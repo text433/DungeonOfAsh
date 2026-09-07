@@ -266,10 +266,80 @@ h2 { font-size: clamp(38px, 7vw, 68px); }
   pointer-events: none;
 }
 
-.dpad,
+.joystick-zone,
 .action-pad { position: absolute; bottom: max(22px, env(safe-area-inset-bottom)); pointer-events: auto; }
-.dpad { left: max(20px, env(safe-area-inset-left)); width: 142px; height: 142px; }
+.joystick-zone {
+  left: max(20px, env(safe-area-inset-left));
+  width: 148px;
+  height: 148px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  touch-action: none;
+}
 .action-pad { right: max(20px, env(safe-area-inset-right)); width: 150px; height: 136px; }
+
+#joystick-base {
+  position: relative;
+  width: 126px;
+  height: 126px;
+  overflow: hidden;
+  border: 1px solid rgba(218, 196, 153, 0.25);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(71, 43, 39, 0.32) 0 28%, rgba(17, 13, 18, 0.58) 30% 66%, rgba(8, 7, 10, 0.7) 68%),
+    rgba(17, 13, 18, 0.56);
+  box-shadow:
+    inset 0 0 0 8px rgba(255, 255, 255, 0.018),
+    inset 0 0 28px rgba(0, 0, 0, 0.55),
+    0 4px 18px rgba(0, 0, 0, 0.28);
+}
+
+#joystick-base::before,
+#joystick-base::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 12px;
+  bottom: 12px;
+  width: 1px;
+  background: linear-gradient(transparent, rgba(215, 154, 63, 0.2), transparent);
+}
+
+#joystick-base::after {
+  left: 12px;
+  right: 12px;
+  top: 50%;
+  bottom: auto;
+  width: auto;
+  height: 1px;
+}
+
+#joystick-knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 58px;
+  height: 58px;
+  margin: -29px 0 0 -29px;
+  border: 1px solid rgba(240, 196, 115, 0.48);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 38% 32%, rgba(166, 91, 57, 0.94), rgba(74, 34, 31, 0.96) 58%, rgba(25, 16, 20, 0.98) 100%);
+  box-shadow:
+    inset 0 1px rgba(255, 232, 185, 0.18),
+    inset 0 -8px 16px rgba(0, 0, 0, 0.32),
+    0 5px 12px rgba(0, 0, 0, 0.48);
+  transform: translate3d(0, 0, 0);
+  transition: transform 90ms ease-out, border-color 90ms ease-out, filter 90ms ease-out;
+  will-change: transform;
+}
+
+.joystick-zone.active #joystick-knob {
+  border-color: rgba(255, 211, 126, 0.8);
+  filter: brightness(1.12);
+  transition: border-color 70ms ease-out, filter 70ms ease-out;
+}
 
 .control {
   position: absolute;
@@ -288,10 +358,6 @@ h2 { font-size: clamp(38px, 7vw, 68px); }
 
 .control.pressed,
 .control:active { border-color: rgba(225, 95, 53, 0.7); background: rgba(93, 34, 29, 0.68); transform: scale(0.94); }
-.dpad .up { left: 44px; top: 0; }
-.dpad .left { left: 0; top: 44px; }
-.dpad .right { right: 0; top: 44px; }
-.dpad .down { left: 44px; bottom: 0; }
 .action-pad .attack { right: 0; top: 0; width: 74px; height: 74px; color: #f0c473; font-size: 28px; }
 .action-pad .interact { left: 0; bottom: 0; width: 58px; height: 58px; font-family: "Courier New", monospace; font-weight: bold; }
 
@@ -319,7 +385,7 @@ h2 { font-size: clamp(38px, 7vw, 68px); }
   .player-panel { transform-origin: left top; left: max(8px, env(safe-area-inset-left)); }
   .run-panel { transform-origin: right top; right: max(8px, env(safe-area-inset-right)); }
   .objective-chip { font-size: 10px; }
-  .dpad { transform: scale(0.86); transform-origin: left bottom; }
+  .joystick-zone { transform: scale(0.86); transform-origin: left bottom; }
   .action-pad { transform: scale(0.88); transform-origin: right bottom; }
 }
 

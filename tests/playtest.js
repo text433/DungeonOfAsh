@@ -85,11 +85,22 @@ const server = require("../server.js");
   await mobilePage.waitForTimeout(350);
   const touchControlsVisible = await mobilePage.locator("#mobile-controls").isVisible();
   if (!touchControlsVisible) throw new Error("Touch controls are not visible on a touch device");
+  const joystickVisible = await mobilePage.locator("#joystick-base").isVisible();
+  if (!joystickVisible) throw new Error("Joystick is not visible on a touch device");
+  const mobileStartX = await mobilePage.evaluate(() => window.__DUNGEON_DEBUG__.scene.player.x);
+  const joystick = await mobilePage.locator("#joystick-base").boundingBox();
+  await mobilePage.mouse.move(joystick.x + joystick.width / 2, joystick.y + joystick.height / 2);
+  await mobilePage.mouse.down();
+  await mobilePage.mouse.move(joystick.x + joystick.width * 0.83, joystick.y + joystick.height / 2, { steps: 5 });
+  await mobilePage.waitForTimeout(420);
+  await mobilePage.mouse.up();
+  const mobileEndX = await mobilePage.evaluate(() => window.__DUNGEON_DEBUG__.scene.player.x);
+  if (mobileEndX <= mobileStartX + 8) throw new Error("Joystick did not move the player");
   await mobilePage.screenshot({ path: "screenshots/04-game-mobile-landscape.png" });
   await mobileContext.close();
 
   if (errors.length) throw new Error(errors.join("\n"));
-  console.log("Browser playtest passed: boot, movement, combat, chest, door, boss, floor 2, resize, touch HUD.");
+  console.log("Browser playtest passed: boot, movement, combat, chest, door, boss, floor 2, resize, joystick.");
   await browser.close();
   server.close();
 })().catch((error) => {

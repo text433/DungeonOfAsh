@@ -22,11 +22,11 @@ for (const relative of required) {
 const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const game = fs.readFileSync(path.join(root, "game.js"), "utf8");
 
-for (const id of ["game", "hud", "mobile-controls", "start-button", "result-screen"]) {
+for (const id of ["game", "hud", "mobile-controls", "joystick-base", "joystick-knob", "start-button", "result-screen"]) {
   if (!html.includes(`id="${id}"`)) throw new Error(`HTML trūkst #${id}`);
 }
 
-for (const marker of ["class DungeonScene", "performAttack", "openChest", "openDoor", "nextFloor"]) {
+for (const marker of ["class DungeonScene", "touchVector", "updateJoystick", "performAttack", "openChest", "openDoor", "nextFloor"]) {
   if (!game.includes(marker)) throw new Error(`Spēles kodā trūkst ${marker}`);
 }
 

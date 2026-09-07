@@ -87,8 +87,8 @@
   class InputSystem {
     constructor(scene) {
       this.scene = scene;
-      this.touch = new Set();
       this.pulses = new Set();
+      this.touchVector = new Phaser.Math.Vector2(0, 0);
       this.cursors = scene.input.keyboard.createCursorKeys();
       this.keys = scene.input.keyboard.addKeys("W,A,S,D,SPACE,E");
       this.bindTouch();
@@ -101,30 +101,79 @@
           event.preventDefault();
           button.setPointerCapture?.(event.pointerId);
           button.classList.add("pressed");
-          if (action === "attack" || action === "interact") this.pulses.add(action);
-          else this.touch.add(action);
+          this.pulses.add(action);
         };
         const up = (event) => {
           event.preventDefault();
           button.classList.remove("pressed");
-          this.touch.delete(action);
         };
         button.addEventListener("pointerdown", down);
         button.addEventListener("pointerup", up);
         button.addEventListener("pointercancel", up);
         button.addEventListener("pointerleave", up);
       });
+
+      const zone = document.getElementById("joystick-zone");
+      const base = document.getElementById("joystick-base");
+      const knob = document.getElementById("joystick-knob");
+      let activePointer = null;
+
+      const updateJoystick = (event) => {
+        const bounds = base.getBoundingClientRect();
+        const centerX = bounds.left + bounds.width / 2;
+        const centerY = bounds.top + bounds.height / 2;
+        const limit = bounds.width * 0.29;
+        let dx = event.clientX - centerX;
+        let dy = event.clientY - centerY;
+        const distance = Math.hypot(dx, dy);
+        if (distance > limit) {
+          dx = (dx / distance) * limit;
+          dy = (dy / distance) * limit;
+        }
+        this.touchVector.set(dx / limit, dy / limit);
+        if (this.touchVector.length() < 0.12) this.touchVector.set(0, 0);
+        knob.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
+      };
+
+      const startJoystick = (event) => {
+        event.preventDefault();
+        activePointer = event.pointerId;
+        zone.setPointerCapture?.(event.pointerId);
+        zone.classList.add("active");
+        updateJoystick(event);
+      };
+
+      const moveJoystick = (event) => {
+        if (event.pointerId !== activePointer) return;
+        event.preventDefault();
+        updateJoystick(event);
+      };
+
+      const stopJoystick = (event) => {
+        if (activePointer !== null && event.pointerId !== activePointer) return;
+        activePointer = null;
+        this.touchVector.set(0, 0);
+        zone.classList.remove("active");
+        knob.style.transform = "translate3d(0, 0, 0)";
+      };
+
+      zone.addEventListener("pointerdown", startJoystick);
+      zone.addEventListener("pointermove", moveJoystick);
+      zone.addEventListener("pointerup", stopJoystick);
+      zone.addEventListener("pointercancel", stopJoystick);
+      zone.addEventListener("lostpointercapture", stopJoystick);
     }
 
     movement() {
       let x = 0;
       let y = 0;
-      if (this.cursors.left.isDown || this.keys.A.isDown || this.touch.has("left")) x -= 1;
-      if (this.cursors.right.isDown || this.keys.D.isDown || this.touch.has("right")) x += 1;
-      if (this.cursors.up.isDown || this.keys.W.isDown || this.touch.has("up")) y -= 1;
-      if (this.cursors.down.isDown || this.keys.S.isDown || this.touch.has("down")) y += 1;
+      if (this.cursors.left.isDown || this.keys.A.isDown) x -= 1;
+      if (this.cursors.right.isDown || this.keys.D.isDown) x += 1;
+      if (this.cursors.up.isDown || this.keys.W.isDown) y -= 1;
+      if (this.cursors.down.isDown || this.keys.S.isDown) y += 1;
       const vector = new Phaser.Math.Vector2(x, y);
-      return vector.lengthSq() > 0 ? vector.normalize() : vector;
+      if (vector.lengthSq() > 0) return vector.normalize();
+      return this.touchVector.clone();
     }
 
     attackPressed() {
