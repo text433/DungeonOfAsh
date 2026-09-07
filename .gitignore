@@ -1,0 +1,6 @@
+node_modules/
+assets/source/
+release/
+screenshots/
+.DS_Store
+*.log

@@ -1,0 +1,16 @@
+{
+  "name": "dungeon-of-ash-html5",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Offline-ready HTML5 dungeon game built from 0x72 DungeonTileset II assets.",
+  "scripts": {
+    "serve": "node server.js",
+    "test": "node tests/game-static.test.js"
+  },
+  "dependencies": {
+    "phaser": "3.90.0"
+  },
+  "devDependencies": {
+    "playwright": "1.55.0"
+  }
+}
