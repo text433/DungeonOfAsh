@@ -2,8 +2,8 @@
   "use strict";
 
   const TILE = 16;
-  const MAP_W = 48;
-  const MAP_H = 32;
+  const MAP_W = 80;
+  const MAP_H = 56;
   const WORLD_W = MAP_W * TILE;
   const WORLD_H = MAP_H * TILE;
   const MAX_HP = 6;
@@ -32,6 +32,8 @@
     floor: ["floor_1", "floor_2", "floor_3", "floor_4", "floor_5", "floor_6", "floor_7", "floor_8"],
     walls: [
       "wall_mid", "wall_top_mid", "wall_left", "wall_right", "wall_top_left", "wall_top_right",
+      "wall_outer_top_left", "wall_outer_mid_left", "wall_outer_front_left",
+      "wall_outer_top_right", "wall_outer_mid_right", "wall_outer_front_right",
       "wall_banner_red", "wall_banner_blue", "wall_banner_green", "wall_hole_1", "wall_hole_2",
       "column", "column_wall", "crate", "skull", "doors_leaf_closed", "doors_leaf_open",
       "floor_stairs", "floor_spikes_anim_f0", "floor_spikes_anim_f1", "floor_spikes_anim_f2", "floor_spikes_anim_f3"
@@ -252,6 +254,7 @@
       this.enemies = this.physics.add.group();
       this.drops = this.physics.add.group({ allowGravity: false });
       this.floorTiles = this.add.group();
+      this.healthBars = this.add.group();
       this.fx = this.add.group();
 
       this.buildDungeon();
@@ -290,51 +293,49 @@
 
     buildDungeon() {
       this.physics.world.setBounds(0, 0, WORLD_W, WORLD_H);
+      this.floorCells = new Set();
+      this.wallCells = new Set();
+
+      [
+        [4, 18, 20, 16],
+        [4, 8, 18, 7],
+        [18, 15, 4, 3],
+        [24, 24, 4, 4],
+        [28, 13, 24, 21],
+        [40, 10, 5, 3],
+        [33, 3, 19, 7],
+        [52, 23, 7, 4],
+        [59, 10, 17, 27],
+        [42, 34, 4, 8],
+        [34, 42, 20, 10],
+        [54, 45, 4, 4],
+        [58, 41, 18, 11]
+      ].forEach(([x, y, width, height]) => this.carveRect(x, y, width, height));
+
       for (let y = 0; y < MAP_H; y += 1) {
         for (let x = 0; x < MAP_W; x += 1) {
+          if (!this.hasFloor(x, y)) continue;
           const noise = this.hash(x, y, this.state.floor);
-          const key = ASSETS.floor[noise % ASSETS.floor.length];
-          const tile = this.add.image(x * TILE + 8, y * TILE + 8, key).setDepth(-20);
-          if (noise % 17 === 0) tile.setTint(0x948184);
-          else if (noise % 11 === 0) tile.setTint(0x7f7379);
+          const key = noise % 13 === 0 ? ASSETS.floor[1 + (noise % (ASSETS.floor.length - 1))] : "floor_1";
+          const tile = this.add.image(x * TILE + 8, y * TILE + 8, key).setDepth(-30);
           this.floorTiles.add(tile);
         }
       }
 
-      for (let x = 0; x < MAP_W; x += 1) {
-        this.addWall(x, 0, x === 0 ? "wall_top_left" : x === MAP_W - 1 ? "wall_top_right" : "wall_top_mid");
-        this.addWall(x, MAP_H - 1, "wall_mid");
-      }
-      for (let y = 1; y < MAP_H - 1; y += 1) {
-        this.addWall(0, y, "wall_left");
-        this.addWall(MAP_W - 1, y, "wall_right");
-      }
+      this.drawDungeonWalls();
 
-      for (let x = 6; x <= 25; x += 1) {
-        if (x !== 15 && x !== 16) this.addWall(x, 10, "wall_mid");
-      }
-      for (let x = 4; x <= 28; x += 1) {
-        if (x !== 20 && x !== 21) this.addWall(x, 22, "wall_mid");
-      }
-      for (let y = 11; y <= 21; y += 1) {
-        if (y !== 16 && y !== 17) this.addWall(12, y, "wall_mid");
-      }
-      for (let y = 1; y < MAP_H - 1; y += 1) {
-        if (y < 15 || y > 16) this.addWall(32, y, "wall_mid");
-      }
-
-      this.door = this.props.create(32 * TILE + 8, 16 * TILE, "doors_leaf_closed");
+      this.door = this.props.create(58 * TILE + 8, 24 * TILE, "doors_leaf_closed");
       this.door.setDepth(this.door.y + 8).refreshBody();
       this.door.body.setSize(14, 30).setOffset(9, 1);
 
-      this.chest = this.props.create(26 * TILE + 8, 17 * TILE + 8, ASSETS.chest[0]);
+      this.chest = this.props.create(11 * TILE + 8, 11 * TILE + 8, ASSETS.chest[0]);
       this.chest.setDepth(this.chest.y).refreshBody();
       this.chest.body.setSize(15, 11).setOffset(0, 5);
 
       const decorative = [
-        [4, 1, "wall_banner_red"], [18, 1, "wall_banner_blue"], [38, 1, "wall_banner_red"],
-        [8, 9, "column_wall"], [23, 9, "column_wall"], [34, 8, "column_wall"], [45, 8, "column_wall"],
-        [6, 20, "crate"], [27, 20, "crate"], [4, 29, "skull"], [29, 27, "wall_hole_2"]
+        [9, 7, "wall_banner_blue"], [38, 2, "wall_banner_red"], [65, 9, "wall_banner_green"],
+        [72, 9, "wall_banner_red"], [7, 31, "crate"], [48, 31, "crate"],
+        [69, 34, "crate"], [21, 30, "skull"], [31, 12, "wall_hole_2"]
       ];
       decorative.forEach(([x, y, key]) => {
         const image = this.add.image(x * TILE + 8, y * TILE + 8, key).setDepth(y * TILE + 8);
@@ -345,8 +346,91 @@
         }
       });
 
-      this.spikes = this.add.sprite(18 * TILE + 8, 18 * TILE + 8, "floor_spikes_anim_f0").setDepth(-2).play("spikes");
+      this.spikeTraps = [
+        [26, 25], [42, 11], [55, 25], [44, 38]
+      ].map(([x, y]) => this.add.sprite(x * TILE + 8, y * TILE + 8, "floor_spikes_anim_f0").setDepth(-2).play("spikes"));
+      this.spikes = this.spikeTraps[0];
       this.stairs = null;
+    }
+
+    carveRect(x, y, width, height) {
+      for (let row = y; row < y + height; row += 1) {
+        for (let column = x; column < x + width; column += 1) {
+          this.floorCells.add(`${column},${row}`);
+        }
+      }
+    }
+
+    hasFloor(x, y) {
+      return this.floorCells.has(`${x},${y}`);
+    }
+
+    drawDungeonWalls() {
+      for (let y = 0; y < MAP_H; y += 1) {
+        this.drawHorizontalBoundary(y, -1);
+        this.drawHorizontalBoundary(y, 1);
+      }
+      for (let x = 0; x < MAP_W; x += 1) {
+        this.drawVerticalBoundary(x, -1);
+        this.drawVerticalBoundary(x, 1);
+      }
+    }
+
+    drawHorizontalBoundary(y, direction) {
+      let x = 0;
+      while (x < MAP_W) {
+        const exposed = this.hasFloor(x, y) && !this.hasFloor(x, y + direction);
+        if (!exposed) {
+          x += 1;
+          continue;
+        }
+        const start = x;
+        while (x + 1 < MAP_W && this.hasFloor(x + 1, y) && !this.hasFloor(x + 1, y + direction)) x += 1;
+        const end = x;
+        const capY = direction < 0 ? y - 2 : y + 1;
+        const faceY = direction < 0 ? y - 1 : y + 2;
+        for (let column = start; column <= end; column += 1) {
+          const cap = start === end ? "wall_top_mid" : column === start ? "wall_top_left" : column === end ? "wall_top_right" : "wall_top_mid";
+          const face = start === end ? "wall_mid" : column === start ? "wall_left" : column === end ? "wall_right" : "wall_mid";
+          this.addBoundaryWall(column, capY, cap);
+          this.addBoundaryWall(column, faceY, face);
+        }
+        x += 1;
+      }
+    }
+
+    drawVerticalBoundary(x, direction) {
+      let y = 0;
+      while (y < MAP_H) {
+        const exposed = this.hasFloor(x, y) && !this.hasFloor(x + direction, y);
+        if (!exposed) {
+          y += 1;
+          continue;
+        }
+        const start = y;
+        while (y + 1 < MAP_H && this.hasFloor(x, y + 1) && !this.hasFloor(x + direction, y + 1)) y += 1;
+        const end = y;
+        const side = direction < 0 ? "left" : "right";
+        for (let row = start; row <= end; row += 1) {
+          const key = start === end
+            ? `wall_outer_mid_${side}`
+            : row === start
+              ? `wall_outer_top_${side}`
+              : row === end
+                ? `wall_outer_front_${side}`
+                : `wall_outer_mid_${side}`;
+          this.addBoundaryWall(x + direction, row, key);
+        }
+        y += 1;
+      }
+    }
+
+    addBoundaryWall(x, y, key) {
+      if (x < 0 || y < 0 || x >= MAP_W || y >= MAP_H || this.hasFloor(x, y)) return null;
+      const cell = `${x},${y}`;
+      if (this.wallCells.has(cell)) return null;
+      this.wallCells.add(cell);
+      return this.addWall(x, y, key);
     }
 
     addWall(x, y, key) {
@@ -357,7 +441,7 @@
     }
 
     createPlayer() {
-      this.player = this.physics.add.sprite(4 * TILE + 8, 4 * TILE + 8, ASSETS.playerIdle[0]);
+      this.player = this.physics.add.sprite(8 * TILE + 8, 25 * TILE + 8, ASSETS.playerIdle[0]);
       this.player.setOrigin(0.5, 1).setDepth(this.player.y).play("player-idle");
       this.player.setCollideWorldBounds(true);
       this.player.body.setSize(10, 9).setOffset(3, 18);
@@ -366,13 +450,14 @@
     spawnEncounters() {
       const scale = 1 + (this.state.floor - 1) * 0.18;
       const positions = [
-        [9, 5, "zombie"], [19, 5, "zombie"], [28, 7, "orc"],
-        [7, 15, "zombie"], [18, 16, "orc"], [27, 19, "zombie"],
-        [7, 27, "orc"], [24, 27, "zombie"]
+        [15, 23, "zombie"], [19, 30, "orc"], [9, 12, "zombie"],
+        [37, 7, "orc"], [48, 7, "zombie"], [34, 18, "zombie"],
+        [46, 19, "orc"], [38, 29, "zombie"], [48, 30, "orc"],
+        [40, 47, "orc"], [49, 48, "zombie"], [66, 15, "orc"], [71, 30, "zombie"]
       ];
-      if (this.state.floor >= 2) positions.push([16, 26, "orc"], [27, 14, "orc"]);
+      if (this.state.floor >= 2) positions.push([64, 46, "orc"], [71, 48, "orc"], [31, 25, "zombie"]);
       positions.forEach(([x, y, type]) => this.spawnEnemy(x, y, type, scale));
-      this.boss = this.spawnEnemy(41, 16, "boss", scale);
+      this.boss = this.spawnEnemy(69, 23, "boss", scale);
       this.state.totalEnemies = this.enemies.countActive(true);
     }
 
@@ -401,7 +486,33 @@
       else if (type === "orc") enemy.body.setSize(11, 11).setOffset(2, 11);
       else enemy.body.setSize(10, 9).setOffset(3, 7);
       enemy.setCollideWorldBounds(true);
+      this.createEnemyHealthBar(enemy, type);
       return enemy;
+    }
+
+    createEnemyHealthBar(enemy, type) {
+      const width = type === "boss" ? 34 : 18;
+      const height = type === "boss" ? 4 : 3;
+      const offsetY = type === "boss" ? 42 : type === "orc" ? 29 : 22;
+      const background = this.add.rectangle(enemy.x, enemy.y - offsetY, width + 2, height + 2, 0x120c10, 0.96)
+        .setStrokeStyle(1, 0x4d3030, 1);
+      const fill = this.add.rectangle(enemy.x - width / 2, enemy.y - offsetY, width, height, 0xc44336, 1)
+        .setOrigin(0, 0.5);
+      this.healthBars.addMultiple([background, fill]);
+      enemy.healthBar = { background, fill, width, offsetY };
+      this.updateEnemyHealthBar(enemy);
+    }
+
+    updateEnemyHealthBar(enemy) {
+      const bar = enemy.healthBar;
+      if (!bar) return;
+      const ratio = Phaser.Math.Clamp(enemy.getData("hp") / enemy.getData("maxHp"), 0, 1);
+      const y = enemy.y - bar.offsetY;
+      bar.background.setPosition(enemy.x, y).setDepth(enemy.depth + 20);
+      bar.fill.setPosition(enemy.x - bar.width / 2, y).setDepth(enemy.depth + 21);
+      bar.fill.displayWidth = Math.max(0.01, bar.width * ratio);
+      bar.fill.setFillStyle(ratio > 0.55 ? 0xc44336 : ratio > 0.25 ? 0xd78632 : 0xe34b36, 1);
+      bar.fill.setVisible(ratio > 0);
     }
 
     createCollisions() {
@@ -510,6 +621,7 @@
       enemy.setVelocity(direction.x * 95, direction.y * 95);
       enemy.setTintFill(0xffd2aa);
       this.time.delayedCall(90, () => enemy.active && enemy.clearTint());
+      this.updateEnemyHealthBar(enemy);
       this.cameras.main.shake(55, 0.0014);
       sound.blip(hp <= 0 ? 84 : 128, hp <= 0 ? 0.12 : 0.05, "square", 0.03);
       if (hp <= 0) this.killEnemy(enemy);
@@ -521,6 +633,9 @@
       const reward = enemy.getData("reward");
       const x = enemy.x;
       const y = enemy.y - 6;
+      enemy.healthBar?.background.destroy();
+      enemy.healthBar?.fill.destroy();
+      enemy.healthBar = null;
       enemy.disableBody(true, true);
       this.state.kills += 1;
       this.spawnDrop(x, y, "coin", reward);
@@ -561,6 +676,7 @@
         if (!enemy.active) return;
         if (time < enemy.getData("staggerUntil")) {
           enemy.setDepth(enemy.y);
+          this.updateEnemyHealthBar(enemy);
           return;
         }
         const distance = Phaser.Math.Distance.Between(enemy.x, enemy.y, this.player.x, this.player.y);
@@ -576,6 +692,7 @@
           if (enemy.anims.currentAnim?.key !== enemy.getData("idle")) enemy.play(enemy.getData("idle"));
         }
         enemy.setDepth(enemy.y);
+        this.updateEnemyHealthBar(enemy);
       });
     }
 
@@ -596,15 +713,28 @@
     }
 
     updateSpikeTrap(time) {
-      if (Phaser.Math.Distance.Between(this.player.x, this.player.y, this.spikes.x, this.spikes.y) > 11) return;
-      if (this.spikes.anims.currentFrame?.index >= 3 && time >= this.hurtReadyAt) {
-        this.hurtReadyAt = time + 850;
-        this.state.damage(1);
-        this.player.setTintFill(0xff5b52);
-        this.time.delayedCall(100, () => this.player.clearTint());
-        this.updateHud();
-        if (this.state.hp <= 0) this.endRun(false);
-      }
+      if (time < this.hurtReadyAt) return;
+      const trap = this.spikeTraps.find((spike) => (
+        Phaser.Math.Distance.Between(this.player.x, this.player.y, spike.x, spike.y) <= 12
+        && spike.anims.currentFrame?.index >= 3
+      ));
+      if (trap) this.triggerSpikeTrap(trap, time);
+    }
+
+    triggerSpikeTrap(trap, time) {
+      this.hurtReadyAt = time + 850;
+      this.state.damage(1);
+      const knockback = new Phaser.Math.Vector2(this.player.x - trap.x, this.player.y - trap.y);
+      if (knockback.lengthSq() < 0.01) knockback.set(0, 1);
+      knockback.normalize();
+      this.player.setVelocity(knockback.x * 135, knockback.y * 135);
+      this.player.setTintFill(0xff5b52);
+      this.time.delayedCall(120, () => this.player.clearTint());
+      this.cameras.main.shake(240, 0.014);
+      this.cameras.main.flash(90, 120, 12, 12, false);
+      sound.blip(58, 0.18, "sawtooth", 0.045);
+      this.updateHud();
+      if (this.state.hp <= 0) this.endRun(false);
     }
 
     updateInteraction() {
@@ -653,7 +783,7 @@
     }
 
     revealStairs() {
-      this.stairs = this.add.image(42 * TILE + 8, 16 * TILE + 8, "floor_stairs").setDepth(-1).setAlpha(0);
+      this.stairs = this.add.image(70 * TILE + 8, 33 * TILE + 8, "floor_stairs").setDepth(-1).setAlpha(0);
       this.tweens.add({ targets: this.stairs, alpha: 1, duration: 500 });
     }
 

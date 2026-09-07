@@ -13,7 +13,7 @@ VADĪBA DATORĀ
 - P vai ESC: pauze
 
 VADĪBA TELEFONĀ
-- Kreisajā pusē ir kustības pogas.
+- Kreisajā pusē ir virtuālais joystick.
 - Labajā pusē ir uzbrukuma un darbības pogas.
 - Visērtāk spēlēt horizontāli.
 

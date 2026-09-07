@@ -29,6 +29,26 @@ const server = require("../server.js");
   const moved = await page.evaluate(() => window.__DUNGEON_DEBUG__.scene.player.x > 75);
   if (!moved) throw new Error("Player did not move with keyboard input");
 
+  const healthBarsReady = await page.evaluate(() => {
+    const scene = window.__DUNGEON_DEBUG__.scene;
+    return scene.enemies.getChildren().every((enemy) => (
+      enemy.healthBar?.background?.active && enemy.healthBar?.fill?.active
+    ));
+  });
+  if (!healthBarsReady) throw new Error("Enemy health bars were not created");
+
+  const trapResult = await page.evaluate(() => {
+    const scene = window.__DUNGEON_DEBUG__.scene;
+    const before = scene.state.hp;
+    scene.hurtReadyAt = 0;
+    scene.triggerSpikeTrap(scene.spikes, scene.time.now);
+    return {
+      damaged: scene.state.hp === before - 1,
+      shaking: scene.cameras.main.shakeEffect.isRunning
+    };
+  });
+  if (!trapResult.damaged || !trapResult.shaking) throw new Error("Spike trap did not damage and shake the camera");
+
   await page.evaluate(() => {
     const scene = window.__DUNGEON_DEBUG__.scene;
     scene.player.setPosition(scene.chest.x - 20, scene.chest.y);

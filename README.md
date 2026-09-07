@@ -11,7 +11,9 @@ Atver `index.html` pārlūkā. Spēle darbojas arī bez interneta.
 - `E` — lāde, durvis un kāpnes
 - `P` vai `ESC` — pauze
 
-Telefonā spēle automātiski parāda skārienvadības pogas.
+Telefonā spēle automātiski parāda virtuālo joystick un skārienvadības pogas.
+
+Dungeonā ir savienotas telpas un gaiteņi, lamatas ar ekrāna kratīšanas efektu un HP joslas virs visiem monstriem.
 
 ## Mērķis
 

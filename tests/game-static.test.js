@@ -26,7 +26,10 @@ for (const id of ["game", "hud", "mobile-controls", "joystick-base", "joystick-k
   if (!html.includes(`id="${id}"`)) throw new Error(`HTML trūkst #${id}`);
 }
 
-for (const marker of ["class DungeonScene", "touchVector", "updateJoystick", "performAttack", "openChest", "openDoor", "nextFloor"]) {
+for (const marker of [
+  "class DungeonScene", "touchVector", "updateJoystick", "drawDungeonWalls",
+  "createEnemyHealthBar", "triggerSpikeTrap", "performAttack", "openChest", "openDoor", "nextFloor"
+]) {
   if (!game.includes(marker)) throw new Error(`Spēles kodā trūkst ${marker}`);
 }
 
