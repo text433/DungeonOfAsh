@@ -88,7 +88,7 @@
       ) x += 1;
       const end = x;
       const capY = direction < 0 ? row - 2 : row + 1;
-      const faceY = direction < 0 ? row - 1 : row + 2;
+      const faceY = row - 1;
 
       for (let column = start; column <= end; column += 1) {
         const capKey = start === end
@@ -112,7 +112,6 @@
         } else {
           paintWallLayer(plans, floorCells, mapWidth, mapHeight, column, capY, faceKey);
           paintWallLayer(plans, floorCells, mapWidth, mapHeight, column, capY, capKey, true);
-          paintWallLayer(plans, floorCells, mapWidth, mapHeight, column, faceY, faceKey);
         }
       }
 
@@ -124,10 +123,8 @@
       } else {
         paintWallLayer(plans, floorCells, mapWidth, mapHeight, start - 1, capY, "wall_outer_front_left");
         paintWallLayer(plans, floorCells, mapWidth, mapHeight, start - 1, capY, "wall_outer_top_left", true);
-        paintWallLayer(plans, floorCells, mapWidth, mapHeight, start - 1, faceY, "wall_outer_front_left");
         paintWallLayer(plans, floorCells, mapWidth, mapHeight, end + 1, capY, "wall_outer_front_right");
         paintWallLayer(plans, floorCells, mapWidth, mapHeight, end + 1, capY, "wall_outer_top_right", true);
-        paintWallLayer(plans, floorCells, mapWidth, mapHeight, end + 1, faceY, "wall_outer_front_right");
       }
       x += 1;
     }

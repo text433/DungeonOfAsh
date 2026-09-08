@@ -43,13 +43,20 @@ if (!html.includes('<script src="map-rules.js"></script>')) throw new Error("HTM
 const floorCells = mapRules.buildFloorCells();
 const wallPlan = mapRules.buildWallPlan(floorCells, 80, 56);
 if (floorCells.size !== 2059) throw new Error(`Negaidīts grīdas flīžu skaits: ${floorCells.size}`);
-if (wallPlan.length !== 734) throw new Error(`Negaidīts sienu flīžu skaits: ${wallPlan.length}`);
+if (wallPlan.length !== 622) throw new Error(`Negaidīts sienu flīžu skaits: ${wallPlan.length}`);
 if (new Set(wallPlan.map(({ x, y }) => `${x},${y}`)).size !== wallPlan.length) {
   throw new Error("Kartes noteikumi vienā šūnā izveido vairākas sienas");
 }
 for (const rule of wallPlan) {
   if (!rule.base || !rule.body || !Array.isArray(rule.overlays)) throw new Error(`Nepilnīgs sienas plāns pie ${rule.x},${rule.y}`);
   if (floorCells.has(`${rule.x},${rule.y}`)) throw new Error(`Siena pārklāj grīdu pie ${rule.x},${rule.y}`);
+}
+
+const sampleFloor = mapRules.buildFloorCells([[2, 2, 4, 3]]);
+const sampleWalls = new Set(mapRules.buildWallPlan(sampleFloor, 10, 10).map(({ x, y }) => `${x},${y}`));
+for (let x = 2; x < 6; x += 1) {
+  if (!sampleWalls.has(`${x},5`)) throw new Error(`Trūkst apakšējā siena pie ${x},5`);
+  if (sampleWalls.has(`${x},6`)) throw new Error(`Apakšējā siena ir uzzīmēta divreiz pie ${x},6`);
 }
 
 const collisionCells = new Set(wallPlan.map(({ x, y }) => `${x},${y}`));
