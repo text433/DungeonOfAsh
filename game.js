@@ -298,7 +298,7 @@
       this.physics.world.setBounds(0, 0, WORLD_W, WORLD_H);
       this.floorCells = mapRules.buildFloorCells();
       this.wallCells = new Set();
-      this.wallMasks = new Map();
+      this.wallPlan = [];
 
       for (let y = 0; y < MAP_H; y += 1) {
         for (let x = 0; x < MAP_W; x += 1) {
@@ -346,10 +346,10 @@
     }
 
     buildWallAutotiles() {
-      mapRules.buildWallPlan(this.floorCells, MAP_W, MAP_H).forEach((rule) => {
+      this.wallPlan = mapRules.buildWallPlan(this.floorCells, MAP_W, MAP_H);
+      this.wallPlan.forEach((rule) => {
         this.wallCells.add(`${rule.x},${rule.y}`);
-        this.wallMasks.set(`${rule.x},${rule.y}`, rule.mask);
-        this.addWall(rule.x, rule.y, rule.base, rule.body);
+        this.addWall(rule.x, rule.y, rule.base, rule.body, rule.baseFlipY);
         rule.overlays.forEach(({ key, flipY = false }) => {
           const overlay = this.add.image(rule.x * TILE + 8, rule.y * TILE + 8, key)
             .setDepth(rule.y * TILE + 8.5)
@@ -359,9 +359,9 @@
       });
     }
 
-    addWall(x, y, key, body = { width: TILE, height: TILE, offsetX: 0, offsetY: 0 }) {
+    addWall(x, y, key, body = { width: TILE, height: TILE, offsetX: 0, offsetY: 0 }, flipY = false) {
       const wall = this.walls.create(x * TILE + 8, y * TILE + 8, key);
-      wall.setDepth(y * TILE + 8).refreshBody();
+      wall.setDepth(y * TILE + 8).setFlipY(flipY).refreshBody();
       wall.body.setSize(body.width, body.height).setOffset(body.offsetX, body.offsetY);
       return wall;
     }

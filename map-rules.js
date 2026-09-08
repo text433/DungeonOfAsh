@@ -44,53 +44,123 @@
     return mask;
   }
 
-  function wallRuleForMask(mask) {
-    const north = Boolean(mask & WALL_EDGE.NORTH);
-    const east = Boolean(mask & WALL_EDGE.EAST);
-    const south = Boolean(mask & WALL_EDGE.SOUTH);
-    const west = Boolean(mask & WALL_EDGE.WEST);
-    const horizontal = north || south;
-    const overlays = [];
-    let base = "wall_mid";
-    let body = { width: TILE, height: TILE, offsetX: 0, offsetY: 0 };
+  const FULL_FACE_KEYS = new Set(["wall_mid", "wall_left", "wall_right"]);
 
-    if (!horizontal) {
-      if (west) base = "wall_outer_mid_left";
-      else if (east) base = "wall_outer_mid_right";
+  function paintWallLayer(plans, floorCells, mapWidth, mapHeight, x, y, key, flipY = false) {
+    if (x < 0 || y < 0 || x >= mapWidth || y >= mapHeight || floorCells.has(cellKey(x, y))) return;
 
-      if (west && east) overlays.push({ key: "wall_outer_mid_right" });
-      else if (west) body = { width: 4, height: TILE, offsetX: 0, offsetY: 0 };
-      else if (east) body = { width: 4, height: TILE, offsetX: TILE - 4, offsetY: 0 };
-    } else if (west && !east) {
-      base = "wall_edge_left";
-    } else if (east && !west) {
-      base = "wall_edge_right";
-    } else if (west && east) {
-      overlays.push({ key: "wall_outer_mid_left" }, { key: "wall_outer_mid_right" });
+    const planKey = cellKey(x, y);
+    const plan = plans.get(planKey) || { x, y, base: null, overlays: [] };
+    const layer = { key, flipY };
+    const sameLayer = (candidate) => candidate && candidate.key === key && candidate.flipY === flipY;
+
+    if (FULL_FACE_KEYS.has(key)) {
+      if (plan.base && FULL_FACE_KEYS.has(plan.base.key)) {
+        if (plan.base.key !== key) plan.base = { key: "wall_mid", flipY: false };
+        plans.set(planKey, plan);
+        return;
+      }
+      if (plan.base && !plan.overlays.some(sameLayer)) plan.overlays.push(plan.base);
+      plan.base = layer;
+      plans.set(planKey, plan);
+      return;
     }
 
-    const capKey = west && !east
-      ? "wall_top_left"
-      : east && !west
-        ? "wall_top_right"
-        : "wall_top_mid";
-    if (north) overlays.push({ key: capKey });
-    if (south) overlays.push({ key: capKey, flipY: true });
+    if (!plan.base) plan.base = layer;
+    else if (!sameLayer(plan.base) && !plan.overlays.some(sameLayer)) plan.overlays.push(layer);
+    plans.set(planKey, plan);
+  }
 
-    return { base, overlays, body };
+  function paintHorizontalRuns(plans, floorCells, mapWidth, mapHeight, row, direction) {
+    const edge = direction < 0 ? WALL_EDGE.NORTH : WALL_EDGE.SOUTH;
+    let x = 0;
+    while (x < mapWidth) {
+      if (!floorCells.has(cellKey(x, row)) || !(wallMaskAt(floorCells, x, row) & edge)) {
+        x += 1;
+        continue;
+      }
+
+      const start = x;
+      while (
+        x + 1 < mapWidth
+        && floorCells.has(cellKey(x + 1, row))
+        && wallMaskAt(floorCells, x + 1, row) & edge
+      ) x += 1;
+      const end = x;
+      const capY = direction < 0 ? row - 2 : row + 1;
+      const faceY = direction < 0 ? row - 1 : row + 2;
+
+      for (let column = start; column <= end; column += 1) {
+        const capKey = start === end
+          ? "wall_top_mid"
+          : column === start
+            ? "wall_top_left"
+            : column === end
+              ? "wall_top_right"
+              : "wall_top_mid";
+        const faceKey = start === end
+          ? "wall_mid"
+          : column === start
+            ? "wall_left"
+            : column === end
+              ? "wall_right"
+              : "wall_mid";
+
+        if (direction < 0) {
+          paintWallLayer(plans, floorCells, mapWidth, mapHeight, column, capY, capKey);
+          paintWallLayer(plans, floorCells, mapWidth, mapHeight, column, faceY, faceKey);
+        } else {
+          paintWallLayer(plans, floorCells, mapWidth, mapHeight, column, capY, faceKey);
+          paintWallLayer(plans, floorCells, mapWidth, mapHeight, column, capY, capKey, true);
+          paintWallLayer(plans, floorCells, mapWidth, mapHeight, column, faceY, faceKey);
+        }
+      }
+
+      if (direction < 0) {
+        paintWallLayer(plans, floorCells, mapWidth, mapHeight, start - 1, capY, "wall_outer_top_left");
+        paintWallLayer(plans, floorCells, mapWidth, mapHeight, start - 1, faceY, "wall_outer_front_left");
+        paintWallLayer(plans, floorCells, mapWidth, mapHeight, end + 1, capY, "wall_outer_top_right");
+        paintWallLayer(plans, floorCells, mapWidth, mapHeight, end + 1, faceY, "wall_outer_front_right");
+      } else {
+        paintWallLayer(plans, floorCells, mapWidth, mapHeight, start - 1, capY, "wall_outer_front_left");
+        paintWallLayer(plans, floorCells, mapWidth, mapHeight, start - 1, capY, "wall_outer_top_left", true);
+        paintWallLayer(plans, floorCells, mapWidth, mapHeight, start - 1, faceY, "wall_outer_front_left");
+        paintWallLayer(plans, floorCells, mapWidth, mapHeight, end + 1, capY, "wall_outer_front_right");
+        paintWallLayer(plans, floorCells, mapWidth, mapHeight, end + 1, capY, "wall_outer_top_right", true);
+        paintWallLayer(plans, floorCells, mapWidth, mapHeight, end + 1, faceY, "wall_outer_front_right");
+      }
+      x += 1;
+    }
   }
 
   function buildWallPlan(floorCells, mapWidth, mapHeight) {
-    const plan = [];
+    const plans = new Map();
+    for (let y = 0; y < mapHeight; y += 1) {
+      paintHorizontalRuns(plans, floorCells, mapWidth, mapHeight, y, -1);
+      paintHorizontalRuns(plans, floorCells, mapWidth, mapHeight, y, 1);
+    }
+
     for (let y = 0; y < mapHeight; y += 1) {
       for (let x = 0; x < mapWidth; x += 1) {
         if (!floorCells.has(cellKey(x, y))) continue;
         const mask = wallMaskAt(floorCells, x, y);
-        if (!mask) continue;
-        plan.push({ x, y, mask, ...wallRuleForMask(mask) });
+        if (mask & WALL_EDGE.WEST) {
+          paintWallLayer(plans, floorCells, mapWidth, mapHeight, x - 1, y, "wall_outer_mid_left");
+        }
+        if (mask & WALL_EDGE.EAST) {
+          paintWallLayer(plans, floorCells, mapWidth, mapHeight, x + 1, y, "wall_outer_mid_right");
+        }
       }
     }
-    return plan;
+
+    return [...plans.values()].map(({ x, y, base, overlays }) => ({
+      x,
+      y,
+      base: base.key,
+      baseFlipY: base.flipY,
+      overlays,
+      body: { width: TILE, height: TILE, offsetX: 0, offsetY: 0 }
+    }));
   }
 
   return Object.freeze({
@@ -98,7 +168,6 @@
     DUNGEON_RECTS,
     buildFloorCells,
     wallMaskAt,
-    wallRuleForMask,
     buildWallPlan
   });
 });
