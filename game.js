@@ -7,6 +7,7 @@
   const WORLD_W = MAP_W * TILE;
   const WORLD_H = MAP_H * TILE;
   const MAX_HP = 6;
+  const mapRules = window.DungeonMapRules;
   const TOUCH_DEVICE = window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
 
   const dom = {
@@ -295,25 +296,9 @@
 
     buildDungeon() {
       this.physics.world.setBounds(0, 0, WORLD_W, WORLD_H);
-      this.floorCells = new Set();
+      this.floorCells = mapRules.buildFloorCells();
       this.wallCells = new Set();
-      this.wallOverlayCells = new Set();
-
-      [
-        [4, 18, 20, 16],
-        [4, 8, 18, 7],
-        [18, 15, 4, 3],
-        [24, 24, 4, 4],
-        [28, 13, 24, 21],
-        [40, 10, 5, 3],
-        [33, 3, 19, 7],
-        [52, 23, 7, 4],
-        [59, 10, 17, 27],
-        [42, 34, 4, 8],
-        [34, 42, 20, 10],
-        [54, 45, 4, 4],
-        [58, 41, 18, 11]
-      ].forEach(([x, y, width, height]) => this.carveRect(x, y, width, height));
+      this.wallMasks = new Map();
 
       for (let y = 0; y < MAP_H; y += 1) {
         for (let x = 0; x < MAP_W; x += 1) {
@@ -325,7 +310,7 @@
         }
       }
 
-      this.drawDungeonWalls();
+      this.buildWallAutotiles();
 
       this.door = this.props.create(58 * TILE + 8, 24 * TILE, "doors_leaf_closed");
       this.door.setDepth(this.door.y + 8).refreshBody();
@@ -356,123 +341,28 @@
       this.stairs = null;
     }
 
-    carveRect(x, y, width, height) {
-      for (let row = y; row < y + height; row += 1) {
-        for (let column = x; column < x + width; column += 1) {
-          this.floorCells.add(`${column},${row}`);
-        }
-      }
-    }
-
     hasFloor(x, y) {
       return this.floorCells.has(`${x},${y}`);
     }
 
-    drawDungeonWalls() {
-      for (let y = 0; y < MAP_H; y += 1) {
-        this.drawHorizontalBoundary(y, -1);
-        this.drawHorizontalBoundary(y, 1);
-      }
-      for (let x = 0; x < MAP_W; x += 1) {
-        this.drawVerticalBoundary(x, -1);
-        this.drawVerticalBoundary(x, 1);
-      }
+    buildWallAutotiles() {
+      mapRules.buildWallPlan(this.floorCells, MAP_W, MAP_H).forEach((rule) => {
+        this.wallCells.add(`${rule.x},${rule.y}`);
+        this.wallMasks.set(`${rule.x},${rule.y}`, rule.mask);
+        this.addWall(rule.x, rule.y, rule.base, rule.body);
+        rule.overlays.forEach(({ key, flipY = false }) => {
+          const overlay = this.add.image(rule.x * TILE + 8, rule.y * TILE + 8, key)
+            .setDepth(rule.y * TILE + 8.5)
+            .setFlipY(flipY);
+          this.wallOverlays.add(overlay);
+        });
+      });
     }
 
-    drawHorizontalBoundary(y, direction) {
-      let x = 0;
-      while (x < MAP_W) {
-        const exposed = this.hasFloor(x, y) && !this.hasFloor(x, y + direction);
-        if (!exposed) {
-          x += 1;
-          continue;
-        }
-        const start = x;
-        while (x + 1 < MAP_W && this.hasFloor(x + 1, y) && !this.hasFloor(x + 1, y + direction)) x += 1;
-        const end = x;
-        const capY = direction < 0 ? y - 2 : y + 1;
-        const faceY = direction < 0 ? y - 1 : y + 2;
-        for (let column = start; column <= end; column += 1) {
-          const cap = start === end ? "wall_top_mid" : column === start ? "wall_top_left" : column === end ? "wall_top_right" : "wall_top_mid";
-          if (direction < 0) {
-            let connectedCap = cap;
-            if (this.hasFloor(column - 1, capY)) connectedCap = "wall_edge_top_left";
-            else if (this.hasFloor(column + 1, capY)) connectedCap = "wall_edge_top_right";
-            this.addBoundaryWall(column, capY, connectedCap);
-            this.addBoundaryWall(column, faceY, this.wallFaceKey(column, faceY, start, end));
-          } else {
-            this.addBoundaryWall(column, capY, this.wallFaceKey(column, capY, start, end));
-            this.addWallOverlay(column, capY, cap, true);
-            this.addBoundaryWall(column, faceY, this.wallFaceKey(column, faceY, start, end));
-          }
-        }
-        if (direction < 0) {
-          this.addBoundaryWall(start - 1, capY, "wall_outer_top_left");
-          this.addBoundaryWall(start - 1, faceY, "wall_outer_front_left");
-          this.addBoundaryWall(end + 1, capY, "wall_outer_top_right");
-          this.addBoundaryWall(end + 1, faceY, "wall_outer_front_right");
-        } else {
-          this.addBoundaryWall(start - 1, capY, "wall_outer_front_left");
-          this.addWallOverlay(start - 1, capY, "wall_outer_top_left", true);
-          this.addBoundaryWall(start - 1, faceY, "wall_outer_front_left");
-          this.addBoundaryWall(end + 1, capY, "wall_outer_front_right");
-          this.addWallOverlay(end + 1, capY, "wall_outer_top_right", true);
-          this.addBoundaryWall(end + 1, faceY, "wall_outer_front_right");
-        }
-        x += 1;
-      }
-    }
-
-    wallFaceKey(column, row, start, end) {
-      let key = start === end ? "wall_mid" : column === start ? "wall_left" : column === end ? "wall_right" : "wall_mid";
-      if (this.hasFloor(column - 1, row)) key = "wall_edge_left";
-      else if (this.hasFloor(column + 1, row)) key = "wall_edge_right";
-      return key;
-    }
-
-    drawVerticalBoundary(x, direction) {
-      let y = 0;
-      while (y < MAP_H) {
-        const exposed = this.hasFloor(x, y) && !this.hasFloor(x + direction, y);
-        if (!exposed) {
-          y += 1;
-          continue;
-        }
-        const start = y;
-        while (y + 1 < MAP_H && this.hasFloor(x, y + 1) && !this.hasFloor(x + direction, y + 1)) y += 1;
-        const end = y;
-        const side = direction < 0 ? "left" : "right";
-        for (let row = start; row <= end; row += 1) {
-          this.addBoundaryWall(x + direction, row, `wall_outer_mid_${side}`);
-        }
-        y += 1;
-      }
-    }
-
-    addBoundaryWall(x, y, key) {
-      if (x < 0 || y < 0 || x >= MAP_W || y >= MAP_H || this.hasFloor(x, y)) return null;
-      const cell = `${x},${y}`;
-      if (this.wallCells.has(cell)) return null;
-      this.wallCells.add(cell);
-      return this.addWall(x, y, key);
-    }
-
-    addWallOverlay(x, y, key, flipY = false) {
-      if (x < 0 || y < 0 || x >= MAP_W || y >= MAP_H || this.hasFloor(x, y)) return null;
-      const cell = `${x},${y},${key},${flipY}`;
-      if (this.wallOverlayCells.has(cell)) return null;
-      this.wallOverlayCells.add(cell);
-      const overlay = this.add.image(x * TILE + 8, y * TILE + 8, key)
-        .setDepth(y * TILE + 8.5)
-        .setFlipY(flipY);
-      this.wallOverlays.add(overlay);
-      return overlay;
-    }
-
-    addWall(x, y, key) {
+    addWall(x, y, key, body = { width: TILE, height: TILE, offsetX: 0, offsetY: 0 }) {
       const wall = this.walls.create(x * TILE + 8, y * TILE + 8, key);
       wall.setDepth(y * TILE + 8).refreshBody();
-      wall.body.setSize(16, 16);
+      wall.body.setSize(body.width, body.height).setOffset(body.offsetX, body.offsetY);
       return wall;
     }
 
