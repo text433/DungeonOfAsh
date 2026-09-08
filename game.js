@@ -255,6 +255,7 @@
       this.enemies = this.physics.add.group();
       this.drops = this.physics.add.group({ allowGravity: false });
       this.floorTiles = this.add.group();
+      this.wallOverlays = this.add.group();
       this.healthBars = this.add.group();
       this.fx = this.add.group();
 
@@ -296,6 +297,7 @@
       this.physics.world.setBounds(0, 0, WORLD_W, WORLD_H);
       this.floorCells = new Set();
       this.wallCells = new Set();
+      this.wallOverlayCells = new Set();
 
       [
         [4, 18, 20, 16],
@@ -391,21 +393,41 @@
         const capY = direction < 0 ? y - 2 : y + 1;
         const faceY = direction < 0 ? y - 1 : y + 2;
         for (let column = start; column <= end; column += 1) {
-          let cap = start === end ? "wall_top_mid" : column === start ? "wall_top_left" : column === end ? "wall_top_right" : "wall_top_mid";
-          let face = start === end ? "wall_mid" : column === start ? "wall_left" : column === end ? "wall_right" : "wall_mid";
-          if (this.hasFloor(column - 1, capY)) cap = "wall_edge_top_left";
-          else if (this.hasFloor(column + 1, capY)) cap = "wall_edge_top_right";
-          if (this.hasFloor(column - 1, faceY)) face = "wall_edge_left";
-          else if (this.hasFloor(column + 1, faceY)) face = "wall_edge_right";
-          this.addBoundaryWall(column, capY, cap);
-          this.addBoundaryWall(column, faceY, face);
+          const cap = start === end ? "wall_top_mid" : column === start ? "wall_top_left" : column === end ? "wall_top_right" : "wall_top_mid";
+          if (direction < 0) {
+            let connectedCap = cap;
+            if (this.hasFloor(column - 1, capY)) connectedCap = "wall_edge_top_left";
+            else if (this.hasFloor(column + 1, capY)) connectedCap = "wall_edge_top_right";
+            this.addBoundaryWall(column, capY, connectedCap);
+            this.addBoundaryWall(column, faceY, this.wallFaceKey(column, faceY, start, end));
+          } else {
+            this.addBoundaryWall(column, capY, this.wallFaceKey(column, capY, start, end));
+            this.addWallOverlay(column, capY, cap, true);
+            this.addBoundaryWall(column, faceY, this.wallFaceKey(column, faceY, start, end));
+          }
         }
-        this.addBoundaryWall(start - 1, capY, "wall_outer_top_left");
-        this.addBoundaryWall(start - 1, faceY, "wall_outer_front_left");
-        this.addBoundaryWall(end + 1, capY, "wall_outer_top_right");
-        this.addBoundaryWall(end + 1, faceY, "wall_outer_front_right");
+        if (direction < 0) {
+          this.addBoundaryWall(start - 1, capY, "wall_outer_top_left");
+          this.addBoundaryWall(start - 1, faceY, "wall_outer_front_left");
+          this.addBoundaryWall(end + 1, capY, "wall_outer_top_right");
+          this.addBoundaryWall(end + 1, faceY, "wall_outer_front_right");
+        } else {
+          this.addBoundaryWall(start - 1, capY, "wall_outer_front_left");
+          this.addWallOverlay(start - 1, capY, "wall_outer_top_left", true);
+          this.addBoundaryWall(start - 1, faceY, "wall_outer_front_left");
+          this.addBoundaryWall(end + 1, capY, "wall_outer_front_right");
+          this.addWallOverlay(end + 1, capY, "wall_outer_top_right", true);
+          this.addBoundaryWall(end + 1, faceY, "wall_outer_front_right");
+        }
         x += 1;
       }
+    }
+
+    wallFaceKey(column, row, start, end) {
+      let key = start === end ? "wall_mid" : column === start ? "wall_left" : column === end ? "wall_right" : "wall_mid";
+      if (this.hasFloor(column - 1, row)) key = "wall_edge_left";
+      else if (this.hasFloor(column + 1, row)) key = "wall_edge_right";
+      return key;
     }
 
     drawVerticalBoundary(x, direction) {
@@ -433,6 +455,18 @@
       if (this.wallCells.has(cell)) return null;
       this.wallCells.add(cell);
       return this.addWall(x, y, key);
+    }
+
+    addWallOverlay(x, y, key, flipY = false) {
+      if (x < 0 || y < 0 || x >= MAP_W || y >= MAP_H || this.hasFloor(x, y)) return null;
+      const cell = `${x},${y},${key},${flipY}`;
+      if (this.wallOverlayCells.has(cell)) return null;
+      this.wallOverlayCells.add(cell);
+      const overlay = this.add.image(x * TILE + 8, y * TILE + 8, key)
+        .setDepth(y * TILE + 8.5)
+        .setFlipY(flipY);
+      this.wallOverlays.add(overlay);
+      return overlay;
     }
 
     addWall(x, y, key) {

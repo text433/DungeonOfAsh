@@ -27,7 +27,7 @@ for (const id of ["game", "hud", "mobile-controls", "joystick-base", "joystick-k
 }
 
 for (const marker of [
-  "class DungeonScene", "touchVector", "updateJoystick", "drawDungeonWalls",
+  "class DungeonScene", "touchVector", "updateJoystick", "drawDungeonWalls", "addWallOverlay",
   "createEnemyHealthBar", "triggerSpikeTrap", "performAttack", "openChest", "openDoor", "nextFloor"
 ]) {
   if (!game.includes(marker)) throw new Error(`Spēles kodā trūkst ${marker}`);
