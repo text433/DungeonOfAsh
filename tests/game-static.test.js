@@ -8,6 +8,8 @@ const required = [
   "map-rules.js",
   "game.js",
   "vendor/phaser.min.js",
+  "assets/frames/wall_atlas_high_mid.png",
+  "assets/frames/wall_atlas_high_mid_alt.png",
   "assets/frames/knight_m_idle_anim_f0.png",
   "assets/frames/wall_mid.png",
   "assets/frames/big_demon_idle_anim_f0.png",
@@ -29,7 +31,7 @@ for (const id of ["game", "hud", "mobile-controls", "joystick-base", "joystick-k
 }
 
 for (const marker of [
-  "class DungeonScene", "touchVector", "updateJoystick", "buildWallAutotiles", "buildWallPlan",
+  "class DungeonScene", "touchVector", "updateJoystick", "buildWallAutotiles", "addHighWallAtlasDetails", "buildWallPlan",
   "createEnemyHealthBar", "triggerSpikeTrap", "performAttack", "openChest", "openDoor", "nextFloor"
 ]) {
   if (!game.includes(marker)) throw new Error(`Spēles kodā trūkst ${marker}`);
