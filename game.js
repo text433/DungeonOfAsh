@@ -34,6 +34,7 @@
       "wall_mid", "wall_top_mid", "wall_left", "wall_right", "wall_top_left", "wall_top_right",
       "wall_outer_top_left", "wall_outer_mid_left", "wall_outer_front_left",
       "wall_outer_top_right", "wall_outer_mid_right", "wall_outer_front_right",
+      "wall_edge_top_left", "wall_edge_left", "wall_edge_top_right", "wall_edge_right",
       "wall_banner_red", "wall_banner_blue", "wall_banner_green", "wall_hole_1", "wall_hole_2",
       "column", "column_wall", "crate", "skull", "doors_leaf_closed", "doors_leaf_open",
       "floor_stairs", "floor_spikes_anim_f0", "floor_spikes_anim_f1", "floor_spikes_anim_f2", "floor_spikes_anim_f3"
@@ -390,11 +391,19 @@
         const capY = direction < 0 ? y - 2 : y + 1;
         const faceY = direction < 0 ? y - 1 : y + 2;
         for (let column = start; column <= end; column += 1) {
-          const cap = start === end ? "wall_top_mid" : column === start ? "wall_top_left" : column === end ? "wall_top_right" : "wall_top_mid";
-          const face = start === end ? "wall_mid" : column === start ? "wall_left" : column === end ? "wall_right" : "wall_mid";
+          let cap = start === end ? "wall_top_mid" : column === start ? "wall_top_left" : column === end ? "wall_top_right" : "wall_top_mid";
+          let face = start === end ? "wall_mid" : column === start ? "wall_left" : column === end ? "wall_right" : "wall_mid";
+          if (this.hasFloor(column - 1, capY)) cap = "wall_edge_top_left";
+          else if (this.hasFloor(column + 1, capY)) cap = "wall_edge_top_right";
+          if (this.hasFloor(column - 1, faceY)) face = "wall_edge_left";
+          else if (this.hasFloor(column + 1, faceY)) face = "wall_edge_right";
           this.addBoundaryWall(column, capY, cap);
           this.addBoundaryWall(column, faceY, face);
         }
+        this.addBoundaryWall(start - 1, capY, "wall_outer_top_left");
+        this.addBoundaryWall(start - 1, faceY, "wall_outer_front_left");
+        this.addBoundaryWall(end + 1, capY, "wall_outer_top_right");
+        this.addBoundaryWall(end + 1, faceY, "wall_outer_front_right");
         x += 1;
       }
     }
@@ -412,14 +421,7 @@
         const end = y;
         const side = direction < 0 ? "left" : "right";
         for (let row = start; row <= end; row += 1) {
-          const key = start === end
-            ? `wall_outer_mid_${side}`
-            : row === start
-              ? `wall_outer_top_${side}`
-              : row === end
-                ? `wall_outer_front_${side}`
-                : `wall_outer_mid_${side}`;
-          this.addBoundaryWall(x + direction, row, key);
+          this.addBoundaryWall(x + direction, row, `wall_outer_mid_${side}`);
         }
         y += 1;
       }
