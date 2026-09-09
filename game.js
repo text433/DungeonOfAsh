@@ -36,7 +36,6 @@
       "wall_outer_top_left", "wall_outer_mid_left", "wall_outer_front_left",
       "wall_outer_top_right", "wall_outer_mid_right", "wall_outer_front_right",
       "wall_edge_top_left", "wall_edge_left", "wall_edge_top_right", "wall_edge_right",
-      "wall_atlas_high_left", "wall_atlas_high_mid", "wall_atlas_high_right",
       "wall_banner_red", "wall_banner_blue", "wall_banner_green", "wall_hole_1", "wall_hole_2",
       "column", "column_wall", "crate", "skull", "doors_leaf_closed", "doors_leaf_open",
       "floor_stairs", "floor_spikes_anim_f0", "floor_spikes_anim_f1", "floor_spikes_anim_f2", "floor_spikes_anim_f3"
@@ -357,29 +356,6 @@
             .setFlipY(flipY);
           this.wallOverlays.add(overlay);
         });
-      });
-      this.addHighWallAtlasDetails();
-    }
-
-    addHighWallAtlasDetails() {
-      const textures = {
-        wall_left: "wall_atlas_high_left",
-        wall_mid: "wall_atlas_high_mid",
-        wall_right: "wall_atlas_high_right"
-      };
-      this.wallPlan.forEach((rule) => {
-        const texture = textures[rule.base];
-        if (!texture) return;
-        const floorAbove = this.hasFloor(rule.x, rule.y - 1);
-        const floorBelow = this.hasFloor(rule.x, rule.y + 1);
-        if (!floorAbove && !floorBelow) return;
-
-        const top = floorBelow
-          ? (rule.y + 1) * TILE - 20
-          : rule.y * TILE;
-        const detail = this.add.image(rule.x * TILE + 8, top + 10, texture)
-          .setDepth(rule.y * TILE + 9);
-        this.wallOverlays.add(detail);
       });
     }
 
