@@ -116,15 +116,13 @@
       }
 
       if (direction < 0) {
-        paintWallLayer(plans, floorCells, mapWidth, mapHeight, start - 1, capY, "wall_outer_top_left");
-        paintWallLayer(plans, floorCells, mapWidth, mapHeight, start - 1, faceY, "wall_outer_front_left");
-        paintWallLayer(plans, floorCells, mapWidth, mapHeight, end + 1, capY, "wall_outer_top_right");
-        paintWallLayer(plans, floorCells, mapWidth, mapHeight, end + 1, faceY, "wall_outer_front_right");
+        paintWallLayer(plans, floorCells, mapWidth, mapHeight, start - 1, capY, "wall_edge_bottom_left");
+        paintWallLayer(plans, floorCells, mapWidth, mapHeight, start - 1, faceY, "wall_edge_left");
+        paintWallLayer(plans, floorCells, mapWidth, mapHeight, end + 1, capY, "wall_edge_bottom_right");
+        paintWallLayer(plans, floorCells, mapWidth, mapHeight, end + 1, faceY, "wall_edge_right");
       } else {
-        paintWallLayer(plans, floorCells, mapWidth, mapHeight, start - 1, capY, "wall_outer_front_left");
-        paintWallLayer(plans, floorCells, mapWidth, mapHeight, start - 1, capY, "wall_outer_top_left", true);
-        paintWallLayer(plans, floorCells, mapWidth, mapHeight, end + 1, capY, "wall_outer_front_right");
-        paintWallLayer(plans, floorCells, mapWidth, mapHeight, end + 1, capY, "wall_outer_top_right", true);
+        paintWallLayer(plans, floorCells, mapWidth, mapHeight, start - 1, capY, "wall_edge_bottom_left", true);
+        paintWallLayer(plans, floorCells, mapWidth, mapHeight, end + 1, capY, "wall_edge_bottom_right", true);
       }
       x += 1;
     }

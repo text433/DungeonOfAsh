@@ -35,7 +35,8 @@
       "wall_mid", "wall_top_mid", "wall_left", "wall_right", "wall_top_left", "wall_top_right",
       "wall_outer_top_left", "wall_outer_mid_left", "wall_outer_front_left",
       "wall_outer_top_right", "wall_outer_mid_right", "wall_outer_front_right",
-      "wall_edge_top_left", "wall_edge_left", "wall_edge_top_right", "wall_edge_right",
+      "wall_edge_top_left", "wall_edge_left", "wall_edge_bottom_left",
+      "wall_edge_top_right", "wall_edge_right", "wall_edge_bottom_right",
       "wall_banner_red", "wall_banner_blue", "wall_banner_green", "wall_hole_1", "wall_hole_2",
       "column", "column_wall", "crate", "skull", "doors_leaf_closed", "doors_leaf_open",
       "floor_stairs", "floor_spikes_anim_f0", "floor_spikes_anim_f1", "floor_spikes_anim_f2", "floor_spikes_anim_f3"

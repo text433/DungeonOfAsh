@@ -10,6 +10,8 @@ const required = [
   "vendor/phaser.min.js",
   "assets/frames/knight_m_idle_anim_f0.png",
   "assets/frames/wall_mid.png",
+  "assets/frames/wall_edge_bottom_left.png",
+  "assets/frames/wall_edge_bottom_right.png",
   "assets/frames/big_demon_idle_anim_f0.png",
   "assets/frames/chest_full_open_anim_f0.png"
 ];
@@ -36,8 +38,8 @@ for (const marker of [
 }
 if (game.includes("wall_atlas_high")) throw new Error("Spēle joprojām zīmē otru sienas slāni");
 
-if (!html.includes('<script src="map-rules.js?v=13"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
-if (!html.includes('<script src="game.js?v=13"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
+if (!html.includes('<script src="map-rules.js?v=14"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
+if (!html.includes('<script src="game.js?v=14"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
 
 const floorCells = mapRules.buildFloorCells();
 const wallPlan = mapRules.buildWallPlan(floorCells, 80, 56);
@@ -52,11 +54,20 @@ for (const rule of wallPlan) {
 }
 
 const sampleFloor = mapRules.buildFloorCells([[2, 2, 4, 3]]);
-const sampleWalls = new Set(mapRules.buildWallPlan(sampleFloor, 10, 10).map(({ x, y }) => `${x},${y}`));
+const samplePlan = mapRules.buildWallPlan(sampleFloor, 10, 10);
+const sampleWalls = new Set(samplePlan.map(({ x, y }) => `${x},${y}`));
 for (let x = 2; x < 6; x += 1) {
   if (!sampleWalls.has(`${x},5`)) throw new Error(`Trūkst apakšējā siena pie ${x},5`);
   if (sampleWalls.has(`${x},6`)) throw new Error(`Apakšējā siena ir uzzīmēta divreiz pie ${x},6`);
 }
+const cornerLayers = (x, y) => {
+  const rule = samplePlan.find((candidate) => candidate.x === x && candidate.y === y);
+  return [rule?.base, ...(rule?.overlays || []).map(({ key }) => key)];
+};
+if (!cornerLayers(1, 0).includes("wall_edge_bottom_left")) throw new Error("Augšējais kreisais stūris nav savienots");
+if (!cornerLayers(6, 0).includes("wall_edge_bottom_right")) throw new Error("Augšējais labais stūris nav savienots");
+if (!cornerLayers(1, 5).includes("wall_edge_bottom_left")) throw new Error("Apakšējais kreisais stūris nav savienots");
+if (!cornerLayers(6, 5).includes("wall_edge_bottom_right")) throw new Error("Apakšējais labais stūris nav savienots");
 
 const collisionCells = new Set(wallPlan.map(({ x, y }) => `${x},${y}`));
 const reachable = new Set(["8,25"]);
