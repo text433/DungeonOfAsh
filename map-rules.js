@@ -7,6 +7,23 @@
 
   const TILE = 16;
   const WALL_EDGE = Object.freeze({ NORTH: 1, EAST: 2, SOUTH: 4, WEST: 8 });
+  const MINIMAL_MASK_PATTERNS = Object.freeze([
+    "000010010", "000011010", "000111010", "000110010",
+    "110111010", "000111011", "000111110", "011111010",
+    "000011011", "010111111", "000111111", "000110110",
+    "010010010", "010011010", "010111010", "010110010",
+    "010011011", "011111111", "110111111", "010110110",
+    "011011011", "011111110", null, "110111110",
+    "010010000", "010011000", "010111000", "010110000",
+    "011011010", "111111011", "111111110", "110110010",
+    "011111011", "111111111", "110111011", "110110110",
+    "000010000", "000011000", "000111000", "000110000",
+    "010111110", "011111000", "110111000", "010111011",
+    "011011000", "111111000", "111111010", "110110000"
+  ]);
+  const FRAME_BY_MINIMAL_MASK = new Map(
+    MINIMAL_MASK_PATTERNS.flatMap((pattern, frame) => pattern ? [[pattern, frame]] : [])
+  );
   const DUNGEON_RECTS = Object.freeze([
     [4, 18, 20, 16],
     [4, 8, 18, 7],
@@ -44,125 +61,70 @@
     return mask;
   }
 
-  const FULL_FACE_KEYS = new Set(["wall_mid", "wall_left", "wall_right"]);
-
-  function paintWallLayer(plans, floorCells, mapWidth, mapHeight, x, y, key, flipY = false) {
-    if (x < 0 || y < 0 || x >= mapWidth || y >= mapHeight || floorCells.has(cellKey(x, y))) return;
-
-    const planKey = cellKey(x, y);
-    const plan = plans.get(planKey) || { x, y, base: null, overlays: [] };
-    const layer = { key, flipY };
-    const sameLayer = (candidate) => candidate && candidate.key === key && candidate.flipY === flipY;
-
-    if (FULL_FACE_KEYS.has(key)) {
-      if (plan.base && FULL_FACE_KEYS.has(plan.base.key)) {
-        if (plan.base.key !== key) plan.base = { key: "wall_mid", flipY: false };
-        plans.set(planKey, plan);
-        return;
-      }
-      if (plan.base && !plan.overlays.some(sameLayer)) plan.overlays.push(plan.base);
-      plan.base = layer;
-      plans.set(planKey, plan);
-      return;
-    }
-
-    if (!plan.base) plan.base = layer;
-    else if (!sameLayer(plan.base) && !plan.overlays.some(sameLayer)) plan.overlays.push(layer);
-    plans.set(planKey, plan);
-  }
-
-  function paintHorizontalRuns(plans, floorCells, mapWidth, mapHeight, row, direction) {
-    const edge = direction < 0 ? WALL_EDGE.NORTH : WALL_EDGE.SOUTH;
-    let x = 0;
-    while (x < mapWidth) {
-      if (!floorCells.has(cellKey(x, row)) || !(wallMaskAt(floorCells, x, row) & edge)) {
-        x += 1;
-        continue;
-      }
-
-      const start = x;
-      while (
-        x + 1 < mapWidth
-        && floorCells.has(cellKey(x + 1, row))
-        && wallMaskAt(floorCells, x + 1, row) & edge
-      ) x += 1;
-      const end = x;
-      const capY = direction < 0 ? row - 2 : row + 1;
-      const faceY = row - 1;
-
-      for (let column = start; column <= end; column += 1) {
-        const capKey = start === end
-          ? "wall_top_mid"
-          : column === start
-            ? "wall_top_left"
-            : column === end
-              ? "wall_top_right"
-              : "wall_top_mid";
-        const faceKey = start === end
-          ? "wall_mid"
-          : column === start
-            ? "wall_left"
-            : column === end
-              ? "wall_right"
-              : "wall_mid";
-
-        if (direction < 0) {
-          paintWallLayer(plans, floorCells, mapWidth, mapHeight, column, capY, capKey);
-          paintWallLayer(plans, floorCells, mapWidth, mapHeight, column, faceY, faceKey);
-        } else {
-          paintWallLayer(plans, floorCells, mapWidth, mapHeight, column, capY, faceKey);
-          paintWallLayer(plans, floorCells, mapWidth, mapHeight, column, capY, capKey, true);
+  function buildWallCells(floorCells, mapWidth, mapHeight) {
+    const walls = new Set();
+    floorCells.forEach((key) => {
+      const [x, y] = key.split(",").map(Number);
+      for (let dy = -1; dy <= 1; dy += 1) {
+        for (let dx = -1; dx <= 1; dx += 1) {
+          if (dx === 0 && dy === 0) continue;
+          const wallX = x + dx;
+          const wallY = y + dy;
+          if (wallX < 0 || wallY < 0 || wallX >= mapWidth || wallY >= mapHeight) continue;
+          const wallKey = cellKey(wallX, wallY);
+          if (!floorCells.has(wallKey)) walls.add(wallKey);
         }
       }
+    });
+    return walls;
+  }
 
-      if (direction < 0) {
-        paintWallLayer(plans, floorCells, mapWidth, mapHeight, start - 1, capY, "wall_edge_bottom_left");
-        paintWallLayer(plans, floorCells, mapWidth, mapHeight, start - 1, faceY, "wall_edge_left");
-        paintWallLayer(plans, floorCells, mapWidth, mapHeight, end + 1, capY, "wall_edge_bottom_right");
-        paintWallLayer(plans, floorCells, mapWidth, mapHeight, end + 1, faceY, "wall_edge_right");
-      } else {
-        paintWallLayer(plans, floorCells, mapWidth, mapHeight, start - 1, capY, "wall_edge_bottom_left", true);
-        paintWallLayer(plans, floorCells, mapWidth, mapHeight, end + 1, capY, "wall_edge_bottom_right", true);
-      }
-      x += 1;
-    }
+  function minimalWallMaskAt(wallCells, x, y) {
+    const has = (dx, dy) => wallCells.has(cellKey(x + dx, y + dy));
+    const north = has(0, -1);
+    const east = has(1, 0);
+    const south = has(0, 1);
+    const west = has(-1, 0);
+
+    // Godot 3x3-minimal: a diagonal counts only when both adjoining edges connect.
+    return [
+      north && west && has(-1, -1), north,
+      north && east && has(1, -1), west,
+      true, east,
+      south && west && has(-1, 1), south,
+      south && east && has(1, 1)
+    ].map((filled) => filled ? "1" : "0").join("");
   }
 
   function buildWallPlan(floorCells, mapWidth, mapHeight) {
-    const plans = new Map();
-    for (let y = 0; y < mapHeight; y += 1) {
-      paintHorizontalRuns(plans, floorCells, mapWidth, mapHeight, y, -1);
-      paintHorizontalRuns(plans, floorCells, mapWidth, mapHeight, y, 1);
-    }
-
+    const wallCells = buildWallCells(floorCells, mapWidth, mapHeight);
+    const plans = [];
     for (let y = 0; y < mapHeight; y += 1) {
       for (let x = 0; x < mapWidth; x += 1) {
-        if (!floorCells.has(cellKey(x, y))) continue;
-        const mask = wallMaskAt(floorCells, x, y);
-        if (mask & WALL_EDGE.WEST) {
-          paintWallLayer(plans, floorCells, mapWidth, mapHeight, x - 1, y, "wall_outer_mid_left");
-        }
-        if (mask & WALL_EDGE.EAST) {
-          paintWallLayer(plans, floorCells, mapWidth, mapHeight, x + 1, y, "wall_outer_mid_right");
-        }
+        if (!wallCells.has(cellKey(x, y))) continue;
+        const mask = minimalWallMaskAt(wallCells, x, y);
+        const frame = FRAME_BY_MINIMAL_MASK.get(mask);
+        if (frame == null) throw new Error(`Nav 3x3-minimal sienas flīzes maskai ${mask}`);
+        plans.push({
+          x,
+          y,
+          frame,
+          mask,
+          body: { width: TILE, height: TILE, offsetX: 0, offsetY: 0 }
+        });
       }
     }
-
-    return [...plans.values()].map(({ x, y, base, overlays }) => ({
-      x,
-      y,
-      base: base.key,
-      baseFlipY: base.flipY,
-      overlays,
-      body: { width: TILE, height: TILE, offsetX: 0, offsetY: 0 }
-    }));
+    return plans;
   }
 
   return Object.freeze({
     WALL_EDGE,
     DUNGEON_RECTS,
+    MINIMAL_MASK_PATTERNS,
     buildFloorCells,
+    buildWallCells,
     wallMaskAt,
+    minimalWallMaskAt,
     buildWallPlan
   });
 });

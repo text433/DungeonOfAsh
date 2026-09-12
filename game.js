@@ -32,11 +32,6 @@
   const ASSETS = {
     floor: ["floor_1", "floor_2", "floor_3", "floor_4", "floor_5", "floor_6", "floor_7", "floor_8"],
     walls: [
-      "wall_mid", "wall_top_mid", "wall_left", "wall_right", "wall_top_left", "wall_top_right",
-      "wall_outer_top_left", "wall_outer_mid_left", "wall_outer_front_left",
-      "wall_outer_top_right", "wall_outer_mid_right", "wall_outer_front_right",
-      "wall_edge_top_left", "wall_edge_left", "wall_edge_bottom_left",
-      "wall_edge_top_right", "wall_edge_right", "wall_edge_bottom_right",
       "wall_banner_red", "wall_banner_blue", "wall_banner_green", "wall_hole_1", "wall_hole_2",
       "column", "column_wall", "crate", "skull", "doors_leaf_closed", "doors_leaf_open",
       "floor_stairs", "floor_spikes_anim_f0", "floor_spikes_anim_f1", "floor_spikes_anim_f2", "floor_spikes_anim_f3"
@@ -241,6 +236,10 @@
 
     preload() {
       this.load.setPath("assets/frames/");
+      this.load.spritesheet("wall_atlas_low", "atlas_walls_low-16x16.png", {
+        frameWidth: TILE,
+        frameHeight: TILE
+      });
       const allKeys = [
         ...ASSETS.floor, ...ASSETS.walls, ...ASSETS.playerIdle, ...ASSETS.playerRun,
         ...ASSETS.zombie, ...ASSETS.orcIdle, ...ASSETS.orcRun, ...ASSETS.bossIdle,
@@ -257,7 +256,6 @@
       this.enemies = this.physics.add.group();
       this.drops = this.physics.add.group({ allowGravity: false });
       this.floorTiles = this.add.group();
-      this.wallOverlays = this.add.group();
       this.healthBars = this.add.group();
       this.fx = this.add.group();
 
@@ -350,19 +348,13 @@
       this.wallPlan = mapRules.buildWallPlan(this.floorCells, MAP_W, MAP_H);
       this.wallPlan.forEach((rule) => {
         this.wallCells.add(`${rule.x},${rule.y}`);
-        this.addWall(rule.x, rule.y, rule.base, rule.body, rule.baseFlipY);
-        rule.overlays.forEach(({ key, flipY = false }) => {
-          const overlay = this.add.image(rule.x * TILE + 8, rule.y * TILE + 8, key)
-            .setDepth(rule.y * TILE + 8.5)
-            .setFlipY(flipY);
-          this.wallOverlays.add(overlay);
-        });
+        this.addWall(rule.x, rule.y, "wall_atlas_low", rule.body, rule.frame);
       });
     }
 
-    addWall(x, y, key, body = { width: TILE, height: TILE, offsetX: 0, offsetY: 0 }, flipY = false) {
-      const wall = this.walls.create(x * TILE + 8, y * TILE + 8, key);
-      wall.setDepth(y * TILE + 8).setFlipY(flipY).refreshBody();
+    addWall(x, y, key, body = { width: TILE, height: TILE, offsetX: 0, offsetY: 0 }, frame) {
+      const wall = this.walls.create(x * TILE + 8, y * TILE + 8, key, frame);
+      wall.setDepth(y * TILE + 8).refreshBody();
       wall.body.setSize(body.width, body.height).setOffset(body.offsetX, body.offsetY);
       return wall;
     }
