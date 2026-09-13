@@ -316,7 +316,7 @@
           if (!this.hasFloor(x, y)) continue;
           const noise = this.hash(x, y, this.state.floor);
           const key = noise % 13 === 0 ? ASSETS.floor[1 + (noise % (ASSETS.floor.length - 1))] : "floor_1";
-          const tile = this.add.image(x * TILE + 8, y * TILE + 8, key).setDepth(-30);
+          const tile = this.add.image(x * TILE + 8, y * TILE + 8, key, "__BASE").setDepth(-30);
           this.floorTiles.add(tile);
         }
       }

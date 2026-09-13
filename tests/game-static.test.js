@@ -37,9 +37,12 @@ for (const marker of [
 }
 if (game.includes("wall_atlas_high")) throw new Error("Spēle joprojām zīmē otru sienas slāni");
 if (game.includes("wallOverlays")) throw new Error("Spēle joprojām slāņo vairākas sienas vienā šūnā");
+if (!game.includes('this.add.image(x * TILE + 8, y * TILE + 8, key, "__BASE")')) {
+  throw new Error("Grīdas flīzes neizmanto pilno 16x16 tekstūras kadru");
+}
 
-if (!html.includes('<script src="map-rules.js?v=16"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
-if (!html.includes('<script src="game.js?v=16"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
+if (!html.includes('<script src="map-rules.js?v=17"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
+if (!html.includes('<script src="game.js?v=17"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
 
 const floorCells = mapRules.buildFloorCells();
 const wallPlan = mapRules.buildWallPlan(floorCells, 80, 56);
