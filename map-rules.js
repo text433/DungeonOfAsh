@@ -96,6 +96,27 @@
     ].map((filled) => filled ? "1" : "0").join("");
   }
 
+  function wallFacing(floorCells, x, y) {
+    const northFloor = floorCells.has(cellKey(x, y - 1));
+    const southFloor = floorCells.has(cellKey(x, y + 1));
+    const westFloor = floorCells.has(cellKey(x - 1, y));
+    const eastFloor = floorCells.has(cellKey(x + 1, y));
+
+    if (southFloor && !northFloor) return "north";
+    if (northFloor && !southFloor) return "south";
+
+    // The diagonal-only corner cells belong to the horizontal wall run.
+    // Direct left/right floor contact always remains a 16x16 side wall.
+    if (!westFloor && !eastFloor) {
+      const southCorner = floorCells.has(cellKey(x - 1, y + 1)) || floorCells.has(cellKey(x + 1, y + 1));
+      const northCorner = floorCells.has(cellKey(x - 1, y - 1)) || floorCells.has(cellKey(x + 1, y - 1));
+      if (southCorner && !northCorner) return "north";
+      if (northCorner && !southCorner) return "south";
+    }
+
+    return "side";
+  }
+
   function buildWallPlan(floorCells, mapWidth, mapHeight) {
     const wallCells = buildWallCells(floorCells, mapWidth, mapHeight);
     const plans = [];
@@ -110,6 +131,7 @@
           y,
           frame,
           mask,
+          facing: wallFacing(floorCells, x, y),
           body: { width: TILE, height: TILE, offsetX: 0, offsetY: 0 }
         });
       }
@@ -125,6 +147,7 @@
     buildWallCells,
     wallMaskAt,
     minimalWallMaskAt,
+    wallFacing,
     buildWallPlan
   });
 });

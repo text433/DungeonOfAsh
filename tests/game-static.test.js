@@ -31,20 +31,20 @@ for (const id of ["game", "hud", "mobile-controls", "joystick-base", "joystick-k
 
 for (const marker of [
   "class DungeonScene", "touchVector", "updateJoystick", "buildWallAutotiles", "buildWallPlan",
-  "createFloorUnderlayFrames", "addWallFloorUnderlay", "isNorthWall", "highWallFrame",
+  "createFloorUnderlayFrames", "addWallFloorUnderlay", "rule.facing", "highWallFrame",
   "createEnemyHealthBar", "triggerSpikeTrap",
   "performAttack", "openChest", "openDoor", "nextFloor"
 ]) {
   if (!game.includes(marker)) throw new Error(`Spēles kodā trūkst ${marker}`);
 }
-if (!game.includes('"wall_atlas_high"')) throw new Error("Augšējās sienas neizmanto 16x32 sienu atlasu");
+if (!game.includes('rule.facing !== "side"')) throw new Error("Horizontālās sienas neizmanto 16x32 sienu atlasu");
 if (game.includes("wallOverlays")) throw new Error("Spēle joprojām slāņo vairākas sienas vienā šūnā");
 if (!game.includes('this.add.image(x * TILE + 8, y * TILE + 8, key, "__BASE")')) {
   throw new Error("Grīdas flīzes neizmanto pilno 16x16 tekstūras kadru");
 }
 
-if (!html.includes('<script src="map-rules.js?v=18"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
-if (!html.includes('<script src="game.js?v=18"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
+if (!html.includes('<script src="map-rules.js?v=19"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
+if (!html.includes('<script src="game.js?v=19"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
 
 const floorCells = mapRules.buildFloorCells();
 const wallPlan = mapRules.buildWallPlan(floorCells, 80, 56);
@@ -55,6 +55,13 @@ if (mapRules.MINIMAL_MASK_PATTERNS.filter(Boolean).length !== 47) {
 }
 if (new Set(wallPlan.map(({ x, y }) => `${x},${y}`)).size !== wallPlan.length) {
   throw new Error("Kartes noteikumi vienā šūnā izveido vairākas sienas");
+}
+const facingCounts = wallPlan.reduce((counts, rule) => {
+  counts[rule.facing] = (counts[rule.facing] || 0) + 1;
+  return counts;
+}, {});
+if (facingCounts.north !== 152 || facingCounts.south !== 151 || facingCounts.side !== 179) {
+  throw new Error(`Nepareizi sienu virzieni: ${JSON.stringify(facingCounts)}`);
 }
 for (const rule of wallPlan) {
   if (!Number.isInteger(rule.frame) || rule.frame < 0 || rule.frame > 47 || rule.frame === 22 || !rule.body) {
@@ -87,10 +94,20 @@ for (let y = 2; y < 5; y += 1) {
   if (!sampleWalls.has(`6,${y}`)) throw new Error(`Trūkst labā sānu siena pie 6,${y}`);
 }
 const sampleFrame = (x, y) => samplePlan.find((candidate) => candidate.x === x && candidate.y === y)?.frame;
+const sampleFacing = (x, y) => samplePlan.find((candidate) => candidate.x === x && candidate.y === y)?.facing;
 if (sampleFrame(1, 1) !== 1) throw new Error("Augšējais kreisais stūris nav savienots");
 if (sampleFrame(6, 1) !== 3) throw new Error("Augšējais labais stūris nav savienots");
 if (sampleFrame(1, 5) !== 25) throw new Error("Apakšējais kreisais stūris nav savienots");
 if (sampleFrame(6, 5) !== 27) throw new Error("Apakšējais labais stūris nav savienots");
+if (sampleFacing(1, 1) !== "north" || sampleFacing(3, 1) !== "north") {
+  throw new Error("Augšējā horizontālā siena nav pilnā augstumā");
+}
+if (sampleFacing(1, 5) !== "south" || sampleFacing(3, 5) !== "south") {
+  throw new Error("Apakšējā horizontālā siena nav pilnā augstumā");
+}
+if (sampleFacing(1, 3) !== "side" || sampleFacing(6, 3) !== "side") {
+  throw new Error("Sānu sienas pārklājas ar 32px horizontālajām sienām");
+}
 
 const collisionCells = new Set(wallPlan.map(({ x, y }) => `${x},${y}`));
 const reachable = new Set(["8,25"]);
