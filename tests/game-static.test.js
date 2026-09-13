@@ -10,6 +10,7 @@ const required = [
   "vendor/phaser.min.js",
   "assets/frames/knight_m_idle_anim_f0.png",
   "assets/frames/atlas_walls_low-16x16.png",
+  "assets/frames/atlas_walls_high-16x32.png",
   "assets/frames/big_demon_idle_anim_f0.png",
   "assets/frames/chest_full_open_anim_f0.png"
 ];
@@ -30,19 +31,20 @@ for (const id of ["game", "hud", "mobile-controls", "joystick-base", "joystick-k
 
 for (const marker of [
   "class DungeonScene", "touchVector", "updateJoystick", "buildWallAutotiles", "buildWallPlan",
-  "createFloorUnderlayFrames", "addWallFloorUnderlay", "createEnemyHealthBar", "triggerSpikeTrap",
+  "createFloorUnderlayFrames", "addWallFloorUnderlay", "isNorthWall", "highWallFrame",
+  "createEnemyHealthBar", "triggerSpikeTrap",
   "performAttack", "openChest", "openDoor", "nextFloor"
 ]) {
   if (!game.includes(marker)) throw new Error(`Spēles kodā trūkst ${marker}`);
 }
-if (game.includes("wall_atlas_high")) throw new Error("Spēle joprojām zīmē otru sienas slāni");
+if (!game.includes('"wall_atlas_high"')) throw new Error("Augšējās sienas neizmanto 16x32 sienu atlasu");
 if (game.includes("wallOverlays")) throw new Error("Spēle joprojām slāņo vairākas sienas vienā šūnā");
 if (!game.includes('this.add.image(x * TILE + 8, y * TILE + 8, key, "__BASE")')) {
   throw new Error("Grīdas flīzes neizmanto pilno 16x16 tekstūras kadru");
 }
 
-if (!html.includes('<script src="map-rules.js?v=17"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
-if (!html.includes('<script src="game.js?v=17"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
+if (!html.includes('<script src="map-rules.js?v=18"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
+if (!html.includes('<script src="game.js?v=18"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
 
 const floorCells = mapRules.buildFloorCells();
 const wallPlan = mapRules.buildWallPlan(floorCells, 80, 56);

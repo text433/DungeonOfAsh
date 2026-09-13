@@ -251,6 +251,10 @@
         frameWidth: TILE,
         frameHeight: TILE
       });
+      this.load.spritesheet("wall_atlas_high", "atlas_walls_high-16x32.png", {
+        frameWidth: TILE,
+        frameHeight: TILE * 2
+      });
       const allKeys = [
         ...ASSETS.floor, ...ASSETS.walls, ...ASSETS.playerIdle, ...ASSETS.playerRun,
         ...ASSETS.zombie, ...ASSETS.orcIdle, ...ASSETS.orcRun, ...ASSETS.bossIdle,
@@ -379,18 +383,34 @@
       });
     }
 
+    isNorthWall(x, y) {
+      return [-1, 0, 1].some((dx) => this.hasFloor(x + dx, y + 1));
+    }
+
+    highWallFrame(frame) {
+      return Math.floor(frame / 12) * 24 + (frame % 12);
+    }
+
     buildWallAutotiles() {
       this.wallPlan = mapRules.buildWallPlan(this.floorCells, MAP_W, MAP_H);
       this.wallPlan.forEach((rule) => {
         this.wallCells.add(`${rule.x},${rule.y}`);
         this.addWallFloorUnderlay(rule.x, rule.y);
-        this.addWall(rule.x, rule.y, "wall_atlas_low", rule.body, rule.frame);
+        const isTall = this.isNorthWall(rule.x, rule.y);
+        const key = isTall ? "wall_atlas_high" : "wall_atlas_low";
+        const frame = isTall ? this.highWallFrame(rule.frame) : rule.frame;
+        const body = isTall
+          ? { width: TILE, height: TILE, offsetX: 0, offsetY: TILE }
+          : rule.body;
+        this.addWall(rule.x, rule.y, key, body, frame, isTall);
       });
     }
 
-    addWall(x, y, key, body = { width: TILE, height: TILE, offsetX: 0, offsetY: 0 }, frame) {
-      const wall = this.walls.create(x * TILE + 8, y * TILE + 8, key, frame);
-      wall.setDepth(y * TILE + 8).refreshBody();
+    addWall(x, y, key, body = { width: TILE, height: TILE, offsetX: 0, offsetY: 0 }, frame, isTall = false) {
+      const wallY = y * TILE + (isTall ? TILE : 8);
+      const wall = this.walls.create(x * TILE + 8, wallY, key, frame);
+      if (isTall) wall.setOrigin(0.5, 1);
+      wall.setDepth(y * TILE + (isTall ? 7 : 8)).refreshBody();
       wall.body.setSize(body.width, body.height).setOffset(body.offsetX, body.offsetY);
       return wall;
     }
