@@ -32,7 +32,7 @@ for (const id of ["game", "hud", "mobile-controls", "joystick-base", "joystick-k
 for (const marker of [
   "class DungeonScene", "touchVector", "updateJoystick", "buildWallAutotiles", "buildWallPlan",
   "createFloorUnderlayFrames", "addWallFloorUnderlay", "rule.facing", "HIGH_WALL_TOP_INSET", "highWallFrame",
-  "startFollow(this.player, true, 1, 1)", "this.moveVector.lerp(target, smoothing)",
+  "startFollow(this.player, false, 1, 1)", "setRoundPixels(false)", "this.moveVector.lerp(target, smoothing)",
   "createEnemyHealthBar", "triggerSpikeTrap",
   "performAttack", "openChest", "openDoor", "nextFloor"
 ]) {
@@ -53,11 +53,13 @@ if (!game.includes('facing === "north" ? TILE : HIGH_WALL_TOP_INSET')) {
 if (game.includes("2.65") || game.includes("3.1") || game.includes("3.6")) {
   throw new Error("Kamera joprojām izmanto raustošu daļskaitļa zoom");
 }
-if (game.includes("startFollow(this.player, true, 0.1, 0.1)")) {
-  throw new Error("Kamerai joprojām ir noapaļots sekošanas aizkavējums");
+if (game.includes("startFollow(this.player, true") || game.includes("setRoundPixels(true)")) {
+  throw new Error("Kamera joprojām noapaļo kustību un rada redzamus lēcienus");
 }
-if (!html.includes('<script src="map-rules.js?v=21"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
-if (!html.includes('<script src="game.js?v=21"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
+if (!game.includes("fixedStep: false")) throw new Error("Fizika nav piesaistīta ekrāna kadru ritmam");
+if (!game.includes("roundPixels: false")) throw new Error("Globālā pikseļu noapaļošana nav izslēgta");
+if (!html.includes('<script src="map-rules.js?v=22"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
+if (!html.includes('<script src="game.js?v=22"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
 
 const floorCells = mapRules.buildFloorCells();
 const wallPlan = mapRules.buildWallPlan(floorCells, 80, 56);

@@ -507,8 +507,10 @@
 
     configureCamera() {
       this.cameras.main.setBounds(0, 0, WORLD_W, WORLD_H);
-      this.cameras.main.startFollow(this.player, true, 1, 1);
-      this.cameras.main.setRoundPixels(true);
+      // Keep fractional camera scroll so a 1 px world correction does not become
+      // a visible 3–4 px jump after zooming the canvas.
+      this.cameras.main.startFollow(this.player, false, 1, 1);
+      this.cameras.main.setRoundPixels(false);
       this.cameras.main.setBackgroundColor(0x09080b);
       this.updateZoom();
       this.scale.on("resize", () => this.updateZoom());
@@ -827,17 +829,19 @@
     parent: "game",
     backgroundColor: "#09080b",
     pixelArt: true,
-    roundPixels: true,
+    roundPixels: false,
     antialias: false,
     width: window.innerWidth,
     height: window.innerHeight,
     scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH },
     physics: {
       default: "arcade",
-      arcade: { gravity: { x: 0, y: 0 }, debug: false }
+      // Follow the display refresh rate instead of moving at fixed 60 Hz. This
+      // prevents alternating still/movement frames on 90–120 Hz phones.
+      arcade: { gravity: { x: 0, y: 0 }, debug: false, fixedStep: false }
     },
     loader: { imageLoadType: "HTMLImageElement" },
-    render: { pixelArt: true, antialias: false, powerPreference: "high-performance" },
+    render: { pixelArt: true, antialias: false, roundPixels: false, powerPreference: "high-performance" },
     scene: [DungeonScene]
   };
 
