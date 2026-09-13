@@ -48,6 +48,17 @@
     items: ["weapon_golden_sword", "flask_big_red", "ui_heart_full", "ui_heart_half", "ui_heart_empty"]
   };
 
+  const FLOOR_UNDERLAY_PIECES = Object.freeze([
+    { name: "north-west", dx: -1, dy: -1, x: 0, y: 0, width: 8, height: 8 },
+    { name: "north", dx: 0, dy: -1, x: 0, y: 0, width: 16, height: 8 },
+    { name: "north-east", dx: 1, dy: -1, x: 8, y: 0, width: 8, height: 8 },
+    { name: "west", dx: -1, dy: 0, x: 0, y: 0, width: 8, height: 16 },
+    { name: "east", dx: 1, dy: 0, x: 8, y: 0, width: 8, height: 16 },
+    { name: "south-west", dx: -1, dy: 1, x: 0, y: 8, width: 8, height: 8 },
+    { name: "south", dx: 0, dy: 1, x: 0, y: 8, width: 16, height: 8 },
+    { name: "south-east", dx: 1, dy: 1, x: 8, y: 8, width: 8, height: 8 }
+  ]);
+
   class RunState {
     constructor(data = {}) {
       this.floor = data.level || 1;
@@ -259,6 +270,7 @@
       this.healthBars = this.add.group();
       this.fx = this.add.group();
 
+      this.createFloorUnderlayFrames();
       this.buildDungeon();
       this.createPlayer();
       this.spawnEncounters();
@@ -344,10 +356,34 @@
       return this.floorCells.has(`${x},${y}`);
     }
 
+    createFloorUnderlayFrames() {
+      const texture = this.textures.get("floor_1");
+      FLOOR_UNDERLAY_PIECES.forEach((piece) => {
+        const frameName = `wall-floor-${piece.name}`;
+        if (!texture.has(frameName)) {
+          texture.add(frameName, 0, piece.x, piece.y, piece.width, piece.height);
+        }
+      });
+    }
+
+    addWallFloorUnderlay(x, y) {
+      FLOOR_UNDERLAY_PIECES.forEach((piece) => {
+        if (!this.hasFloor(x + piece.dx, y + piece.dy)) return;
+        const underlay = this.add.image(
+          x * TILE + piece.x,
+          y * TILE + piece.y,
+          "floor_1",
+          `wall-floor-${piece.name}`
+        ).setOrigin(0).setDepth(-30);
+        this.floorTiles.add(underlay);
+      });
+    }
+
     buildWallAutotiles() {
       this.wallPlan = mapRules.buildWallPlan(this.floorCells, MAP_W, MAP_H);
       this.wallPlan.forEach((rule) => {
         this.wallCells.add(`${rule.x},${rule.y}`);
+        this.addWallFloorUnderlay(rule.x, rule.y);
         this.addWall(rule.x, rule.y, "wall_atlas_low", rule.body, rule.frame);
       });
     }

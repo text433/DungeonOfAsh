@@ -30,15 +30,16 @@ for (const id of ["game", "hud", "mobile-controls", "joystick-base", "joystick-k
 
 for (const marker of [
   "class DungeonScene", "touchVector", "updateJoystick", "buildWallAutotiles", "buildWallPlan",
-  "createEnemyHealthBar", "triggerSpikeTrap", "performAttack", "openChest", "openDoor", "nextFloor"
+  "createFloorUnderlayFrames", "addWallFloorUnderlay", "createEnemyHealthBar", "triggerSpikeTrap",
+  "performAttack", "openChest", "openDoor", "nextFloor"
 ]) {
   if (!game.includes(marker)) throw new Error(`Spēles kodā trūkst ${marker}`);
 }
 if (game.includes("wall_atlas_high")) throw new Error("Spēle joprojām zīmē otru sienas slāni");
 if (game.includes("wallOverlays")) throw new Error("Spēle joprojām slāņo vairākas sienas vienā šūnā");
 
-if (!html.includes('<script src="map-rules.js?v=15"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
-if (!html.includes('<script src="game.js?v=15"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
+if (!html.includes('<script src="map-rules.js?v=16"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
+if (!html.includes('<script src="game.js?v=16"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
 
 const floorCells = mapRules.buildFloorCells();
 const wallPlan = mapRules.buildWallPlan(floorCells, 80, 56);
@@ -58,6 +59,13 @@ for (const rule of wallPlan) {
     throw new Error(`Sienas maskai ${rule.mask} izvēlēta nepareiza flīze ${rule.frame}`);
   }
   if (floorCells.has(`${rule.x},${rule.y}`)) throw new Error(`Siena pārklāj grīdu pie ${rule.x},${rule.y}`);
+  let touchesFloor = false;
+  for (let dy = -1; dy <= 1; dy += 1) {
+    for (let dx = -1; dx <= 1; dx += 1) {
+      if ((dx !== 0 || dy !== 0) && floorCells.has(`${rule.x + dx},${rule.y + dy}`)) touchesFloor = true;
+    }
+  }
+  if (!touchesFloor) throw new Error(`Siena pie ${rule.x},${rule.y} nav savienota ar grīdas apakšslāni`);
 }
 
 const sampleFloor = mapRules.buildFloorCells([[2, 2, 4, 3]]);
