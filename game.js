@@ -101,6 +101,7 @@
       this.scene = scene;
       this.pulses = new Set();
       this.touchVector = new Phaser.Math.Vector2(0, 0);
+      this.moveVector = new Phaser.Math.Vector2(0, 0);
       this.cursors = scene.input.keyboard.createCursorKeys();
       this.keys = scene.input.keyboard.addKeys("W,A,S,D,SPACE,E");
       this.bindTouch();
@@ -143,7 +144,9 @@
           dy = (dy / distance) * limit;
         }
         this.touchVector.set(dx / limit, dy / limit);
-        if (this.touchVector.length() < 0.12) this.touchVector.set(0, 0);
+        const strength = this.touchVector.length();
+        if (strength < 0.16) this.touchVector.set(0, 0);
+        else this.touchVector.setLength(Math.min(1, (strength - 0.16) / 0.84));
         knob.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
       };
 
@@ -176,7 +179,7 @@
       zone.addEventListener("lostpointercapture", stopJoystick);
     }
 
-    movement() {
+    movement(delta = 16.667) {
       let x = 0;
       let y = 0;
       if (this.cursors.left.isDown || this.keys.A.isDown) x -= 1;
@@ -184,8 +187,11 @@
       if (this.cursors.up.isDown || this.keys.W.isDown) y -= 1;
       if (this.cursors.down.isDown || this.keys.S.isDown) y += 1;
       const vector = new Phaser.Math.Vector2(x, y);
-      if (vector.lengthSq() > 0) return vector.normalize();
-      return this.touchVector.clone();
+      const target = vector.lengthSq() > 0 ? vector.normalize() : this.touchVector;
+      const smoothing = 1 - Math.exp(-Math.max(0, delta) / 28);
+      this.moveVector.lerp(target, smoothing);
+      if (target.lengthSq() === 0 && this.moveVector.lengthSq() < 0.0001) this.moveVector.set(0, 0);
+      return this.moveVector.clone();
     }
 
     attackPressed() {
@@ -501,7 +507,7 @@
 
     configureCamera() {
       this.cameras.main.setBounds(0, 0, WORLD_W, WORLD_H);
-      this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+      this.cameras.main.startFollow(this.player, true, 1, 1);
       this.cameras.main.setRoundPixels(true);
       this.cameras.main.setBackgroundColor(0x09080b);
       this.updateZoom();
@@ -510,10 +516,8 @@
 
     updateZoom() {
       const width = this.scale.width || window.innerWidth;
-      const height = this.scale.height || window.innerHeight;
       let zoom = 3;
-      if (TOUCH_DEVICE) zoom = width < height ? 2.65 : 3.1;
-      if (width > 1500) zoom = 3.6;
+      if (width > 1500) zoom = 4;
       this.cameras.main.setZoom(zoom);
     }
 
@@ -538,9 +542,9 @@
       else this.scene.resume();
     }
 
-    update(time) {
+    update(time, delta) {
       if (!this.running || this.ended) return;
-      const movement = this.inputSystem.movement();
+      const movement = this.inputSystem.movement(delta);
       const speed = 76;
       this.player.setVelocity(movement.x * speed, movement.y * speed);
       if (movement.lengthSq() > 0) {
