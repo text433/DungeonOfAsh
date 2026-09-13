@@ -31,7 +31,7 @@ for (const id of ["game", "hud", "mobile-controls", "joystick-base", "joystick-k
 
 for (const marker of [
   "class DungeonScene", "touchVector", "updateJoystick", "buildWallAutotiles", "buildWallPlan",
-  "createFloorUnderlayFrames", "addWallFloorUnderlay", "rule.facing", "highWallFrame",
+  "createFloorUnderlayFrames", "addWallFloorUnderlay", "rule.facing", "HIGH_WALL_TOP_INSET", "highWallFrame",
   "createEnemyHealthBar", "triggerSpikeTrap",
   "performAttack", "openChest", "openDoor", "nextFloor"
 ]) {
@@ -43,8 +43,14 @@ if (!game.includes('this.add.image(x * TILE + 8, y * TILE + 8, key, "__BASE")'))
   throw new Error("Grīdas flīzes neizmanto pilno 16x16 tekstūras kadru");
 }
 
-if (!html.includes('<script src="map-rules.js?v=19"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
-if (!html.includes('<script src="game.js?v=19"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
+if (!game.includes('facing === "south" ? -HIGH_WALL_TOP_INSET')) {
+  throw new Error("Apakšējās sienas redzamā mala nav pievilkta pie grīdas");
+}
+if (!game.includes('facing === "north" ? TILE : HIGH_WALL_TOP_INSET')) {
+  throw new Error("Apakšējās sienas sadursme nav saglabāta pareizajā šūnā");
+}
+if (!html.includes('<script src="map-rules.js?v=20"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
+if (!html.includes('<script src="game.js?v=20"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
 
 const floorCells = mapRules.buildFloorCells();
 const wallPlan = mapRules.buildWallPlan(floorCells, 80, 56);

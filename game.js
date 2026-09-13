@@ -2,6 +2,7 @@
   "use strict";
 
   const TILE = 16;
+  const HIGH_WALL_TOP_INSET = 11;
   const MAP_W = 80;
   const MAP_H = 56;
   const WORLD_W = MAP_W * TILE;
@@ -396,7 +397,7 @@
         const key = isTall ? "wall_atlas_high" : "wall_atlas_low";
         const frame = isTall ? this.highWallFrame(rule.frame) : rule.frame;
         const body = isTall
-          ? { width: TILE, height: TILE, offsetX: 0, offsetY: rule.facing === "north" ? TILE : 0 }
+          ? { width: TILE, height: TILE, offsetX: 0, offsetY: rule.facing === "north" ? TILE : HIGH_WALL_TOP_INSET }
           : rule.body;
         this.addWall(rule.x, rule.y, key, body, frame, rule.facing);
       });
@@ -404,7 +405,7 @@
 
     addWall(x, y, key, body = { width: TILE, height: TILE, offsetX: 0, offsetY: 0 }, frame, facing = "side") {
       const isTall = facing !== "side";
-      const wallY = y * TILE + (facing === "north" ? TILE : facing === "south" ? 0 : 8);
+      const wallY = y * TILE + (facing === "north" ? TILE : facing === "south" ? -HIGH_WALL_TOP_INSET : 8);
       const wall = this.walls.create(x * TILE + 8, wallY, key, frame);
       if (facing === "north") wall.setOrigin(0.5, 1);
       if (facing === "south") wall.setOrigin(0.5, 0);
