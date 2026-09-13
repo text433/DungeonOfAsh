@@ -9,6 +9,7 @@
   const WORLD_H = MAP_H * TILE;
   const MAX_HP = 6;
   const mapRules = window.DungeonMapRules;
+  const BOSS_CHAMBER = mapRules.BOSS_CHAMBER;
   const TOUCH_DEVICE = window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
 
   const dom = {
@@ -334,26 +335,60 @@
 
       this.buildWallAutotiles();
 
-      this.door = this.props.create(58 * TILE + 8, 24 * TILE, "doors_leaf_closed");
-      this.door.setDepth(this.door.y + 8).refreshBody();
-      this.door.body.setSize(14, 30).setOffset(9, 1);
+      // The 32 px gate replaces two cells in the boss chamber's front wall.
+      // Its baseline matches the adjacent 32 px wall tiles exactly.
+      this.door = this.props.create(
+        BOSS_CHAMBER.entranceX * TILE,
+        (BOSS_CHAMBER.wallY + 1) * TILE,
+        "doors_leaf_closed"
+      );
+      this.door.setOrigin(0.5, 1).setDepth(this.door.y).refreshBody();
+      this.door.body.setSize(28, 11).setOffset(2, 21);
 
       this.chest = this.props.create(11 * TILE + 8, 11 * TILE + 8, ASSETS.chest[0]);
       this.chest.setDepth(this.chest.y).refreshBody();
       this.chest.body.setSize(15, 11).setOffset(0, 5);
 
-      const decorative = [
-        [9, 7, "wall_banner_blue"], [38, 2, "wall_banner_red"], [65, 9, "wall_banner_green"],
-        [72, 9, "wall_banner_red"], [7, 31, "crate"], [48, 31, "crate"],
-        [69, 34, "crate"], [21, 30, "skull"], [31, 12, "wall_hole_2"]
+      const wallDecorations = [
+        [9, 7, "wall_banner_blue"], [38, 2, "wall_banner_red"],
+        [65, 9, "wall_banner_green"], [72, 9, "wall_banner_red"],
+        [31, 12, "wall_hole_2"], [61, 9, "wall_hole_1"], [74, 9, "wall_hole_2"]
       ];
-      decorative.forEach(([x, y, key]) => {
-        const image = this.add.image(x * TILE + 8, y * TILE + 8, key).setDepth(y * TILE + 8);
-        if (key === "crate") {
-          const bodyProp = this.props.create(image.x, image.y, key).setDepth(image.depth);
-          bodyProp.refreshBody();
-          image.destroy();
+      wallDecorations.forEach(([x, y, key]) => {
+        this.add.image(x * TILE + 8, y * TILE + 8, key).setDepth(y * TILE + 8);
+      });
+
+      // Tall wall columns frame the boss gate while solid columns give the
+      // larger rooms readable structure without blocking their main routes.
+      [[64, BOSS_CHAMBER.wallY], [71, BOSS_CHAMBER.wallY]].forEach(([x, y]) => {
+        this.add.image(x * TILE + 8, (y + 1) * TILE, "column_wall")
+          .setOrigin(0.5, 1)
+          .setDepth((y + 1) * TILE - 1);
+      });
+
+      const solidDecorations = [
+        [7, 31, "crate"], [48, 31, "crate"], [69, 34, "crate"],
+        [62, 27, "column"], [73, 27, "column"],
+        [32, 29, "column"], [48, 29, "column"],
+        [37, 49, "column"], [51, 49, "column"]
+      ];
+      solidDecorations.forEach(([x, y, key]) => {
+        const propY = key === "column" ? (y + 1) * TILE : y * TILE + 8;
+        const prop = this.props.create(x * TILE + 8, propY, key);
+        if (key === "column") {
+          prop.setOrigin(0.5, 1).setDepth(propY + 1).refreshBody();
+          prop.body.setSize(12, 10).setOffset(2, 38);
+        } else {
+          prop.setDepth(propY).refreshBody();
         }
+      });
+
+      const floorDecorations = [
+        [21, 30, "skull"], [61, 22, "skull"], [74, 32, "skull"],
+        [36, 24, "skull"], [50, 17, "skull"]
+      ];
+      floorDecorations.forEach(([x, y, key]) => {
+        this.add.image(x * TILE + 8, y * TILE + 8, key).setDepth(y * TILE + 8);
       });
 
       this.spikeTraps = [
@@ -433,11 +468,11 @@
         [15, 23, "zombie"], [19, 30, "orc"], [9, 12, "zombie"],
         [37, 7, "orc"], [48, 7, "zombie"], [34, 18, "zombie"],
         [46, 19, "orc"], [38, 29, "zombie"], [48, 30, "orc"],
-        [40, 47, "orc"], [49, 48, "zombie"], [66, 15, "orc"], [71, 30, "zombie"]
+        [40, 47, "orc"], [49, 48, "zombie"], [63, 23, "orc"], [71, 30, "zombie"]
       ];
       if (this.state.floor >= 2) positions.push([64, 46, "orc"], [71, 48, "orc"], [31, 25, "zombie"]);
       positions.forEach(([x, y, type]) => this.spawnEnemy(x, y, type, scale));
-      this.boss = this.spawnEnemy(69, 23, "boss", scale);
+      this.boss = this.spawnEnemy(68, 15, "boss", scale);
       this.state.totalEnemies = this.enemies.countActive(true);
     }
 
@@ -763,7 +798,7 @@
     }
 
     revealStairs() {
-      this.stairs = this.add.image(70 * TILE + 8, 33 * TILE + 8, "floor_stairs").setDepth(-1).setAlpha(0);
+      this.stairs = this.add.image(72 * TILE + 8, 15 * TILE + 8, "floor_stairs").setDepth(-1).setAlpha(0);
       this.tweens.add({ targets: this.stairs, alpha: 1, duration: 500 });
     }
 

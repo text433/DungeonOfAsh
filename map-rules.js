@@ -24,6 +24,16 @@
   const FRAME_BY_MINIMAL_MASK = new Map(
     MINIMAL_MASK_PATTERNS.flatMap((pattern, frame) => pattern ? [[pattern, frame]] : [])
   );
+  const BOSS_CHAMBER = Object.freeze({
+    left: 59,
+    right: 75,
+    top: 10,
+    bottom: 18,
+    wallY: 19,
+    gateLeft: 67,
+    gateRight: 68,
+    entranceX: 68
+  });
   const DUNGEON_RECTS = Object.freeze([
     [4, 18, 20, 16],
     [4, 8, 18, 7],
@@ -33,7 +43,12 @@
     [40, 10, 5, 3],
     [33, 3, 19, 7],
     [52, 23, 7, 4],
-    [59, 10, 17, 27],
+    // The boss chamber and its antechamber are separate rooms. Only the two
+    // gate cells connect them, so the door is part of a real wall instead of
+    // standing on an open floor tile.
+    [59, 10, 17, 9],
+    [67, 19, 2, 1],
+    [59, 20, 17, 17],
     [42, 34, 4, 8],
     [34, 42, 20, 10],
     [54, 45, 4, 4],
@@ -102,6 +117,15 @@
     const westFloor = floorCells.has(cellKey(x - 1, y));
     const eastFloor = floorCells.has(cellKey(x + 1, y));
 
+    // The internal boss-room divider is a front-facing 32 px wall. Without
+    // this structural rule, floor on both sides would incorrectly select a
+    // thin side-wall tile.
+    if (
+      y === BOSS_CHAMBER.wallY &&
+      x >= BOSS_CHAMBER.left && x <= BOSS_CHAMBER.right &&
+      (northFloor || southFloor)
+    ) return "north";
+
     if (southFloor && !northFloor) return "north";
     if (northFloor && !southFloor) return "south";
 
@@ -141,6 +165,7 @@
 
   return Object.freeze({
     WALL_EDGE,
+    BOSS_CHAMBER,
     DUNGEON_RECTS,
     MINIMAL_MASK_PATTERNS,
     buildFloorCells,

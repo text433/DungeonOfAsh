@@ -30,10 +30,10 @@ for (const id of ["game", "hud", "mobile-controls", "joystick-base", "joystick-k
 }
 
 for (const marker of [
-  "class DungeonScene", "touchVector", "updateJoystick", "buildWallAutotiles", "buildWallPlan",
+  "class DungeonScene", "touchVector", "updateJoystick", "buildWallAutotiles", "buildWallPlan", "BOSS_CHAMBER",
   "createFloorUnderlayFrames", "addWallFloorUnderlay", "rule.facing", "HIGH_WALL_TOP_INSET", "highWallFrame",
   "startFollow(this.player, false, 1, 1)", "setRoundPixels(false)", "this.moveVector.lerp(target, smoothing)",
-  "createEnemyHealthBar", "triggerSpikeTrap",
+  "createEnemyHealthBar", "triggerSpikeTrap", "column_wall", "solidDecorations",
   "performAttack", "openChest", "openDoor", "nextFloor"
 ]) {
   if (!game.includes(marker)) throw new Error(`Spēles kodā trūkst ${marker}`);
@@ -58,13 +58,13 @@ if (game.includes("startFollow(this.player, true") || game.includes("setRoundPix
 }
 if (!game.includes("fixedStep: false")) throw new Error("Fizika nav piesaistīta ekrāna kadru ritmam");
 if (!game.includes("roundPixels: false")) throw new Error("Globālā pikseļu noapaļošana nav izslēgta");
-if (!html.includes('<script src="map-rules.js?v=22"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
-if (!html.includes('<script src="game.js?v=22"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
+if (!html.includes('<script src="map-rules.js?v=23"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
+if (!html.includes('<script src="game.js?v=23"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
 
 const floorCells = mapRules.buildFloorCells();
 const wallPlan = mapRules.buildWallPlan(floorCells, 80, 56);
-if (floorCells.size !== 2059) throw new Error(`Negaidīts grīdas flīžu skaits: ${floorCells.size}`);
-if (wallPlan.length !== 482) throw new Error(`Negaidīts sienu flīžu skaits: ${wallPlan.length}`);
+if (floorCells.size !== 2044) throw new Error(`Negaidīts grīdas flīžu skaits: ${floorCells.size}`);
+if (wallPlan.length !== 497) throw new Error(`Negaidīts sienu flīžu skaits: ${wallPlan.length}`);
 if (mapRules.MINIMAL_MASK_PATTERNS.filter(Boolean).length !== 47) {
   throw new Error("3x3-minimal atlasā nav visu 47 kaimiņu variantu");
 }
@@ -75,8 +75,22 @@ const facingCounts = wallPlan.reduce((counts, rule) => {
   counts[rule.facing] = (counts[rule.facing] || 0) + 1;
   return counts;
 }, {});
-if (facingCounts.north !== 152 || facingCounts.south !== 151 || facingCounts.side !== 179) {
+if (facingCounts.north !== 167 || facingCounts.south !== 151 || facingCounts.side !== 179) {
   throw new Error(`Nepareizi sienu virzieni: ${JSON.stringify(facingCounts)}`);
+}
+
+const bossRoom = mapRules.BOSS_CHAMBER;
+for (let x = bossRoom.left; x <= bossRoom.right; x += 1) {
+  const key = `${x},${bossRoom.wallY}`;
+  const isGate = x >= bossRoom.gateLeft && x <= bossRoom.gateRight;
+  if (isGate && !floorCells.has(key)) throw new Error(`Boss durvju ailē trūkst grīdas pie ${key}`);
+  if (!isGate) {
+    const wall = wallPlan.find((candidate) => candidate.x === x && candidate.y === bossRoom.wallY);
+    if (!wall || wall.facing !== "north") throw new Error(`Boss telpas siena nav pilnā augstumā pie ${key}`);
+  }
+}
+if (!game.includes("BOSS_CHAMBER.entranceX * TILE") || !game.includes("BOSS_CHAMBER.wallY + 1")) {
+  throw new Error("Boss durvis nav piesaistītas sienas ailei");
 }
 for (const rule of wallPlan) {
   if (!Number.isInteger(rule.frame) || rule.frame < 0 || rule.frame > 47 || rule.frame === 22 || !rule.body) {
@@ -137,7 +151,7 @@ while (queue.length) {
     }
   });
 }
-for (const target of ["11,11", "58,24", "69,23", "40,47", "55,46"]) {
+for (const target of ["11,11", "68,19", "68,15", "40,47", "55,46"]) {
   if (!reachable.has(target)) throw new Error(`Kartes noteikumi noslēdz ceļu uz ${target}`);
 }
 
