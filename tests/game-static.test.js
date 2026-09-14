@@ -13,6 +13,11 @@ const required = [
   "assets/frames/knight_f_idle_anim_f0.png",
   "assets/frames/knight_f_run_anim_f3.png",
   "assets/frames/knight_f_hit_anim_f0.png",
+  "assets/frames/knight_ash_idle_anim_f0.png",
+  "assets/frames/knight_ash_idle_anim_f3.png",
+  "assets/frames/knight_ash_run_anim_f0.png",
+  "assets/frames/knight_ash_run_anim_f3.png",
+  "assets/frames/knight_ash_hit_anim_f0.png",
   "assets/frames/atlas_walls_low-16x16.png",
   "assets/frames/atlas_walls_high-16x32.png",
   "assets/frames/big_demon_idle_anim_f0.png",
@@ -56,7 +61,7 @@ for (const marker of [
   "buildTown", "townStairs", "town-npc-idle", "guide-npc-idle", "updateAutoChests", "respawnAtGuide",
   "updateEnemyPatrol", "updateBossPatrol", "patrolRadius", "aggroRadius", "castAshWard", "openTalentTree",
   "renderMinimap", "createFogOfWar", "updateFogOfWar", "const revealRadius = 7", "this.fogGraphics.setVisible(false)", "visitedCells", "currentVisibleCells", "isWorldTileVisible", "openSmith", "upgradeWeapon", "ensureSound", "sound.step()", "createBuffer", "updateCarriedWeapon", "createAttackFx", "addLavaFall",
-  "ARMOR_SETS", "player-steel-idle", "player-scout-idle", "applyArmorVisual", "speedMultiplier", "blockChance",
+  "ARMOR_SETS", "player-steel-idle", "player-scout-idle", "player-ash-idle", "player-ash-run", "Pelnu bruņas", "applyArmorVisual", "speedMultiplier", "blockChance",
   "createLootTextures", "loot-key", "collectAt", "toggleMinimapZoom", "toggleMinimap(false)", "Sakauj stāva bosu",
   "Phaser.Scenes.Events.POST_UPDATE", "runHandPoses", "idleHandPoses",
   "setOrigin(0.5, 0.95).setScale(0.74)", "facingLeft ? pose.angle : 360 - pose.angle",
@@ -87,8 +92,8 @@ if (!game.includes("fixedStep: false")) throw new Error("Fizika nav piesaistīta
 if (!game.includes("roundPixels: false")) throw new Error("Globālā pikseļu noapaļošana nav izslēgta");
 if (!html.includes('<script src="map-rules.js?v=28"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
 if (!html.includes('<script src="progression.js?v=28"></script>')) throw new Error("HTML neielādē progresa sistēmu");
-if (!html.includes('<script src="game.js?v=41"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
-if (!html.includes('<link rel="stylesheet" href="style.css?v=41" />')) throw new Error("HTML neielādē jaunāko HUD noformējumu");
+if (!html.includes('<script src="game.js?v=42"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
+if (!html.includes('<link rel="stylesheet" href="style.css?v=42" />')) throw new Error("HTML neielādē jaunāko HUD noformējumu");
 
 const minimapSource = game.slice(game.indexOf("    renderMinimap(time) {"), game.indexOf("    toggleMinimap(show) {"));
 for (const forbidden of ["this.enemies", "this.chests", "currentVisibleCells.has", "fillRect(0, 0, width, height)"]) {

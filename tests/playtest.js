@@ -77,7 +77,7 @@ const server = require("../server.js");
       keyVisible: Boolean(document.querySelector("#key-status")?.offsetParent)
     };
   });
-  if (!pickupState.hasKey || pickupState.armorId !== "scout" || !pickupState.keyVisible) {
+  if (!pickupState.hasKey || pickupState.armorId !== "ash" || !pickupState.keyVisible || !pickupState.armorText?.includes("Pelnu bruņas")) {
     throw new Error(`Loot pickup failed: ${JSON.stringify(pickupState)}`);
   }
 
@@ -105,7 +105,7 @@ const server = require("../server.js");
   await mobileContext.close();
 
   if (errors.length) throw new Error(errors.join("\n"));
-  console.log("Browser playtest passed: armor, physical chest loot, key pickup, optional quest, wall minimap controls and mobile HUD.");
+  console.log("Browser playtest passed: animated Ash Armor, physical chest loot, key pickup, optional quest, wall minimap controls and mobile HUD.");
   await context.close();
   await browser.close();
   server.close();
