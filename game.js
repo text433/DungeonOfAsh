@@ -10,6 +10,10 @@
   const MAX_HP = 6;
   const mapRules = window.DungeonMapRules;
   const BOSS_CHAMBER = mapRules.BOSS_CHAMBER;
+  const TOWN = mapRules.TOWN;
+  const progressionApi = window.DungeonProgression;
+  const progression = progressionApi.progression;
+  const TALENTS = progressionApi.TALENTS;
   const BOSS_GATE_WALL_FRAME = 38;
   const TOUCH_DEVICE = window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
 
@@ -19,6 +23,7 @@
     xp: document.getElementById("xp-fill"),
     gold: document.getElementById("gold"),
     floor: document.getElementById("floor"),
+    area: document.getElementById("area-label"),
     objective: document.getElementById("objective"),
     prompt: document.getElementById("prompt"),
     mobile: document.getElementById("mobile-controls"),
@@ -27,7 +32,14 @@
     result: document.getElementById("result-screen"),
     resultKicker: document.getElementById("result-kicker"),
     resultTitle: document.getElementById("result-title"),
-    resultCopy: document.getElementById("result-copy")
+    resultCopy: document.getElementById("result-copy"),
+    talent: document.getElementById("talent-screen"),
+    talentButton: document.getElementById("talent-button"),
+    talentClose: document.getElementById("talent-close"),
+    talentPoints: document.getElementById("talent-points"),
+    talentHudPoints: document.getElementById("talent-hud-points"),
+    buff: document.getElementById("buff-chip"),
+    ability: document.getElementById("ability-button")
   };
 
   const asset = (name) => `assets/frames/${name}.png`;
@@ -35,14 +47,22 @@
   const ASSETS = {
     floor: ["floor_1", "floor_2", "floor_3", "floor_4", "floor_5", "floor_6", "floor_7", "floor_8"],
     walls: [
-      "wall_banner_red", "wall_banner_blue", "wall_banner_green", "wall_hole_1", "wall_hole_2",
-      "column", "column_wall", "crate", "skull",
+      "wall_banner_red", "wall_banner_blue", "wall_banner_green", "wall_banner_yellow", "wall_hole_1", "wall_hole_2",
+      "column", "column_wall", "crate", "skull", "wall_fountain_top_2",
       "doors_frame_left", "doors_frame_top", "doors_frame_right", "doors_leaf_closed", "doors_leaf_open",
-      "floor_stairs", "floor_spikes_anim_f0", "floor_spikes_anim_f1", "floor_spikes_anim_f2", "floor_spikes_anim_f3"
+      "floor_stairs", "floor_ladder", "floor_spikes_anim_f0", "floor_spikes_anim_f1", "floor_spikes_anim_f2", "floor_spikes_anim_f3"
     ],
     playerIdle: [0, 1, 2, 3].map((i) => `knight_m_idle_anim_f${i}`),
     playerRun: [0, 1, 2, 3].map((i) => `knight_m_run_anim_f${i}`),
     zombie: ["zombie_anim_f1", "zombie_anim_f2", "zombie_anim_f3", "zombie_anim_f10"],
+    goblinIdle: [0, 1, 2, 3].map((i) => `goblin_idle_anim_f${i}`),
+    goblinRun: [0, 1, 2, 3].map((i) => `goblin_run_anim_f${i}`),
+    skeletonIdle: [0, 1, 2, 3].map((i) => `skelet_idle_anim_f${i}`),
+    skeletonRun: [0, 1, 2, 3].map((i) => `skelet_run_anim_f${i}`),
+    impIdle: [0, 1, 2, 3].map((i) => `imp_idle_anim_f${i}`),
+    impRun: [0, 1, 2, 3].map((i) => `imp_run_anim_f${i}`),
+    townNpc: [0, 1, 2, 3].map((i) => `wizzard_m_idle_anim_f${i}`),
+    guideNpc: [0, 1, 2, 3].map((i) => `angel_idle_anim_f${i}`),
     orcIdle: [0, 1, 2, 3].map((i) => `orc_warrior_idle_anim_f${i}`),
     orcRun: [0, 1, 2, 3].map((i) => `orc_warrior_run_anim_f${i}`),
     bossIdle: [0, 1, 2, 3].map((i) => `big_demon_idle_anim_f${i}`),
@@ -66,7 +86,8 @@
   class RunState {
     constructor(data = {}) {
       this.floor = data.level || 1;
-      this.hp = Phaser.Math.Clamp(data.hp == null ? MAX_HP : data.hp, 1, MAX_HP);
+      this.maxHp = MAX_HP + progression.bonuses().maxHp;
+      this.hp = Phaser.Math.Clamp(data.hp == null ? this.maxHp : data.hp, 1, this.maxHp);
       this.gold = data.gold || 0;
       this.hasKey = false;
       this.chestOpened = false;
@@ -83,8 +104,14 @@
 
     heal(amount) {
       const before = this.hp;
-      this.hp = Math.min(MAX_HP, this.hp + amount);
+      this.hp = Math.min(this.maxHp, this.hp + amount);
       return this.hp - before;
+    }
+
+    loseGold(fraction) {
+      const lost = Math.min(this.gold, Math.ceil(this.gold * fraction));
+      this.gold -= lost;
+      return lost;
     }
 
     addGold(amount) {
@@ -106,7 +133,7 @@
       this.touchVector = new Phaser.Math.Vector2(0, 0);
       this.moveVector = new Phaser.Math.Vector2(0, 0);
       this.cursors = scene.input.keyboard.createCursorKeys();
-      this.keys = scene.input.keyboard.addKeys("W,A,S,D,SPACE,E");
+      this.keys = scene.input.keyboard.addKeys("W,A,S,D,SPACE,E,Q");
       this.bindTouch();
     }
 
@@ -206,6 +233,11 @@
       if (this.pulses.delete("interact")) return true;
       return Phaser.Input.Keyboard.JustDown(this.keys.E);
     }
+
+    abilityPressed() {
+      if (this.pulses.delete("ability")) return true;
+      return Phaser.Input.Keyboard.JustDown(this.keys.Q);
+    }
   }
 
   class SoundKit {
@@ -246,6 +278,7 @@
 
     init(data) {
       this.startData = data || {};
+      this.area = data.area || "town";
       this.state = new RunState(data);
       this.running = Boolean(data.autoStart);
       this.ended = false;
@@ -253,6 +286,10 @@
       this.lastFacing = new Phaser.Math.Vector2(1, 0);
       this.attackReadyAt = 0;
       this.hurtReadyAt = 0;
+      this.wardEndsAt = 0;
+      this.transitioning = false;
+      this.respawning = false;
+      this.talentOpen = false;
     }
 
     preload() {
@@ -267,8 +304,10 @@
       });
       const allKeys = [
         ...ASSETS.floor, ...ASSETS.walls, ...ASSETS.playerIdle, ...ASSETS.playerRun,
-        ...ASSETS.zombie, ...ASSETS.orcIdle, ...ASSETS.orcRun, ...ASSETS.bossIdle,
-        ...ASSETS.bossRun, ...ASSETS.chest, ...ASSETS.coin, ...ASSETS.items
+        ...ASSETS.zombie, ...ASSETS.goblinIdle, ...ASSETS.goblinRun,
+        ...ASSETS.skeletonIdle, ...ASSETS.skeletonRun, ...ASSETS.impIdle, ...ASSETS.impRun,
+        ...ASSETS.townNpc, ...ASSETS.guideNpc, ...ASSETS.orcIdle, ...ASSETS.orcRun,
+        ...ASSETS.bossIdle, ...ASSETS.bossRun, ...ASSETS.chest, ...ASSETS.coin, ...ASSETS.items
       ];
       [...new Set(allKeys)].forEach((key) => this.load.image(key, `${key}.png`));
     }
@@ -287,7 +326,8 @@
       this.createFloorUnderlayFrames();
       this.buildDungeon();
       this.createPlayer();
-      this.spawnEncounters();
+      if (this.area === "dungeon") this.spawnEncounters();
+      else this.state.totalEnemies = 0;
       this.createCollisions();
       this.configureCamera();
       this.updateHud();
@@ -310,6 +350,14 @@
       create("player-idle", ASSETS.playerIdle, 5);
       create("player-run", ASSETS.playerRun, 9);
       create("zombie-idle", ASSETS.zombie, 5);
+      create("goblin-idle", ASSETS.goblinIdle, 5);
+      create("goblin-run", ASSETS.goblinRun, 9);
+      create("skeleton-idle", ASSETS.skeletonIdle, 5);
+      create("skeleton-run", ASSETS.skeletonRun, 8);
+      create("imp-idle", ASSETS.impIdle, 7);
+      create("imp-run", ASSETS.impRun, 10);
+      create("town-npc-idle", ASSETS.townNpc, 5);
+      create("guide-npc-idle", ASSETS.guideNpc, 5);
       create("orc-idle", ASSETS.orcIdle, 5);
       create("orc-run", ASSETS.orcRun, 8);
       create("boss-idle", ASSETS.bossIdle, 5);
@@ -321,6 +369,10 @@
 
     buildDungeon() {
       this.physics.world.setBounds(0, 0, WORLD_W, WORLD_H);
+      if (this.area === "town") {
+        this.buildTown();
+        return;
+      }
       this.floorCells = mapRules.buildFloorCells();
       this.wallCells = new Set();
       this.wallPlan = [];
@@ -352,9 +404,15 @@
         "doors_frame_top"
       ).setOrigin(0.5, 1).setDepth(this.door.y - 1);
 
-      this.chest = this.props.create(11 * TILE + 8, 11 * TILE + 8, ASSETS.chest[0]);
-      this.chest.setDepth(this.chest.y).refreshBody();
-      this.chest.body.setSize(15, 11).setOffset(0, 5);
+      this.chests = [
+        this.createChest(11, 11, true),
+        this.createChest(43, 30, false),
+        this.createChest(67, 47, false)
+      ];
+
+      this.guideNpc = this.add.sprite(7 * TILE + 8, 21 * TILE + 8, ASSETS.guideNpc[0])
+        .setOrigin(0.5, 1).setDepth(21 * TILE + 8).play("guide-npc-idle");
+      this.respawnPoint = { x: 8 * TILE + 8, y: 23 * TILE + 8 };
 
       const wallDecorations = [
         [9, 7, "wall_banner_blue"], [38, 2, "wall_banner_red"],
@@ -404,6 +462,64 @@
       ].map(([x, y]) => this.add.sprite(x * TILE + 8, y * TILE + 8, "floor_spikes_anim_f0").setDepth(-2).play("spikes"));
       this.spikes = this.spikeTraps[0];
       this.stairs = null;
+      this.townStairs = null;
+    }
+
+    buildTown() {
+      this.floorCells = mapRules.buildFloorCells(mapRules.TOWN_RECTS);
+      this.wallCells = new Set();
+      this.wallPlan = [];
+      this.chests = [];
+      this.spikeTraps = [];
+      this.stairs = null;
+      this.door = null;
+      this.boss = null;
+
+      for (let y = 0; y < MAP_H; y += 1) {
+        for (let x = 0; x < MAP_W; x += 1) {
+          if (!this.hasFloor(x, y)) continue;
+          const noise = this.hash(x, y, 77);
+          const key = noise % 17 === 0 ? ASSETS.floor[1 + (noise % 4)] : "floor_1";
+          this.floorTiles.add(this.add.image(x * TILE + 8, y * TILE + 8, key, "__BASE").setDepth(-30));
+        }
+      }
+
+      this.buildWallAutotiles();
+
+      const gateBaseline = (TOWN.wallY + 1) * TILE;
+      this.add.image(TOWN.entranceX * TILE, gateBaseline, "doors_leaf_open")
+        .setOrigin(0.5, 1).setDepth(gateBaseline);
+      this.add.image(TOWN.entranceX * TILE, (TOWN.wallY - 1) * TILE, "doors_frame_top")
+        .setOrigin(0.5, 1).setDepth(gateBaseline - 1);
+
+      this.townNpc = this.add.sprite(TOWN.npcX * TILE + 8, TOWN.npcY * TILE + 8, ASSETS.townNpc[0])
+        .setOrigin(0.5, 1).setDepth(TOWN.npcY * TILE + 8).play("town-npc-idle");
+      this.respawnPoint = { x: TOWN.spawnX * TILE + 8, y: TOWN.spawnY * TILE + 8 };
+
+      this.townStairs = this.add.image(TOWN.stairsX * TILE + 8, TOWN.stairsY * TILE + 8, "floor_ladder")
+        .setDepth(-1);
+      this.tweens.add({ targets: this.townStairs, alpha: 0.68, duration: 650, yoyo: true, repeat: -1 });
+
+      this.add.image(26 * TILE + 8, 16 * TILE + 8, "wall_fountain_top_2").setDepth(16 * TILE + 8);
+      [[33, 7, "wall_banner_blue"], [42, 7, "wall_banner_yellow"]].forEach(([x, y, key]) => {
+        this.add.image(x * TILE + 8, y * TILE + 8, key).setDepth(y * TILE + 8);
+      });
+      [[24, 21], [55, 21], [24, 39], [55, 39]].forEach(([x, y]) => {
+        const baseline = (y + 1) * TILE;
+        const column = this.props.create(x * TILE + 8, baseline, "column");
+        column.setOrigin(0.5, 1).setDepth(baseline + 1).refreshBody();
+        column.body.setSize(12, 10).setOffset(2, 38);
+      });
+      [[27, 35], [48, 12], [51, 37]].forEach(([x, y]) => {
+        this.props.create(x * TILE + 8, y * TILE + 8, "crate").setDepth(y * TILE + 8).refreshBody();
+      });
+    }
+
+    createChest(tileX, tileY, hasKey) {
+      const chest = this.props.create(tileX * TILE + 8, tileY * TILE + 8, ASSETS.chest[0]);
+      chest.setDepth(chest.y).setData({ opened: false, hasKey }).refreshBody();
+      chest.body.setSize(15, 11).setOffset(0, 5);
+      return chest;
     }
 
     hasFloor(x, y) {
@@ -439,17 +555,18 @@
 
     buildWallAutotiles() {
       this.wallPlan = mapRules.buildWallPlan(this.floorCells, MAP_W, MAP_H);
+      const activeGate = this.area === "town" ? TOWN : BOSS_CHAMBER;
       this.wallPlan.forEach((rule) => {
         this.wallCells.add(`${rule.x},${rule.y}`);
         this.addWallFloorUnderlay(rule.x, rule.y);
-        const bossGateFrameKey = rule.y === BOSS_CHAMBER.wallY
-          ? rule.x === BOSS_CHAMBER.gateLeft - 1
+        const gateFrameKey = rule.y === activeGate.wallY
+          ? rule.x === activeGate.gateLeft - 1
             ? "doors_frame_left"
-            : rule.x === BOSS_CHAMBER.gateRight + 1
+            : rule.x === activeGate.gateRight + 1
               ? "doors_frame_right"
               : null
           : null;
-        if (bossGateFrameKey) {
+        if (gateFrameKey) {
           // Keep a full-height straight wall under the transparent arch trim.
           // The trim shapes the doorway without making these cells look thin.
           this.addWall(
@@ -463,7 +580,7 @@
           this.add.image(
             rule.x * TILE + 8,
             (rule.y + 1) * TILE,
-            bossGateFrameKey
+            gateFrameKey
           ).setOrigin(0.5, 1).setDepth(rule.y * TILE + 8);
           return;
         }
@@ -489,7 +606,10 @@
     }
 
     createPlayer() {
-      this.player = this.physics.add.sprite(8 * TILE + 8, 25 * TILE + 8, ASSETS.playerIdle[0]);
+      const spawn = this.area === "town"
+        ? this.respawnPoint
+        : { x: this.respawnPoint?.x || 8 * TILE + 8, y: this.respawnPoint?.y || 25 * TILE + 8 };
+      this.player = this.physics.add.sprite(spawn.x, spawn.y, ASSETS.playerIdle[0]);
       this.player.setOrigin(0.5, 1).setDepth(this.player.y).play("player-idle");
       this.player.setCollideWorldBounds(true);
       this.player.body.setSize(10, 9).setOffset(3, 18);
@@ -498,12 +618,15 @@
     spawnEncounters() {
       const scale = 1 + (this.state.floor - 1) * 0.18;
       const positions = [
-        [15, 23, "zombie"], [19, 30, "orc"], [9, 12, "zombie"],
-        [37, 7, "orc"], [48, 7, "zombie"], [34, 18, "zombie"],
-        [46, 19, "orc"], [38, 29, "zombie"], [48, 30, "orc"],
-        [40, 47, "orc"], [49, 48, "zombie"], [63, 23, "orc"], [71, 30, "zombie"]
+        [15, 23, "zombie"], [19, 30, "orc"], [9, 12, "goblin"],
+        [37, 7, "orc"], [48, 7, "skeleton"], [34, 18, "zombie"],
+        [46, 19, "orc"], [38, 29, "goblin"], [48, 30, "orc"],
+        [40, 47, "orc"], [49, 48, "skeleton"], [63, 23, "orc"],
+        [71, 30, "zombie"], [30, 28, "imp"], [52, 24, "goblin"],
+        [61, 30, "skeleton"], [71, 45, "imp"], [64, 46, "goblin"],
+        [21, 21, "skeleton"], [35, 45, "zombie"], [55, 46, "imp"], [73, 49, "orc"]
       ];
-      if (this.state.floor >= 2) positions.push([64, 46, "orc"], [71, 48, "orc"], [31, 25, "zombie"]);
+      if (this.state.floor >= 2) positions.push([70, 35, "orc"], [45, 46, "skeleton"], [31, 25, "goblin"]);
       positions.forEach(([x, y, type]) => this.spawnEnemy(x, y, type, scale));
       this.boss = this.spawnEnemy(68, 15, "boss", scale);
       this.state.totalEnemies = this.enemies.countActive(true);
@@ -511,12 +634,17 @@
 
     spawnEnemy(tileX, tileY, type, scale) {
       const definitions = {
-        zombie: { texture: ASSETS.zombie[0], idle: "zombie-idle", run: "zombie-idle", hp: 2, speed: 31, damage: 1, reward: 2, radius: 150 },
-        orc: { texture: ASSETS.orcIdle[0], idle: "orc-idle", run: "orc-run", hp: 4, speed: 39, damage: 1, reward: 4, radius: 185 },
-        boss: { texture: ASSETS.bossIdle[0], idle: "boss-idle", run: "boss-run", hp: 16, speed: 34, damage: 2, reward: 20, radius: 390 }
+        zombie: { texture: ASSETS.zombie[0], idle: "zombie-idle", run: "zombie-idle", hp: 2, speed: 31, damage: 1, reward: 2, aggroRadius: 128, patrolRadius: 46 },
+        goblin: { texture: ASSETS.goblinIdle[0], idle: "goblin-idle", run: "goblin-run", hp: 2, speed: 46, damage: 1, reward: 3, aggroRadius: 145, patrolRadius: 58 },
+        skeleton: { texture: ASSETS.skeletonIdle[0], idle: "skeleton-idle", run: "skeleton-run", hp: 3, speed: 36, damage: 1, reward: 3, aggroRadius: 158, patrolRadius: 52 },
+        imp: { texture: ASSETS.impIdle[0], idle: "imp-idle", run: "imp-run", hp: 3, speed: 43, damage: 1, reward: 4, aggroRadius: 170, patrolRadius: 62 },
+        orc: { texture: ASSETS.orcIdle[0], idle: "orc-idle", run: "orc-run", hp: 4, speed: 39, damage: 1, reward: 4, aggroRadius: 185, patrolRadius: 54 },
+        boss: { texture: ASSETS.bossIdle[0], idle: "boss-idle", run: "boss-run", hp: 16, speed: 34, damage: 2, reward: 20, aggroRadius: 390, patrolRadius: 70 }
       };
       const def = definitions[type];
-      const enemy = this.enemies.create(tileX * TILE + 8, tileY * TILE + 8, def.texture);
+      const originX = tileX * TILE + 8;
+      const originY = tileY * TILE + 8;
+      const enemy = this.enemies.create(originX, originY, def.texture);
       enemy.setOrigin(0.5, 1).setDepth(enemy.y).play(def.idle);
       enemy.setData({
         type,
@@ -527,7 +655,15 @@
         speed: def.speed * Math.min(1.45, scale),
         damage: def.damage,
         reward: Math.ceil(def.reward * scale),
-        radius: def.radius,
+        aggroRadius: def.aggroRadius,
+        patrolRadius: def.patrolRadius,
+        originX,
+        originY,
+        wanderX: originX,
+        wanderY: originY,
+        aiState: "idle",
+        decisionAt: this.time.now + Phaser.Math.Between(250, 1300),
+        patrolDirection: Math.random() < 0.5 ? -1 : 1,
         staggerUntil: 0
       });
       if (type === "boss") enemy.body.setSize(22, 20).setOffset(5, 15);
@@ -613,9 +749,9 @@
     }
 
     update(time, delta) {
-      if (!this.running || this.ended) return;
+      if (!this.running || this.ended || this.respawning) return;
       const movement = this.inputSystem.movement(delta);
-      const speed = 76;
+      const speed = 76 * progression.bonuses().speedMultiplier;
       this.player.setVelocity(movement.x * speed, movement.y * speed);
       if (movement.lengthSq() > 0) {
         this.lastFacing.copy(movement);
@@ -627,10 +763,37 @@
       this.player.setDepth(this.player.y);
 
       if (this.inputSystem.attackPressed() && time >= this.attackReadyAt) this.performAttack(time);
-      this.updateEnemies(time);
+      if (this.inputSystem.abilityPressed()) this.castAshWard(time);
+      if (this.area === "dungeon") {
+        this.updateEnemies(time);
+        this.updateAutoChests();
+        this.updateSpikeTrap(time);
+      } else {
+        this.updateTownEntrance();
+      }
       this.updateInteraction();
       if (this.inputSystem.interactPressed()) this.performInteraction();
-      this.updateSpikeTrap(time);
+      this.updateWardHud(time);
+    }
+
+    castAshWard(time) {
+      const bonuses = progression.bonuses();
+      if (!bonuses.unlockWard || time < this.wardEndsAt) return;
+      this.wardEndsAt = time + 6000;
+      this.state.heal(bonuses.wardHeal);
+      this.player.setTint(0x75ddff);
+      this.time.delayedCall(180, () => this.player.active && this.player.clearTint());
+      this.cameras.main.flash(100, 65, 145, 190, false);
+      sound.blip(560, 0.24, "sine", 0.04);
+      this.updateHud();
+    }
+
+    updateWardHud(time) {
+      const remaining = Math.max(0, this.wardEndsAt - time);
+      dom.buff.classList.toggle("is-hidden", remaining <= 0);
+      dom.buff.textContent = remaining > 0 ? `PELNU VAIROGS · ${Math.ceil(remaining / 1000)}s` : "";
+      dom.ability.classList.toggle("is-ready", progression.bonuses().unlockWard && remaining <= 0);
+      dom.ability.classList.toggle("is-active", remaining > 0);
     }
 
     performAttack(time) {
@@ -651,14 +814,17 @@
       });
       sound.blip(210, 0.07, "sawtooth", 0.022);
 
+      const bonuses = progression.bonuses();
       this.enemies.getChildren().forEach((enemy) => {
         if (!enemy.active) return;
         const toEnemy = new Phaser.Math.Vector2(enemy.x - this.player.x, enemy.y - (this.player.y - 8));
         const distance = toEnemy.length();
-        if (distance > (enemy.getData("type") === "boss" ? 39 : 32)) return;
+        const reach = (enemy.getData("type") === "boss" ? 39 : 32) + bonuses.attackRange;
+        if (distance > reach) return;
         const facing = toEnemy.normalize().dot(direction);
         if (facing < -0.05) return;
-        this.hitEnemy(enemy, 1, direction, time);
+        const wardDamage = time < this.wardEndsAt ? bonuses.wardDamage : 0;
+        this.hitEnemy(enemy, 1 + bonuses.attackDamage + wardDamage, direction, time);
       });
     }
 
@@ -686,6 +852,8 @@
       enemy.healthBar = null;
       enemy.disableBody(true, true);
       this.state.kills += 1;
+      const killHeal = progression.bonuses().healOnKill;
+      if (killHeal) this.state.heal(killHeal);
       this.spawnDrop(x, y, "coin", reward);
       if (type !== "boss" && Math.random() < 0.22) this.spawnDrop(x + 7, y, "potion", 2);
       if (type === "boss") {
@@ -729,26 +897,100 @@
         }
         const distance = Phaser.Math.Distance.Between(enemy.x, enemy.y, this.player.x, this.player.y);
         const type = enemy.getData("type");
-        const canChase = distance < enemy.getData("radius") && (type !== "boss" || this.state.doorOpened);
+        const canChase = distance < enemy.getData("aggroRadius") && (type !== "boss" || this.state.doorOpened);
         if (canChase && distance > 18) {
           const direction = new Phaser.Math.Vector2(this.player.x - enemy.x, this.player.y - enemy.y).normalize();
           enemy.setVelocity(direction.x * enemy.getData("speed"), direction.y * enemy.getData("speed"));
           enemy.setFlipX(direction.x < 0);
           if (enemy.anims.currentAnim?.key !== enemy.getData("run")) enemy.play(enemy.getData("run"));
+        } else if (type === "boss") {
+          this.updateBossPatrol(enemy);
         } else {
-          enemy.setVelocity(0, 0);
-          if (enemy.anims.currentAnim?.key !== enemy.getData("idle")) enemy.play(enemy.getData("idle"));
+          this.updateEnemyPatrol(enemy, time);
         }
         enemy.setDepth(enemy.y);
         this.updateEnemyHealthBar(enemy);
       });
     }
 
+    updateEnemyPatrol(enemy, time) {
+      if (time >= enemy.getData("decisionAt")) {
+        if (Math.random() < 0.44) {
+          enemy.setData({ aiState: "idle", decisionAt: time + Phaser.Math.Between(700, 1800) });
+        } else {
+          const radius = enemy.getData("patrolRadius");
+          let targetX = enemy.getData("originX");
+          let targetY = enemy.getData("originY");
+          for (let attempt = 0; attempt < 6; attempt += 1) {
+            const angle = Math.random() * Math.PI * 2;
+            const distance = Phaser.Math.Between(Math.floor(radius * 0.35), radius);
+            const candidateX = enemy.getData("originX") + Math.cos(angle) * distance;
+            const candidateY = enemy.getData("originY") + Math.sin(angle) * distance;
+            if (this.hasFloor(Math.floor(candidateX / TILE), Math.floor(candidateY / TILE))) {
+              targetX = candidateX;
+              targetY = candidateY;
+              break;
+            }
+          }
+          enemy.setData({
+            aiState: "wander",
+            wanderX: targetX,
+            wanderY: targetY,
+            decisionAt: time + Phaser.Math.Between(1200, 2600)
+          });
+        }
+      }
+
+      if (enemy.getData("aiState") !== "wander") {
+        enemy.setVelocity(0, 0);
+        if (enemy.anims.currentAnim?.key !== enemy.getData("idle")) enemy.play(enemy.getData("idle"));
+        return;
+      }
+      const toTarget = new Phaser.Math.Vector2(
+        enemy.getData("wanderX") - enemy.x,
+        enemy.getData("wanderY") - enemy.y
+      );
+      if (toTarget.length() < 7) {
+        enemy.setData({ aiState: "idle", decisionAt: time + Phaser.Math.Between(500, 1400) });
+        enemy.setVelocity(0, 0);
+        return;
+      }
+      toTarget.normalize();
+      enemy.setVelocity(toTarget.x * enemy.getData("speed") * 0.58, toTarget.y * enemy.getData("speed") * 0.58);
+      enemy.setFlipX(toTarget.x < 0);
+      if (enemy.anims.currentAnim?.key !== enemy.getData("run")) enemy.play(enemy.getData("run"));
+    }
+
+    updateBossPatrol(enemy) {
+      const radius = enemy.getData("patrolRadius");
+      let direction = enemy.getData("patrolDirection");
+      if (enemy.x <= enemy.getData("originX") - radius) direction = 1;
+      if (enemy.x >= enemy.getData("originX") + radius) direction = -1;
+      enemy.setData("patrolDirection", direction);
+      enemy.setVelocityX(direction * enemy.getData("speed") * 0.62);
+      enemy.setVelocityY(0);
+      enemy.setFlipX(direction < 0);
+      if (enemy.anims.currentAnim?.key !== enemy.getData("run")) enemy.play(enemy.getData("run"));
+    }
+
+    applyPlayerDamage(amount) {
+      const bonuses = progression.bonuses();
+      if (bonuses.blockChance && Math.random() < bonuses.blockChance) {
+        sound.blip(710, 0.08, "square", 0.025);
+        return 0;
+      }
+      const reduced = this.time.now < this.wardEndsAt ? Math.max(1, Math.ceil(amount * 0.5)) : amount;
+      this.state.damage(reduced);
+      return reduced;
+    }
+
     handleEnemyContact(player, enemy) {
       const now = this.time.now;
       if (now < this.hurtReadyAt || !enemy.active) return;
       this.hurtReadyAt = now + 850;
-      const remaining = this.state.damage(enemy.getData("damage"));
+      const dealt = this.applyPlayerDamage(enemy.getData("damage"));
+      if (!dealt) return;
+      const remaining = this.state.hp;
       const knockback = new Phaser.Math.Vector2(player.x - enemy.x, player.y - enemy.y).normalize();
       player.setVelocity(knockback.x * 170, knockback.y * 170);
       player.setTintFill(0xff5b52);
@@ -757,7 +999,7 @@
       this.cameras.main.flash(100, 110, 15, 15, false);
       sound.blip(72, 0.15, "sawtooth", 0.04);
       this.updateHud();
-      if (remaining <= 0) this.endRun(false);
+      if (remaining <= 0) this.respawnAtGuide();
     }
 
     updateSpikeTrap(time) {
@@ -771,7 +1013,8 @@
 
     triggerSpikeTrap(trap, time) {
       this.hurtReadyAt = time + 850;
-      this.state.damage(1);
+      const dealt = this.applyPlayerDamage(1);
+      if (!dealt) return;
       const knockback = new Phaser.Math.Vector2(this.player.x - trap.x, this.player.y - trap.y);
       if (knockback.lengthSq() < 0.01) knockback.set(0, 1);
       knockback.normalize();
@@ -782,19 +1025,26 @@
       this.cameras.main.flash(90, 120, 12, 12, false);
       sound.blip(58, 0.18, "sawtooth", 0.045);
       this.updateHud();
-      if (this.state.hp <= 0) this.endRun(false);
+      if (this.state.hp <= 0) this.respawnAtGuide();
     }
 
     updateInteraction() {
       this.nearInteraction = null;
       let label = "";
-      if (!this.state.chestOpened && Phaser.Math.Distance.Between(this.player.x, this.player.y, this.chest.x, this.chest.y) < 38) {
-        this.nearInteraction = "chest";
-        label = "E · ATVER LĀDI";
-      } else if (!this.state.doorOpened && Phaser.Math.Distance.Between(this.player.x, this.player.y, this.door.x, this.door.y) < 48) {
+      if (this.area === "town" && this.townNpc &&
+          Phaser.Math.Distance.Between(this.player.x, this.player.y, this.townNpc.x, this.townNpc.y) < 42) {
+        this.nearInteraction = "townNpc";
+        label = "E · RUNĀT / BONUSA KOKS";
+      } else if (this.area === "dungeon" && this.guideNpc &&
+          Phaser.Math.Distance.Between(this.player.x, this.player.y, this.guideNpc.x, this.guideNpc.y) < 42) {
+        this.nearInteraction = "guideNpc";
+        label = "E · ATPAKAĻ UZ PILSĒTU";
+      } else if (this.area === "dungeon" && !this.state.doorOpened &&
+          Phaser.Math.Distance.Between(this.player.x, this.player.y, this.door.x, this.door.y) < 48) {
         this.nearInteraction = "door";
         label = this.state.hasKey ? "E · ATSLĒGT DURVIS" : "NEPIECIEŠAMA ATSLĒGA";
-      } else if (this.stairs && Phaser.Math.Distance.Between(this.player.x, this.player.y, this.stairs.x, this.stairs.y) < 34) {
+      } else if (this.area === "dungeon" && this.stairs &&
+          Phaser.Math.Distance.Between(this.player.x, this.player.y, this.stairs.x, this.stairs.y) < 34) {
         this.nearInteraction = "stairs";
         label = "E · NĀKAMAIS STĀVS";
       }
@@ -803,18 +1053,38 @@
     }
 
     performInteraction() {
-      if (this.nearInteraction === "chest") this.openChest();
-      else if (this.nearInteraction === "door" && this.state.hasKey) this.openDoor();
-      else if (this.nearInteraction === "door") sound.blip(86, 0.12, "square", 0.03);
-      else if (this.nearInteraction === "stairs") this.nextFloor();
+      if (this.nearInteraction === "townNpc") {
+        this.state.heal(this.state.maxHp);
+        this.updateHud();
+        this.openTalentTree();
+      } else if (this.nearInteraction === "guideNpc") {
+        this.returnToTown();
+      } else if (this.nearInteraction === "door" && this.state.hasKey) {
+        this.openDoor();
+      } else if (this.nearInteraction === "door") {
+        sound.blip(86, 0.12, "square", 0.03);
+      } else if (this.nearInteraction === "stairs") {
+        this.nextFloor();
+      }
     }
 
-    openChest() {
-      this.state.chestOpened = true;
-      this.state.hasKey = true;
-      this.chest.play("chest-open");
-      this.state.addGold(5);
-      this.state.heal(2);
+    updateAutoChests() {
+      this.chests.forEach((chest) => {
+        if (!chest.active || chest.getData("opened")) return;
+        if (Phaser.Math.Distance.Between(this.player.x, this.player.y, chest.x, chest.y) < 34) this.openChest(chest);
+      });
+    }
+
+    openChest(chest) {
+      if (!chest || chest.getData("opened")) return;
+      chest.setData("opened", true);
+      chest.play("chest-open");
+      if (chest.getData("hasKey")) {
+        this.state.hasKey = true;
+        this.state.chestOpened = true;
+      }
+      this.state.addGold(chest.getData("hasKey") ? 5 : 3);
+      this.state.heal(chest.getData("hasKey") ? 2 : 1);
       sound.blip(480, 0.16, "triangle", 0.04);
       this.cameras.main.flash(130, 138, 85, 30, false);
       this.updateHud();
@@ -836,16 +1106,67 @@
     }
 
     nextFloor() {
+      if (this.transitioning) return;
+      this.transitioning = true;
       const next = this.state.floor + 1;
+      progression.awardFloorPoint();
       this.state.saveBestFloor();
       sound.blip(760, 0.2, "sine", 0.04);
       this.cameras.main.fadeOut(350, 8, 6, 10);
       this.cameras.main.once("camerafadeoutcomplete", () => {
-        this.scene.restart({ autoStart: true, level: next, gold: this.state.gold, hp: Math.min(MAX_HP, this.state.hp + 2) });
+        this.scene.restart({
+          autoStart: true,
+          area: "dungeon",
+          level: next,
+          gold: this.state.gold,
+          hp: Math.min(this.state.maxHp, this.state.hp + 2)
+        });
+      });
+    }
+
+    updateTownEntrance() {
+      if (!this.townStairs || this.transitioning) return;
+      if (Phaser.Math.Distance.Between(this.player.x, this.player.y, this.townStairs.x, this.townStairs.y) < 16) {
+        this.enterDungeon();
+      }
+    }
+
+    enterDungeon() {
+      if (this.transitioning) return;
+      this.transitioning = true;
+      sound.blip(340, 0.18, "sine", 0.035);
+      this.cameras.main.fadeOut(300, 8, 6, 10);
+      this.cameras.main.once("camerafadeoutcomplete", () => {
+        this.scene.restart({
+          autoStart: true,
+          area: "dungeon",
+          level: this.state.floor,
+          gold: this.state.gold,
+          hp: this.state.hp
+        });
+      });
+    }
+
+    returnToTown() {
+      if (this.transitioning) return;
+      this.transitioning = true;
+      this.cameras.main.fadeOut(300, 8, 6, 10);
+      this.cameras.main.once("camerafadeoutcomplete", () => {
+        this.scene.restart({
+          autoStart: true,
+          area: "town",
+          level: this.state.floor,
+          gold: this.state.gold,
+          hp: this.state.hp
+        });
       });
     }
 
     updateObjective() {
+      if (this.area === "town") {
+        dom.objective.textContent = "Atrodi trepes uz dungeonu vai runā ar burvi";
+        return;
+      }
       if (this.state.bossDead) dom.objective.textContent = "Ieej kāpnēs uz nākamo stāvu";
       else if (this.state.doorOpened && this.boss?.active) dom.objective.textContent = `Pelnu Dēmons · HP ${this.boss.getData("hp")}/${this.boss.getData("maxHp")}`;
       else if (this.state.doorOpened) dom.objective.textContent = "Sakauj Pelnu Dēmonu";
@@ -855,7 +1176,7 @@
 
     updateHud() {
       dom.hearts.innerHTML = "";
-      for (let i = 0; i < MAX_HP / 2; i += 1) {
+      for (let i = 0; i < Math.ceil(this.state.maxHp / 2); i += 1) {
         const value = this.state.hp - i * 2;
         const key = value >= 2 ? "ui_heart_full" : value === 1 ? "ui_heart_half" : "ui_heart_empty";
         const image = document.createElement("img");
@@ -864,9 +1185,79 @@
         dom.hearts.appendChild(image);
       }
       dom.gold.textContent = String(this.state.gold);
-      dom.floor.textContent = String(this.state.floor);
+      dom.floor.textContent = this.area === "town" ? "—" : String(this.state.floor);
+      dom.area.textContent = this.area === "town" ? "Pilsēta" : "Stāvs";
       dom.xp.style.width = `${Math.min(100, (this.state.kills / Math.max(1, this.state.totalEnemies)) * 100)}%`;
       this.updateObjective();
+      this.updateProgressionUi();
+    }
+
+    updateProgressionUi() {
+      const snapshot = progression.snapshot();
+      dom.talentPoints.textContent = String(snapshot.points);
+      dom.talentHudPoints.textContent = String(snapshot.points);
+      dom.talentHudPoints.classList.toggle("is-hidden", snapshot.points <= 0);
+      document.querySelectorAll("[data-talent]").forEach((button) => {
+        const id = button.dataset.talent;
+        const node = TALENTS[id];
+        const level = snapshot.levels[id] || 0;
+        button.classList.toggle("unlocked", level >= node.maxLevel);
+        button.classList.toggle("available", progression.canSpend(id));
+        button.classList.toggle("locked", !progression.canSpend(id) && level < node.maxLevel);
+        button.querySelector(".talent-level").textContent = `${level}/${node.maxLevel}`;
+      });
+      dom.ability.classList.toggle("is-hidden", !progression.bonuses().unlockWard);
+      this.updateWardHud(this.time.now);
+    }
+
+    applyProgressionBonuses() {
+      const before = this.state.maxHp;
+      this.state.maxHp = MAX_HP + progression.bonuses().maxHp;
+      if (this.state.maxHp > before) this.state.heal(this.state.maxHp - before);
+      this.updateHud();
+    }
+
+    openTalentTree() {
+      if (this.talentOpen) return;
+      this.talentOpen = true;
+      this.updateProgressionUi();
+      dom.talent.classList.add("active");
+      dom.mobile.classList.add("is-hidden");
+      dom.prompt.classList.add("is-hidden");
+      this.scene.pause();
+    }
+
+    closeTalentTree() {
+      if (!this.talentOpen) return;
+      this.talentOpen = false;
+      dom.talent.classList.remove("active");
+      if (this.running && !this.ended) this.scene.resume();
+      if (TOUCH_DEVICE && this.running) dom.mobile.classList.remove("is-hidden");
+    }
+
+    respawnAtGuide() {
+      if (this.respawning || this.area !== "dungeon") return;
+      this.respawning = true;
+      const lost = this.state.loseGold(0.15);
+      this.state.hp = this.state.maxHp;
+      this.player.setVelocity(0, 0);
+      this.cameras.main.fadeOut(220, 55, 9, 9);
+      this.time.delayedCall(260, () => {
+        this.player.setPosition(this.respawnPoint.x, this.respawnPoint.y).clearTint();
+        this.enemies.getChildren().forEach((enemy) => {
+          if (!enemy.active) return;
+          enemy.setPosition(enemy.getData("originX"), enemy.getData("originY"));
+          enemy.setVelocity(0, 0);
+          enemy.setData({ aiState: "idle", decisionAt: this.time.now + 800 });
+        });
+        this.hurtReadyAt = this.time.now + 1800;
+        this.respawning = false;
+        this.cameras.main.fadeIn(260, 8, 6, 10);
+        this.updateHud();
+        dom.prompt.textContent = lost ? `Sargs tevi izglāba · zaudēts zelts: ${lost}` : "Sargs tevi izglāba";
+        dom.prompt.classList.remove("is-hidden");
+        this.time.delayedCall(1700, () => dom.prompt.classList.add("is-hidden"));
+      });
     }
 
     endRun(victory) {
@@ -923,6 +1314,7 @@
     dom.start.classList.remove("active");
     dom.pause.classList.remove("active");
     dom.result.classList.remove("active");
+    dom.talent.classList.remove("active");
     dom.hud.classList.remove("is-hidden");
     if (TOUCH_DEVICE) dom.mobile.classList.remove("is-hidden");
   }
@@ -933,12 +1325,24 @@
     dom.result.classList.remove("active");
     dom.pause.classList.remove("active");
     dom.prompt.classList.add("is-hidden");
-    scene.scene.restart({ autoStart: true, level, gold, hp: MAX_HP });
+    scene.scene.restart({ autoStart: true, area: "town", level, gold, hp: MAX_HP + progression.bonuses().maxHp });
     showGameplayUi();
     sound.unlock();
   }
 
   document.getElementById("start-button").addEventListener("click", () => currentScene().beginRun());
+  dom.talentButton.addEventListener("click", () => currentScene()?.openTalentTree());
+  dom.talentClose.addEventListener("click", () => currentScene()?.closeTalentTree());
+  document.querySelectorAll("[data-talent]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const scene = currentScene();
+      if (progression.spend(button.dataset.talent)) {
+        sound.blip(690, 0.16, "triangle", 0.04);
+        scene?.applyProgressionBonuses();
+        scene?.updateProgressionUi();
+      }
+    });
+  });
   document.getElementById("pause-button").addEventListener("click", () => currentScene().togglePause());
   document.getElementById("resume-button").addEventListener("click", () => currentScene().togglePause(false));
   document.getElementById("restart-button").addEventListener("click", () => restart(1, false));
@@ -955,7 +1359,9 @@
   window.addEventListener("keydown", (event) => {
     if (event.code !== "Escape" && event.code !== "KeyP") return;
     event.preventDefault();
-    currentScene()?.togglePause();
+    const scene = currentScene();
+    if (scene?.talentOpen) scene.closeTalentTree();
+    else scene?.togglePause();
   });
 
   window.addEventListener("blur", () => {

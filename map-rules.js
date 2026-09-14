@@ -34,6 +34,31 @@
     gateRight: 68,
     entranceX: 68
   });
+  const TOWN = Object.freeze({
+    plazaLeft: 20,
+    plazaRight: 59,
+    plazaTop: 18,
+    plazaBottom: 43,
+    houseLeft: 31,
+    houseRight: 44,
+    houseTop: 7,
+    houseBottom: 16,
+    wallY: 17,
+    gateLeft: 37,
+    gateRight: 38,
+    entranceX: 38,
+    npcX: 38,
+    npcY: 12,
+    stairsX: 51,
+    stairsY: 31,
+    spawnX: 38,
+    spawnY: 25
+  });
+  const TOWN_RECTS = Object.freeze([
+    Object.freeze([20, 18, 40, 26]),
+    Object.freeze([31, 7, 14, 10]),
+    Object.freeze([37, 17, 2, 1])
+  ]);
   const DUNGEON_RECTS = Object.freeze([
     [4, 18, 20, 16],
     [4, 8, 18, 7],
@@ -117,6 +142,17 @@
     const westFloor = floorCells.has(cellKey(x - 1, y));
     const eastFloor = floorCells.has(cellKey(x + 1, y));
 
+    // The town house has the same full-height doorway wall rule as the boss
+    // chamber. This keeps the arch, side columns and floor on one baseline.
+    const townLayout = floorCells.has(cellKey(TOWN.plazaLeft, TOWN.plazaBottom))
+      && floorCells.has(cellKey(TOWN.houseRight, TOWN.houseTop));
+    if (
+      townLayout &&
+      y === TOWN.wallY &&
+      x >= TOWN.plazaLeft && x <= TOWN.plazaRight &&
+      (northFloor || southFloor)
+    ) return "north";
+
     // The internal boss-room divider is a front-facing 32 px wall. Without
     // this structural rule, floor on both sides would incorrectly select a
     // thin side-wall tile.
@@ -169,6 +205,8 @@
   return Object.freeze({
     WALL_EDGE,
     BOSS_CHAMBER,
+    TOWN,
+    TOWN_RECTS,
     DUNGEON_RECTS,
     MINIMAL_MASK_PATTERNS,
     buildFloorCells,

@@ -396,3 +396,214 @@ h2 { font-size: clamp(38px, 7vw, 68px); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
 }
+
+
+/* Persistent progression HUD */
+#talent-button {
+  right: calc(max(16px, env(safe-area-inset-right)) + 96px);
+  color: #f2c56d;
+  font-size: 20px;
+}
+.point-badge {
+  position: absolute;
+  right: -6px;
+  top: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 1px 4px;
+  border: 1px solid #f0bf61;
+  border-radius: 9px;
+  color: #1a1010;
+  background: #e2a446;
+  font: 700 11px/14px "Courier New", monospace;
+}
+.buff-chip {
+  position: absolute;
+  z-index: 7;
+  top: max(64px, calc(env(safe-area-inset-top) + 50px));
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 12px;
+  border: 1px solid rgba(101, 211, 234, 0.55);
+  background: rgba(9, 25, 32, 0.88);
+  color: #a9efff;
+  font: 700 11px/1 "Courier New", monospace;
+  letter-spacing: 0.08em;
+  box-shadow: 0 0 18px rgba(75, 185, 220, 0.18);
+}
+
+/* PoE-inspired branching bonus tree */
+.talent-overlay {
+  z-index: 28;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+    max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  overflow: auto;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(111, 52, 34, 0.28), transparent 50%),
+    rgba(5, 4, 7, 0.96);
+}
+.talent-window {
+  width: min(940px, 96vw);
+  max-height: 94vh;
+  overflow: auto;
+  padding: 22px;
+  border: 1px solid rgba(215, 154, 63, 0.38);
+  background: linear-gradient(180deg, rgba(25, 18, 22, 0.98), rgba(10, 8, 12, 0.99));
+  box-shadow: 0 18px 70px #000, inset 0 0 40px rgba(174, 74, 40, 0.06);
+}
+.talent-header {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 16px;
+  padding: 0 46px 18px 0;
+  border-bottom: 1px solid rgba(215, 154, 63, 0.25);
+  text-align: left;
+}
+.talent-header h2 { font-size: clamp(30px, 5vw, 54px); line-height: 1; }
+.talent-wallet {
+  padding: 9px 13px;
+  border: 1px solid rgba(215, 154, 63, 0.32);
+  color: #96886f;
+  font: 12px/1 "Courier New", monospace;
+  letter-spacing: 0.08em;
+}
+.talent-wallet strong { margin-left: 8px; color: #ffd889; font-size: 18px; }
+.talent-close {
+  position: absolute;
+  top: -6px;
+  right: 0;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--line);
+  color: #cdbd9d;
+  background: rgba(10, 8, 12, 0.8);
+  font: 26px/1 Arial, sans-serif;
+  cursor: pointer;
+}
+.talent-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px;
+  padding-top: 20px;
+}
+.talent-branch {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 18px;
+  padding: 15px;
+  border: 1px solid rgba(225, 210, 176, 0.12);
+  background: rgba(255, 255, 255, 0.018);
+}
+.talent-branch h3 {
+  margin: 0 0 2px;
+  color: #d5c39d;
+  font: 700 13px/1 "Courier New", monospace;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.talent-node {
+  position: relative;
+  min-height: 98px;
+  padding: 12px 12px 12px 68px;
+  border: 1px solid rgba(123, 102, 91, 0.34);
+  color: #8c8174;
+  background: linear-gradient(145deg, rgba(28, 23, 26, 0.98), rgba(13, 11, 15, 0.98));
+  text-align: left;
+  cursor: default;
+}
+.talent-node:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 33px;
+  bottom: -19px;
+  width: 1px;
+  height: 18px;
+  background: rgba(215, 154, 63, 0.28);
+}
+.talent-node .node-icon {
+  position: absolute;
+  left: 15px;
+  top: 20px;
+  width: 39px;
+  height: 39px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(215, 154, 63, 0.22);
+  border-radius: 50%;
+  color: #9b7650;
+  background: #100d11;
+  font-size: 20px;
+}
+.talent-node strong,
+.talent-node small { display: block; }
+.talent-node strong { color: #b9aa90; font-size: 14px; }
+.talent-node small { margin-top: 6px; font-size: 11px; line-height: 1.35; }
+.talent-level {
+  position: absolute;
+  right: 7px;
+  bottom: 6px;
+  font: 10px/1 "Courier New", monospace;
+}
+.talent-node.available {
+  border-color: rgba(230, 167, 76, 0.68);
+  color: #c4b493;
+  box-shadow: 0 0 18px rgba(208, 116, 47, 0.12);
+  cursor: pointer;
+}
+.talent-node.available .node-icon { color: #ffd57c; border-color: #b77a3d; }
+.talent-node.unlocked {
+  border-color: rgba(124, 194, 126, 0.5);
+  color: #a8c7a2;
+  background: linear-gradient(145deg, rgba(27, 44, 34, 0.95), rgba(12, 19, 17, 0.98));
+}
+.talent-node.unlocked .node-icon {
+  color: #b9f2b0;
+  border-color: rgba(124, 194, 126, 0.58);
+  box-shadow: 0 0 14px rgba(98, 191, 116, 0.2);
+}
+.talent-node.locked { opacity: 0.58; }
+
+.action-pad .ability {
+  right: 74px;
+  top: 46px;
+  width: 50px;
+  height: 50px;
+  color: #7e7187;
+}
+.action-pad .ability.is-ready {
+  color: #9eeeff;
+  border-color: rgba(104, 219, 240, 0.55);
+  box-shadow: 0 0 18px rgba(75, 185, 220, 0.18), inset 0 0 15px rgba(90, 203, 228, 0.08);
+}
+.action-pad .ability.is-active {
+  color: #fff;
+  background: rgba(31, 113, 137, 0.72);
+}
+
+@media (max-width: 760px) {
+  .talent-window { padding: 15px; }
+  .talent-grid { grid-template-columns: 1fr; gap: 14px; }
+  .talent-branch { gap: 12px; }
+  .talent-node { min-height: 78px; }
+}
+
+@media (pointer: coarse) and (orientation: landscape) {
+  .talent-window { width: min(980px, 95vw); max-height: 92vh; padding: 13px 18px; }
+  .talent-header { padding-bottom: 10px; }
+  .talent-header h2 { font-size: 30px; }
+  .talent-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding-top: 12px; }
+  .talent-branch { gap: 8px; padding: 10px; }
+  .talent-node { min-height: 68px; padding: 8px 8px 8px 48px; }
+  .talent-node .node-icon { left: 8px; top: 14px; width: 31px; height: 31px; font-size: 16px; }
+  .talent-node:not(:last-child)::after { left: 23px; bottom: -9px; height: 8px; }
+  .talent-node small { margin-top: 3px; }
+}
+
+@media (max-width: 620px) {
+  #talent-button { right: calc(max(8px, env(safe-area-inset-right)) + 89px); }
+  .buff-chip { top: max(110px, calc(env(safe-area-inset-top) + 98px)); font-size: 9px; }
+}
