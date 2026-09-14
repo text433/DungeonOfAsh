@@ -53,6 +53,7 @@ for (const marker of [
   "buildTown", "townStairs", "town-npc-idle", "guide-npc-idle", "updateAutoChests", "respawnAtGuide",
   "updateEnemyPatrol", "updateBossPatrol", "patrolRadius", "aggroRadius", "castAshWard", "openTalentTree",
   "renderMinimap", "openSmith", "upgradeWeapon", "updateCarriedWeapon", "createAttackFx", "addLavaFall",
+  "Phaser.Scenes.Events.POST_UPDATE", "runHandPoses", "idleHandPoses",
   "lava-flow", "playerHit", "dungeonOfAshIntroSeenV1"
 ]) {
   if (!game.includes(marker)) throw new Error(`Spēles kodā trūkst ${marker}`);
@@ -79,7 +80,7 @@ if (!game.includes("fixedStep: false")) throw new Error("Fizika nav piesaistīta
 if (!game.includes("roundPixels: false")) throw new Error("Globālā pikseļu noapaļošana nav izslēgta");
 if (!html.includes('<script src="map-rules.js?v=28"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
 if (!html.includes('<script src="progression.js?v=28"></script>')) throw new Error("HTML neielādē progresa sistēmu");
-if (!html.includes('<script src="game.js?v=29"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
+if (!html.includes('<script src="game.js?v=30"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
 
 const floorCells = mapRules.buildFloorCells();
 const wallPlan = mapRules.buildWallPlan(floorCells, 64, 48);

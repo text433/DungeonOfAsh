@@ -654,6 +654,7 @@
         .setOrigin(0.18, 0.5).setScale(0.82);
       this.applyWeaponVisual();
       this.updateCarriedWeapon();
+      this.events.on(Phaser.Scenes.Events.POST_UPDATE, this.updateCarriedWeapon, this);
     }
 
     applyWeaponVisual() {
@@ -665,24 +666,35 @@
     }
 
 
+
     updateCarriedWeapon() {
       if (!this.carriedWeapon?.active || !this.player?.active || this.attackAnimating) return;
 
-      // The knight artwork only turns left/right. Keep the sword attached to the
-      // hand instead of rotating it toward the raw joystick vector.
+      // Each knight animation frame has its own hand pose. The weapon is synced
+      // after the physics step so its handle stays on the hand while moving.
       const facingLeft = Boolean(this.player.flipX);
       const side = facingLeft ? -1 : 1;
       const animationKey = this.player.anims.currentAnim?.key || "";
       const frameIndex = Math.max(0, (this.player.anims.currentFrame?.index || 1) - 1) % 4;
-      const isRunning = animationKey === "player-run";
-      const handBob = isRunning ? [0, 1, 0, -1][frameIndex] : [0, 0, 1, 0][frameIndex];
-      const handSway = isRunning ? [0, 1, 0, -1][frameIndex] : 0;
+      const runHandPoses = [
+        { x: 5, y: -12, angle: 28 },
+        { x: 7, y: -11, angle: 40 },
+        { x: 6, y: -9, angle: 52 },
+        { x: 4, y: -10, angle: 36 }
+      ];
+      const idleHandPoses = [
+        { x: 5, y: -11, angle: 34 },
+        { x: 6, y: -12, angle: 38 },
+        { x: 6, y: -11, angle: 42 },
+        { x: 5, y: -10, angle: 36 }
+      ];
+      const pose = animationKey === "player-run" ? runHandPoses[frameIndex] : idleHandPoses[frameIndex];
 
       this.carriedWeapon.setPosition(
-        this.player.x + side * (6 + handSway),
-        this.player.y - 11 + handBob
+        this.player.x + side * pose.x,
+        this.player.y + pose.y
       );
-      this.carriedWeapon.setAngle(facingLeft ? 218 : 38);
+      this.carriedWeapon.setAngle(facingLeft ? 180 - pose.angle : pose.angle);
       this.carriedWeapon.setDepth(this.player.depth + 2);
       this.carriedWeapon.setVisible(true);
     }
