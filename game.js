@@ -10,6 +10,7 @@
   const MAX_HP = 6;
   const mapRules = window.DungeonMapRules;
   const BOSS_CHAMBER = mapRules.BOSS_CHAMBER;
+  const BOSS_GATE_WALL_FRAME = 38;
   const TOUCH_DEVICE = window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
 
   const dom = {
@@ -367,9 +368,10 @@
       // Tall wall columns frame the boss gate while solid columns give the
       // larger rooms readable structure without blocking their main routes.
       [[64, BOSS_CHAMBER.wallY], [71, BOSS_CHAMBER.wallY]].forEach(([x, y]) => {
-        this.add.image(x * TILE + 8, (y + 1) * TILE, "column_wall")
+        const columnBaseline = (y + 2) * TILE;
+        this.add.image(x * TILE + 8, columnBaseline, "column_wall")
           .setOrigin(0.5, 1)
-          .setDepth((y + 1) * TILE - 1);
+          .setDepth(columnBaseline - 1);
       });
 
       const solidDecorations = [
@@ -448,14 +450,21 @@
               : null
           : null;
         if (bossGateFrameKey) {
+          // Keep a full-height straight wall under the transparent arch trim.
+          // The trim shapes the doorway without making these cells look thin.
           this.addWall(
             rule.x,
             rule.y,
-            bossGateFrameKey,
+            "wall_atlas_high",
             { width: TILE, height: TILE, offsetX: 0, offsetY: TILE },
-            undefined,
+            this.highWallFrame(BOSS_GATE_WALL_FRAME),
             "north"
           );
+          this.add.image(
+            rule.x * TILE + 8,
+            (rule.y + 1) * TILE,
+            bossGateFrameKey
+          ).setOrigin(0.5, 1).setDepth(rule.y * TILE + 8);
           return;
         }
         const isTall = rule.facing !== "side";

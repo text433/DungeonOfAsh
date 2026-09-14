@@ -37,7 +37,7 @@ for (const marker of [
   "createFloorUnderlayFrames", "addWallFloorUnderlay", "rule.facing", "HIGH_WALL_TOP_INSET", "highWallFrame",
   "startFollow(this.player, false, 1, 1)", "setRoundPixels(false)", "this.moveVector.lerp(target, smoothing)",
   "createEnemyHealthBar", "triggerSpikeTrap", "column_wall", "solidDecorations",
-  "bossGateFrameKey", "doors_frame_left", "doors_frame_top", "doors_frame_right",
+  "bossGateFrameKey", "BOSS_GATE_WALL_FRAME", "columnBaseline", "doors_frame_left", "doors_frame_top", "doors_frame_right",
   "performAttack", "openChest", "openDoor", "nextFloor"
 ]) {
   if (!game.includes(marker)) throw new Error(`Spēles kodā trūkst ${marker}`);
@@ -62,8 +62,8 @@ if (game.includes("startFollow(this.player, true") || game.includes("setRoundPix
 }
 if (!game.includes("fixedStep: false")) throw new Error("Fizika nav piesaistīta ekrāna kadru ritmam");
 if (!game.includes("roundPixels: false")) throw new Error("Globālā pikseļu noapaļošana nav izslēgta");
-if (!html.includes('<script src="map-rules.js?v=24"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
-if (!html.includes('<script src="game.js?v=24"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
+if (!html.includes('<script src="map-rules.js?v=25"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
+if (!html.includes('<script src="game.js?v=25"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
 
 const floorCells = mapRules.buildFloorCells();
 const wallPlan = mapRules.buildWallPlan(floorCells, 80, 56);
@@ -98,6 +98,12 @@ if (!game.includes("BOSS_CHAMBER.entranceX * TILE") || !game.includes("BOSS_CHAM
 }
 if (!game.includes("BOSS_CHAMBER.gateLeft - 1") || !game.includes("BOSS_CHAMBER.gateRight + 1")) {
   throw new Error("Durvju arkas malas nav piesaistītas blakus sienu flīzēm");
+}
+if (!game.includes("this.highWallFrame(BOSS_GATE_WALL_FRAME)")) {
+  throw new Error("Pie durvju arkas nav saglabāta pilna biezuma ķieģeļu siena");
+}
+if (!game.includes("const columnBaseline = (y + 2) * TILE")) {
+  throw new Error("Boss telpas kolonnas pamatne nav izlīdzināta ar sienas apakšmalu");
 }
 if (!game.includes("(BOSS_CHAMBER.wallY - 1) * TILE")) {
   throw new Error("Virs durvīm trūkst augšējās arkas daļas");
