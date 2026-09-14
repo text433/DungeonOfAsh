@@ -651,7 +651,7 @@
 
       const weapon = progression.weaponConfig();
       this.carriedWeapon = this.add.image(this.player.x, this.player.y - 11, weapon.texture)
-        .setOrigin(0.18, 0.5).setScale(0.82);
+        .setOrigin(0.5, 0.86).setScale(0.74);
       this.applyWeaponVisual();
       this.updateCarriedWeapon();
       this.events.on(Phaser.Scenes.Events.POST_UPDATE, this.updateCarriedWeapon, this);
@@ -677,16 +677,16 @@
       const animationKey = this.player.anims.currentAnim?.key || "";
       const frameIndex = Math.max(0, (this.player.anims.currentFrame?.index || 1) - 1) % 4;
       const runHandPoses = [
-        { x: 5, y: -12, angle: 28 },
-        { x: 7, y: -11, angle: 40 },
-        { x: 6, y: -9, angle: 52 },
-        { x: 4, y: -10, angle: 36 }
+        { x: 5, y: -9, angle: 126 },
+        { x: 6, y: -10, angle: 140 },
+        { x: 5, y: -8, angle: 150 },
+        { x: 4, y: -9, angle: 136 }
       ];
       const idleHandPoses = [
-        { x: 5, y: -11, angle: 34 },
-        { x: 6, y: -12, angle: 38 },
-        { x: 6, y: -11, angle: 42 },
-        { x: 5, y: -10, angle: 36 }
+        { x: 4, y: -9, angle: 132 },
+        { x: 5, y: -10, angle: 136 },
+        { x: 5, y: -9, angle: 134 },
+        { x: 4, y: -8, angle: 130 }
       ];
       const pose = animationKey === "player-run" ? runHandPoses[frameIndex] : idleHandPoses[frameIndex];
 
@@ -694,7 +694,7 @@
         this.player.x + side * pose.x,
         this.player.y + pose.y
       );
-      this.carriedWeapon.setAngle(facingLeft ? 180 + pose.angle : pose.angle);
+      this.carriedWeapon.setAngle(facingLeft ? 360 - pose.angle : pose.angle);
       this.carriedWeapon.setDepth(this.player.depth + 2);
       this.carriedWeapon.setVisible(true);
     }
@@ -1467,7 +1467,7 @@
       this.updateSmithUi();
       const weapon = progression.weaponConfig();
       this.carriedWeapon?.setScale(1.35);
-      this.tweens.add({ targets: this.carriedWeapon, scale: 0.82, duration: 380, ease: "Back.easeOut" });
+      this.tweens.add({ targets: this.carriedWeapon, scale: 0.74, duration: 380, ease: "Back.easeOut" });
       const flare = this.add.circle(this.player.x, this.player.y - 11, 8, weapon.glow || 0xffc766, 0.8)
         .setDepth(this.player.depth + 4).setBlendMode(Phaser.BlendModes.ADD);
       this.tweens.add({ targets: flare, scale: 4, alpha: 0, duration: 520, onComplete: () => flare.destroy() });
