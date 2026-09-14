@@ -677,16 +677,16 @@
       const animationKey = this.player.anims.currentAnim?.key || "";
       const frameIndex = Math.max(0, (this.player.anims.currentFrame?.index || 1) - 1) % 4;
       const runHandPoses = [
-        { x: 2, y: -6, angle: 126 },
-        { x: 3, y: -7, angle: 140 },
-        { x: 2, y: -5, angle: 150 },
-        { x: 1, y: -6, angle: 136 }
+        { x: 1, y: -6, angle: 126 },
+        { x: 2, y: -7, angle: 140 },
+        { x: 1, y: -5, angle: 150 },
+        { x: 0, y: -6, angle: 136 }
       ];
       const idleHandPoses = [
-        { x: 2, y: -6, angle: 132 },
-        { x: 2, y: -7, angle: 136 },
-        { x: 2, y: -6, angle: 134 },
-        { x: 1, y: -5, angle: 130 }
+        { x: 1, y: -6, angle: 132 },
+        { x: 1, y: -7, angle: 136 },
+        { x: 1, y: -6, angle: 134 },
+        { x: 0, y: -5, angle: 130 }
       ];
       const pose = animationKey === "player-run" ? runHandPoses[frameIndex] : idleHandPoses[frameIndex];
 
