@@ -677,25 +677,25 @@
       const animationKey = this.player.anims.currentAnim?.key || "";
       const frameIndex = Math.max(0, (this.player.anims.currentFrame?.index || 1) - 1) % 4;
       const runHandPoses = [
-        { x: 1, y: -6, angle: 126 },
-        { x: 2, y: -7, angle: 140 },
-        { x: 1, y: -5, angle: 150 },
-        { x: 0, y: -6, angle: 136 }
+        { x: 1, y: -7, angle: 42 },
+        { x: 2, y: -8, angle: 48 },
+        { x: 1, y: -6, angle: 38 },
+        { x: 0, y: -7, angle: 44 }
       ];
       const idleHandPoses = [
-        { x: 1, y: -6, angle: 132 },
-        { x: 1, y: -7, angle: 136 },
-        { x: 1, y: -6, angle: 134 },
-        { x: 0, y: -5, angle: 130 }
+        { x: 1, y: -7, angle: 45 },
+        { x: 1, y: -8, angle: 42 },
+        { x: 1, y: -7, angle: 47 },
+        { x: 0, y: -6, angle: 44 }
       ];
       const pose = animationKey === "player-run" ? runHandPoses[frameIndex] : idleHandPoses[frameIndex];
 
       this.carriedWeapon.setPosition(
-        this.player.x + side * pose.x,
+        this.player.x - side * pose.x,
         this.player.y + pose.y
       );
-      this.carriedWeapon.setAngle(facingLeft ? 360 - pose.angle : pose.angle);
-      this.carriedWeapon.setDepth(this.player.depth + 2);
+      this.carriedWeapon.setAngle(facingLeft ? pose.angle : 360 - pose.angle);
+      this.carriedWeapon.setDepth(this.player.depth - 1);
       this.carriedWeapon.setVisible(true);
     }
     spawnEncounters() {
