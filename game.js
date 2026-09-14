@@ -664,21 +664,28 @@
       dom.weaponRank.textContent = `${weapon.name} · +${weapon.damage}`;
     }
 
+
     updateCarriedWeapon() {
       if (!this.carriedWeapon?.active || !this.player?.active || this.attackAnimating) return;
-      const direction = this.lastFacing.clone();
-      if (direction.lengthSq() === 0) direction.set(1, 0);
-      direction.normalize();
-      const angle = Phaser.Math.RadToDeg(Math.atan2(direction.y, direction.x));
+
+      // The knight artwork only turns left/right. Keep the sword attached to the
+      // hand instead of rotating it toward the raw joystick vector.
+      const facingLeft = Boolean(this.player.flipX);
+      const side = facingLeft ? -1 : 1;
+      const animationKey = this.player.anims.currentAnim?.key || "";
+      const frameIndex = Math.max(0, (this.player.anims.currentFrame?.index || 1) - 1) % 4;
+      const isRunning = animationKey === "player-run";
+      const handBob = isRunning ? [0, 1, 0, -1][frameIndex] : [0, 0, 1, 0][frameIndex];
+      const handSway = isRunning ? [0, 1, 0, -1][frameIndex] : 0;
+
       this.carriedWeapon.setPosition(
-        this.player.x + direction.x * 7,
-        this.player.y - 11 + direction.y * 5
+        this.player.x + side * (6 + handSway),
+        this.player.y - 11 + handBob
       );
-      this.carriedWeapon.setAngle(angle + 38);
-      this.carriedWeapon.setDepth(this.player.depth + (direction.y >= -0.1 ? 2 : -1));
+      this.carriedWeapon.setAngle(facingLeft ? 218 : 38);
+      this.carriedWeapon.setDepth(this.player.depth + 2);
       this.carriedWeapon.setVisible(true);
     }
-
     spawnEncounters() {
       const scale = 1 + (this.state.floor - 1) * 0.18;
       const positions = [
