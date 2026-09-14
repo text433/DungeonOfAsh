@@ -134,6 +134,9 @@
     if (!westFloor && !eastFloor) {
       const southCorner = floorCells.has(cellKey(x - 1, y + 1)) || floorCells.has(cellKey(x + 1, y + 1));
       const northCorner = floorCells.has(cellKey(x - 1, y - 1)) || floorCells.has(cellKey(x + 1, y - 1));
+      // A vertical wall meeting a horizontal run is a tall T-junction. Using
+      // the low side-wall atlas here leaves its upper half one tile too low.
+      if (southCorner && northCorner) return "north";
       if (southCorner && !northCorner) return "north";
       if (northCorner && !southCorner) return "south";
     }

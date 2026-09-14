@@ -62,8 +62,8 @@ if (game.includes("startFollow(this.player, true") || game.includes("setRoundPix
 }
 if (!game.includes("fixedStep: false")) throw new Error("Fizika nav piesaistīta ekrāna kadru ritmam");
 if (!game.includes("roundPixels: false")) throw new Error("Globālā pikseļu noapaļošana nav izslēgta");
-if (!html.includes('<script src="map-rules.js?v=25"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
-if (!html.includes('<script src="game.js?v=25"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
+if (!html.includes('<script src="map-rules.js?v=26"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
+if (!html.includes('<script src="game.js?v=26"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
 
 const floorCells = mapRules.buildFloorCells();
 const wallPlan = mapRules.buildWallPlan(floorCells, 80, 56);
@@ -79,11 +79,18 @@ const facingCounts = wallPlan.reduce((counts, rule) => {
   counts[rule.facing] = (counts[rule.facing] || 0) + 1;
   return counts;
 }, {});
-if (facingCounts.north !== 167 || facingCounts.south !== 151 || facingCounts.side !== 179) {
+if (facingCounts.north !== 169 || facingCounts.south !== 151 || facingCounts.side !== 177) {
   throw new Error(`Nepareizi sienu virzieni: ${JSON.stringify(facingCounts)}`);
 }
 
 const bossRoom = mapRules.BOSS_CHAMBER;
+for (const [x, y] of [[bossRoom.left - 1, bossRoom.wallY], [bossRoom.right + 1, bossRoom.wallY]]) {
+  const junction = wallPlan.find((candidate) => candidate.x === x && candidate.y === y);
+  if (!junction || junction.facing !== "north") {
+    throw new Error(`T-veida sienas savienojums nav pilnā augstumā pie ${x},${y}`);
+  }
+}
+
 for (let x = bossRoom.left; x <= bossRoom.right; x += 1) {
   const key = `${x},${bossRoom.wallY}`;
   const isGate = x >= bossRoom.gateLeft && x <= bossRoom.gateRight;
