@@ -534,8 +534,6 @@
       });
 
       this.addLavaFall(19, 17);
-      this.add.image(18 * TILE + 8, 28 * TILE + 8, "weapon_big_hammer").setDepth(28 * TILE + 8);
-      this.add.image(20 * TILE + 8, 28 * TILE + 8, "weapon_knight_sword").setDepth(28 * TILE + 8);
     }
 
     addLavaFall(tileX, wallY) {
