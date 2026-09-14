@@ -41,12 +41,21 @@
     buff: document.getElementById("buff-chip"),
     ability: document.getElementById("ability-button"),
     minimap: document.getElementById("minimap"),
+    minimapPanel: document.getElementById("minimap-panel"),
+    minimapZoom: document.getElementById("minimap-zoom"),
+    minimapClose: document.getElementById("minimap-close"),
+    minimapReopen: document.getElementById("minimap-reopen"),
+    minimapLabel: document.getElementById("minimap-label"),
+    questKicker: document.querySelector(".quest-kicker"),
+    keyStatus: document.getElementById("key-status"),
+    lootToast: document.getElementById("loot-toast"),
     smith: document.getElementById("smith-screen"),
     smithClose: document.getElementById("smith-close"),
     smithUpgrade: document.getElementById("smith-upgrade"),
     smithWeapon: document.getElementById("smith-weapon"),
     smithCost: document.getElementById("smith-cost"),
-    weaponRank: document.getElementById("weapon-rank")
+    weaponRank: document.getElementById("weapon-rank"),
+    armorRank: document.getElementById("armor-rank")
   };
 
   const asset = (name) => `assets/frames/${name}.png`;
@@ -62,6 +71,9 @@
     playerIdle: [0, 1, 2, 3].map((i) => `knight_m_idle_anim_f${i}`),
     playerRun: [0, 1, 2, 3].map((i) => `knight_m_run_anim_f${i}`),
     playerHit: ["knight_m_hit_anim_f0"],
+    scoutIdle: [0, 1, 2, 3].map((i) => `knight_f_idle_anim_f${i}`),
+    scoutRun: [0, 1, 2, 3].map((i) => `knight_f_run_anim_f${i}`),
+    scoutHit: ["knight_f_hit_anim_f0"],
     smithNpc: [0, 1, 2, 3].map((i) => `doc_idle_anim_f${i}`),
     lavaMid: [0, 1, 2].map((i) => `wall_fountain_mid_red_anim_f${i}`),
     lavaBasin: [0, 1, 2].map((i) => `wall_fountain_basin_red_anim_f${i}`),
@@ -84,6 +96,29 @@
     items: ["weapon_golden_sword", "flask_big_red", "ui_heart_full", "ui_heart_half", "ui_heart_empty"]
   };
 
+  const ARMOR_SETS = Object.freeze({
+    steel: {
+      id: "steel",
+      name: "Smagās bruņas",
+      idle: ASSETS.playerIdle,
+      run: ASSETS.playerRun,
+      hit: ASSETS.playerHit[0],
+      speedMultiplier: 1,
+      blockChance: 0.05,
+      bonus: "5% bloks"
+    },
+    scout: {
+      id: "scout",
+      name: "Vieglās bruņas",
+      idle: ASSETS.scoutIdle,
+      run: ASSETS.scoutRun,
+      hit: ASSETS.scoutHit[0],
+      speedMultiplier: 1.1,
+      blockChance: 0,
+      bonus: "+10% ātrums"
+    }
+  });
+
   const FLOOR_UNDERLAY_PIECES = Object.freeze([
     { name: "north-west", dx: -1, dy: -1, x: 0, y: 0, width: 8, height: 8 },
     { name: "north", dx: 0, dy: -1, x: 0, y: 0, width: 16, height: 8 },
@@ -101,8 +136,11 @@
       this.maxHp = MAX_HP + progression.bonuses().maxHp;
       this.hp = Phaser.Math.Clamp(data.hp == null ? this.maxHp : data.hp, 1, this.maxHp);
       this.gold = data.gold || 0;
+      const savedArmor = data.armorId || localStorage.getItem("dungeonOfAshArmor") || "steel";
+      this.armorId = ARMOR_SETS[savedArmor] ? savedArmor : "steel";
       this.hasKey = false;
       this.chestOpened = false;
+      this.armorDropSeen = false;
       this.doorOpened = false;
       this.bossDead = false;
       this.kills = 0;
@@ -334,6 +372,7 @@
       this.smithOpen = false;
       this.attackAnimating = false;
       this.minimapNextAt = 0;
+      this.minimapZoomed = dom.minimapPanel?.classList.contains("is-zoomed") || false;
       this.stepReadyAt = 0;
       this.visitedCells = new Set();
       this.currentVisibleCells = new Set();
@@ -352,7 +391,8 @@
       });
       const allKeys = [
         ...ASSETS.floor, ...ASSETS.walls, ...ASSETS.playerIdle, ...ASSETS.playerRun,
-        ...ASSETS.playerHit, ...ASSETS.smithNpc, ...ASSETS.lavaMid, ...ASSETS.lavaBasin, ...ASSETS.weapons,
+        ...ASSETS.playerHit, ...ASSETS.scoutIdle, ...ASSETS.scoutRun, ...ASSETS.scoutHit,
+        ...ASSETS.smithNpc, ...ASSETS.lavaMid, ...ASSETS.lavaBasin, ...ASSETS.weapons,
         ...ASSETS.zombie, ...ASSETS.goblinIdle, ...ASSETS.goblinRun,
         ...ASSETS.skeletonIdle, ...ASSETS.skeletonRun, ...ASSETS.impIdle, ...ASSETS.impRun,
         ...ASSETS.townNpc, ...ASSETS.guideNpc, ...ASSETS.orcIdle, ...ASSETS.orcRun,
@@ -363,6 +403,7 @@
 
     create() {
       this.createAnimations();
+      this.createLootTextures();
       this.inputSystem = new InputSystem(this);
       this.walls = this.physics.add.staticGroup();
       this.props = this.physics.add.staticGroup();
@@ -399,8 +440,10 @@
         if (this.anims.exists(key)) return;
         this.anims.create({ key, frames: frames.map((frame) => ({ key: frame })), frameRate, repeat });
       };
-      create("player-idle", ASSETS.playerIdle, 5);
-      create("player-run", ASSETS.playerRun, 9);
+      create("player-steel-idle", ASSETS.playerIdle, 5);
+      create("player-steel-run", ASSETS.playerRun, 9);
+      create("player-scout-idle", ASSETS.scoutIdle, 5);
+      create("player-scout-run", ASSETS.scoutRun, 9);
       create("smith-npc-idle", ASSETS.smithNpc, 5);
       create("lava-flow", ASSETS.lavaMid, 8);
       create("lava-basin", ASSETS.lavaBasin, 7);
@@ -420,6 +463,23 @@
       create("coin-spin", ASSETS.coin, 9);
       create("spikes", ["floor_spikes_anim_f0", "floor_spikes_anim_f1", "floor_spikes_anim_f2", "floor_spikes_anim_f3"], 5);
       create("chest-open", ASSETS.chest, 8, 0);
+    }
+
+    createLootTextures() {
+      if (this.textures.exists("loot-key")) return;
+      const graphics = this.make.graphics({ x: 0, y: 0, add: false });
+      graphics.fillStyle(0x3b2514, 1);
+      graphics.fillRect(2, 3, 8, 8);
+      graphics.fillRect(8, 6, 7, 4);
+      graphics.fillRect(12, 9, 3, 4);
+      graphics.fillStyle(0xffd36d, 1);
+      graphics.fillRect(2, 2, 7, 7);
+      graphics.fillRect(8, 5, 7, 3);
+      graphics.fillRect(12, 8, 3, 4);
+      graphics.fillStyle(0x6d3a1d, 1);
+      graphics.fillRect(4, 4, 3, 3);
+      graphics.generateTexture("loot-key", 16, 14);
+      graphics.destroy();
     }
 
     buildDungeon() {
@@ -457,9 +517,9 @@
       ).setOrigin(0.5, 1).setDepth(this.door.y - 1);
 
       this.chests = [
-        this.createChest(7, 11, true),
-        this.createChest(30, 19, false),
-        this.createChest(50, 37, false)
+        this.createChest(7, 11, 0.42),
+        this.createChest(30, 19, 0.42),
+        this.createChest(50, 37, 0.42)
       ];
 
       this.guideNpc = this.add.sprite(5 * TILE + 8, 21 * TILE + 8, ASSETS.guideNpc[0])
@@ -581,9 +641,9 @@
       this.tweens.add({ targets: glow, alpha: { from: 0.09, to: 0.24 }, scale: { from: 0.88, to: 1.15 }, duration: 850, yoyo: true, repeat: -1 });
     }
 
-    createChest(tileX, tileY, hasKey) {
+    createChest(tileX, tileY, keyChance = 0.42) {
       const chest = this.props.create(tileX * TILE + 8, tileY * TILE + 8, ASSETS.chest[0]);
-      chest.setDepth(chest.y).setData({ opened: false, hasKey }).refreshBody();
+      chest.setDepth(chest.y).setData({ opened: false, keyChance }).refreshBody();
       chest.body.setSize(15, 11).setOffset(0, 5);
       return chest;
     }
@@ -676,8 +736,9 @@
       const spawn = this.area === "town"
         ? this.respawnPoint
         : { x: this.respawnPoint?.x || 7 * TILE + 8, y: this.respawnPoint?.y || 23 * TILE + 8 };
-      this.player = this.physics.add.sprite(spawn.x, spawn.y, ASSETS.playerIdle[0]);
-      this.player.setOrigin(0.5, 1).setDepth(this.player.y).play("player-idle");
+      const armor = this.armorConfig();
+      this.player = this.physics.add.sprite(spawn.x, spawn.y, armor.idle[0]);
+      this.player.setOrigin(0.5, 1).setDepth(this.player.y).play(this.playerAnimation("idle"));
       this.player.setCollideWorldBounds(true);
       this.player.body.setSize(10, 9).setOffset(3, 18);
 
@@ -687,6 +748,24 @@
       this.applyWeaponVisual();
       this.updateCarriedWeapon();
       this.events.on(Phaser.Scenes.Events.POST_UPDATE, this.updateCarriedWeapon, this);
+    }
+
+    armorConfig() {
+      return ARMOR_SETS[this.state.armorId] || ARMOR_SETS.steel;
+    }
+
+    playerAnimation(action) {
+      return `player-${this.armorConfig().id}-${action}`;
+    }
+
+    applyArmorVisual() {
+      const armor = this.armorConfig();
+      localStorage.setItem("dungeonOfAshArmor", armor.id);
+      dom.armorRank.textContent = `${armor.name} · ${armor.bonus}`;
+      if (!this.player?.active) return;
+      this.player.anims.stop();
+      this.player.setTexture(armor.idle[0]);
+      this.player.play(this.playerAnimation("idle"));
     }
 
     applyWeaponVisual() {
@@ -720,7 +799,7 @@
         { x: 1, y: -7, angle: 47 },
         { x: 0, y: -6, angle: 44 }
       ];
-      const pose = animationKey === "player-run" ? runHandPoses[frameIndex] : idleHandPoses[frameIndex];
+      const pose = animationKey.endsWith("-run") ? runHandPoses[frameIndex] : idleHandPoses[frameIndex];
 
       this.carriedWeapon.setPosition(
         this.player.x - side * pose.x,
@@ -870,7 +949,7 @@
     update(time, delta) {
       if (!this.running || this.ended || this.respawning) return;
       const movement = this.inputSystem.movement(delta);
-      const speed = 76 * progression.bonuses().speedMultiplier;
+      const speed = 76 * progression.bonuses().speedMultiplier * this.armorConfig().speedMultiplier;
       this.player.setVelocity(movement.x * speed, movement.y * speed);
       if (movement.lengthSq() > 0 && time >= this.stepReadyAt) {
         sound.step();
@@ -879,9 +958,9 @@
       if (movement.lengthSq() > 0) {
         this.lastFacing.copy(movement);
         if (Math.abs(movement.x) > 0.1) this.player.setFlipX(movement.x < 0);
-        if (!this.attackAnimating && this.player.anims.currentAnim?.key !== "player-run") this.player.play("player-run");
-      } else if (!this.attackAnimating && this.player.anims.currentAnim?.key !== "player-idle") {
-        this.player.play("player-idle");
+        if (!this.attackAnimating && this.player.anims.currentAnim?.key !== this.playerAnimation("run")) this.player.play(this.playerAnimation("run"));
+      } else if (!this.attackAnimating && this.player.anims.currentAnim?.key !== this.playerAnimation("idle")) {
+        this.player.play(this.playerAnimation("idle"));
       }
       this.player.setDepth(this.player.y);
       this.updateCarriedWeapon();
@@ -968,67 +1047,77 @@
     }
 
     renderMinimap(time) {
-      if (!dom.minimap || time < this.minimapNextAt || !this.floorCells) return;
+      if (!dom.minimap || dom.minimapPanel?.classList.contains("is-hidden") || time < this.minimapNextAt || !this.floorCells) return;
       this.minimapNextAt = time + 140;
       const ctx = dom.minimap.getContext("2d");
       const width = dom.minimap.width;
       const height = dom.minimap.height;
       ctx.clearRect(0, 0, width, height);
-      ctx.fillStyle = "#030207";
-      ctx.fillRect(0, 0, width, height);
 
       const cells = Array.from(this.floorCells, (entry) => entry.split(",").map(Number));
-      const minX = Math.min(...cells.map(([x]) => x));
-      const maxX = Math.max(...cells.map(([x]) => x));
-      const minY = Math.min(...cells.map(([, y]) => y));
-      const maxY = Math.max(...cells.map(([, y]) => y));
-      const scale = Math.min((width - 12) / (maxX - minX + 1), (height - 12) / (maxY - minY + 1));
+      let minX = Math.min(...cells.map(([x]) => x));
+      let maxX = Math.max(...cells.map(([x]) => x));
+      let minY = Math.min(...cells.map(([, y]) => y));
+      let maxY = Math.max(...cells.map(([, y]) => y));
+      if (this.minimapZoomed) {
+        const centerX = Math.floor(this.player.x / TILE);
+        const centerY = Math.floor(this.player.y / TILE);
+        minX = centerX - 11;
+        maxX = centerX + 11;
+        minY = centerY - 8;
+        maxY = centerY + 8;
+      }
+      const scale = Math.min((width - 8) / (maxX - minX + 1), (height - 8) / (maxY - minY + 1));
       const ox = (width - (maxX - minX + 1) * scale) / 2;
       const oy = (height - (maxY - minY + 1) * scale) / 2;
       const px = (x) => ox + (x - minX) * scale + scale / 2;
       const py = (y) => oy + (y - minY) * scale + scale / 2;
-      const paintCell = (x, y, color) => {
-        ctx.fillStyle = color;
-        ctx.fillRect(ox + (x - minX) * scale, oy + (y - minY) * scale, Math.ceil(scale), Math.ceil(scale));
-      };
 
-      cells.forEach(([x, y]) => {
-        const key = `${x},${y}`;
-        if (!this.visitedCells.has(key)) return;
-        paintCell(x, y, this.currentVisibleCells.has(key) ? "#68565b" : "#292328");
-      });
+      // Diablo stila karte: tikai jau atklātās sienas, bez grīdas,
+      // radījumiem un bez gaišā apļa, kas nodotu redzamības rādiusu.
       this.wallCells?.forEach((entry) => {
         if (!this.visitedCells.has(entry)) return;
         const [x, y] = entry.split(",").map(Number);
-        paintCell(x, y, this.currentVisibleCells.has(entry) ? "#b49a86" : "#51454a");
+        if (x < minX || x > maxX || y < minY || y > maxY) return;
+        ctx.fillStyle = "rgba(218, 197, 173, 0.76)";
+        ctx.fillRect(
+          ox + (x - minX) * scale,
+          oy + (y - minY) * scale,
+          Math.max(1.25, Math.ceil(scale)),
+          Math.max(1.25, Math.ceil(scale))
+        );
       });
 
-      const dot = (x, y, color, radius = 2.2, nearbyOnly = false) => {
-        const discovered = nearbyOnly ? this.isWorldTileVisible(x, y) : this.isWorldTileExplored(x, y);
-        if (!discovered) return;
-        ctx.beginPath();
-        ctx.arc(px(Math.floor(x / TILE)), py(Math.floor(y / TILE)), radius, 0, Math.PI * 2);
-        ctx.fillStyle = color;
-        ctx.fill();
-      };
-      if (this.area === "town") {
-        dot(this.townNpc?.x, this.townNpc?.y, "#9ce7ff", 2.6);
-        dot(this.smithNpc?.x, this.smithNpc?.y, "#ff9b45", 2.6);
-        dot(this.townStairs?.x, this.townStairs?.y, "#f6d36d", 2.7);
-      } else {
-        dot(this.guideNpc?.x, this.guideNpc?.y, "#9ce7ff", 2.6);
-        this.chests?.filter((chest) => !chest.getData("opened")).forEach((chest) => dot(chest.x, chest.y, "#ffc05a", 2));
-        this.enemies?.getChildren().filter((enemy) => enemy.active).forEach((enemy) => {
-          dot(enemy.x, enemy.y, enemy.getData("type") === "boss" ? "#ff3d59" : "#c75a58", enemy.getData("type") === "boss" ? 3 : 1.5, true);
-        });
-        if (this.stairs) dot(this.stairs.x, this.stairs.y, "#f6d36d", 2.7);
-      }
       const playerTileX = Math.floor(this.player.x / TILE);
       const playerTileY = Math.floor(this.player.y / TILE);
+      if (playerTileX < minX || playerTileX > maxX || playerTileY < minY || playerTileY > maxY) return;
       ctx.beginPath();
-      ctx.arc(px(playerTileX), py(playerTileY), 3, 0, Math.PI * 2);
-      ctx.fillStyle = "#82efff";
+      ctx.arc(px(playerTileX), py(playerTileY), this.minimapZoomed ? 4.2 : 3.25, 0, Math.PI * 2);
+      ctx.fillStyle = "#74efff";
       ctx.fill();
+      ctx.strokeStyle = "rgba(230, 255, 255, 0.82)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    toggleMinimap(show) {
+      const visible = typeof show === "boolean" ? show : dom.minimapPanel?.classList.contains("is-hidden");
+      dom.minimapPanel?.classList.toggle("is-hidden", !visible);
+      dom.minimapReopen?.classList.toggle("is-hidden", visible);
+      this.minimapNextAt = 0;
+      if (visible) this.renderMinimap(this.time.now);
+    }
+
+    toggleMinimapZoom() {
+      this.minimapZoomed = !this.minimapZoomed;
+      dom.minimapPanel?.classList.toggle("is-zoomed", this.minimapZoomed);
+      if (dom.minimapZoom) {
+        dom.minimapZoom.textContent = this.minimapZoomed ? "−" : "＋";
+        dom.minimapZoom.setAttribute("aria-label", this.minimapZoomed ? "Attālināt karti" : "Pietuvināt karti");
+      }
+      if (dom.minimapLabel) dom.minimapLabel.textContent = this.minimapZoomed ? "KARTE · TUVUMĀ" : "KARTE · SIENAS";
+      this.minimapNextAt = 0;
+      this.renderMinimap(this.time.now);
     }
     castAshWard(time) {
       const bonuses = progression.bonuses();
@@ -1059,7 +1148,7 @@
       const weaponConfig = progression.weaponConfig();
       this.carriedWeapon?.setVisible(false);
       this.player.anims.stop();
-      this.player.setTexture(ASSETS.playerHit[0]);
+      this.player.setTexture(this.armorConfig().hit);
       this.player.x += direction.x * 2;
       this.player.y += direction.y * 2;
 
@@ -1080,7 +1169,7 @@
       this.time.delayedCall(155, () => {
         if (!this.player?.active) return;
         this.attackAnimating = false;
-        this.player.play("player-idle");
+        this.player.play(this.playerAnimation("idle"));
         this.updateCarriedWeapon();
       });
       sound.blip(210 + weaponConfig.level * 35, 0.08, "sawtooth", 0.026);
@@ -1177,24 +1266,69 @@
     }
 
     spawnDrop(x, y, type, value) {
-      const key = type === "coin" ? ASSETS.coin[0] : "flask_big_red";
-      const drop = this.drops.create(x, y, key).setDepth(y + 2).setData({ type, value });
+      const armor = type === "armor" ? (ARMOR_SETS[value] || ARMOR_SETS.scout) : null;
+      const key = type === "coin"
+        ? ASSETS.coin[0]
+        : type === "potion"
+          ? "flask_big_red"
+          : type === "key"
+            ? "loot-key"
+            : armor.idle[0];
+      const targetX = x + Phaser.Math.Between(-14, 14);
+      const targetY = y + Phaser.Math.Between(-11, 9);
+      const drop = this.drops.create(x, y - 3, key)
+        .setDepth(targetY + 2)
+        .setData({ type, value, collectAt: this.time.now + 430 });
+      if (type === "armor") drop.setScale(0.86);
+      if (type === "key") drop.setScale(0.9);
       drop.body.setCircle(type === "coin" ? 4 : 5);
       if (type === "coin") drop.play("coin-spin");
-      this.tweens.add({ targets: drop, y: y - 5, duration: 260, yoyo: true, ease: "Sine.easeOut" });
+      this.tweens.add({
+        targets: drop,
+        x: targetX,
+        y: targetY,
+        duration: 310,
+        ease: "Quad.easeOut",
+        onComplete: () => {
+          if (!drop.active) return;
+          this.tweens.add({ targets: drop, y: targetY - 3, duration: 520, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+        }
+      });
     }
 
     collectDrop(_player, drop) {
+      if (this.time.now < drop.getData("collectAt")) return;
       const type = drop.getData("type");
       if (type === "coin") {
         this.state.addGold(drop.getData("value"));
         sound.blip(620, 0.07, "square", 0.025);
-      } else {
+      } else if (type === "potion") {
         this.state.heal(drop.getData("value"));
         sound.blip(410, 0.11, "sine", 0.035);
+        this.showLootToast("DZĪVĪBAS PUDELE · +2 HP");
+      } else if (type === "key") {
+        this.state.hasKey = true;
+        this.state.chestOpened = true;
+        sound.blip(810, 0.2, "triangle", 0.045);
+        this.showLootToast("ATRASTA DĒMONA ATSLĒGA", "key");
+      } else if (type === "armor") {
+        const armorId = ARMOR_SETS[drop.getData("value")] ? drop.getData("value") : "scout";
+        this.state.armorId = armorId;
+        this.applyArmorVisual();
+        sound.blip(540, 0.2, "triangle", 0.045);
+        this.cameras.main.flash(120, 64, 150, 170, false);
+        this.showLootToast(`APRĪKOTS · ${this.armorConfig().name}`, "armor");
       }
       drop.disableBody(true, true);
       this.updateHud();
+    }
+
+    showLootToast(message, type = "") {
+      if (!dom.lootToast) return;
+      dom.lootToast.textContent = message;
+      dom.lootToast.className = `loot-toast ${type}`.trim();
+      this.lootToastTimer?.remove(false);
+      this.lootToastTimer = this.time.delayedCall(1750, () => dom.lootToast.classList.add("is-hidden"));
     }
 
     updateEnemies(time) {
@@ -1285,8 +1419,10 @@
 
     applyPlayerDamage(amount) {
       const bonuses = progression.bonuses();
-      if (bonuses.blockChance && Math.random() < bonuses.blockChance) {
+      const blockChance = Math.min(0.75, bonuses.blockChance + this.armorConfig().blockChance);
+      if (blockChance && Math.random() < blockChance) {
         sound.blip(710, 0.08, "square", 0.025);
+        this.showLootToast("BRUŅAS BLOĶĒJA SITIENU", "armor");
         return 0;
       }
       const reduced = this.time.now < this.wardEndsAt ? Math.max(1, Math.ceil(amount * 0.5)) : amount;
@@ -1395,16 +1531,22 @@
       if (!chest || chest.getData("opened")) return;
       chest.setData("opened", true);
       chest.play("chest-open");
-      if (chest.getData("hasKey")) {
-        this.state.hasKey = true;
-        this.state.chestOpened = true;
+      this.state.chestOpened = true;
+      this.spawnDrop(chest.x, chest.y - 7, "coin", Phaser.Math.Between(3, 8));
+      if (Math.random() < 0.34) this.spawnDrop(chest.x, chest.y - 7, "coin", Phaser.Math.Between(2, 5));
+      if (Math.random() < 0.58) this.spawnDrop(chest.x, chest.y - 7, "potion", 2);
+      if (!this.state.hasKey && !this.state.doorOpened && Math.random() < chest.getData("keyChance")) {
+        this.spawnDrop(chest.x, chest.y - 7, "key", 1);
       }
-      this.state.addGold(chest.getData("hasKey") ? 5 : 3);
-      this.state.heal(chest.getData("hasKey") ? 2 : 1);
+      const unopenedChests = this.chests.filter((candidate) => !candidate.getData("opened")).length;
+      if (Math.random() < 0.36 || (!this.state.armorDropSeen && unopenedChests === 0)) {
+        const armorId = this.state.armorId === "steel" ? "scout" : "steel";
+        this.state.armorDropSeen = true;
+        this.spawnDrop(chest.x, chest.y - 7, "armor", armorId);
+      }
       sound.blip(480, 0.16, "triangle", 0.04);
       this.cameras.main.flash(130, 138, 85, 30, false);
       this.updateHud();
-      this.updateObjective();
     }
 
     openDoor() {
@@ -1480,14 +1622,22 @@
 
     updateObjective() {
       if (this.area === "town") {
-        dom.objective.textContent = "Atrodi trepes uz dungeonu vai runā ar burvi";
+        dom.questKicker.textContent = "NĀKAMAIS SOLIS";
+        dom.objective.textContent = "Ieej dungeonā pa trepēm";
+        dom.keyStatus.classList.add("is-hidden");
         return;
       }
-      if (this.state.bossDead) dom.objective.textContent = "Ieej kāpnēs uz nākamo stāvu";
-      else if (this.state.doorOpened && this.boss?.active) dom.objective.textContent = `Pelnu Dēmons · HP ${this.boss.getData("hp")}/${this.boss.getData("maxHp")}`;
-      else if (this.state.doorOpened) dom.objective.textContent = "Sakauj Pelnu Dēmonu";
-      else if (this.state.hasKey) dom.objective.textContent = "Atver dēmona zāles durvis";
-      else dom.objective.textContent = "Atrodi lādi ar atslēgu";
+      dom.questKicker.textContent = "IZVĒLES UZDEVUMS";
+      if (this.state.bossDead) dom.objective.textContent = "Boss sakauts · kāp uz nākamo stāvu";
+      else if (this.state.doorOpened && this.boss?.active) dom.objective.textContent = `Sakauj stāva bosu · HP ${this.boss.getData("hp")}/${this.boss.getData("maxHp")}`;
+      else dom.objective.textContent = "Sakauj stāva bosu";
+      dom.keyStatus.classList.toggle("is-hidden", !this.state.hasKey && !this.state.doorOpened);
+      dom.keyStatus.textContent = this.state.doorOpened ? "DURVIS ATVĒRTAS" : "ATSLĒGA ATRASTA";
+      if (!this.state.doorOpened) {
+        const icon = document.createElement("i");
+        icon.setAttribute("aria-hidden", "true");
+        dom.keyStatus.prepend(icon);
+      }
     }
 
 
@@ -1506,6 +1656,7 @@
       dom.area.textContent = this.area === "town" ? "Pilsēta" : "Stāvs";
       dom.xp.style.width = `${Math.min(100, (this.state.kills / Math.max(1, this.state.totalEnemies)) * 100)}%`;
       this.applyWeaponVisual();
+      dom.armorRank.textContent = `${this.armorConfig().name} · ${this.armorConfig().bonus}`;
       this.updateObjective();
       this.updateProgressionUi();
       if (this.smithOpen) this.updateSmithUi();
@@ -1701,6 +1852,9 @@
   dom.talentClose.addEventListener("click", () => currentScene()?.closeTalentTree());
   dom.smithClose.addEventListener("click", () => currentScene()?.closeSmith());
   dom.smithUpgrade.addEventListener("click", () => currentScene()?.upgradeWeapon());
+  dom.minimapZoom.addEventListener("click", () => currentScene()?.toggleMinimapZoom());
+  dom.minimapClose.addEventListener("click", () => currentScene()?.toggleMinimap(false));
+  dom.minimapReopen.addEventListener("click", () => currentScene()?.toggleMinimap(true));
   document.querySelectorAll("[data-talent]").forEach((button) => {
     button.addEventListener("click", () => {
       const scene = currentScene();

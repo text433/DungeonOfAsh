@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0b090d" />
     <meta name="description" content="Dungeon of Ash — spēlējama HTML5 dungeon piedzīvojumu spēle." />
     <title>Dungeon of Ash</title>
-    <link rel="stylesheet" href="style.css?v=28" />
+    <link rel="stylesheet" href="style.css?v=41" />
   </head>
   <body>
     <main id="game-shell" aria-label="Dungeon of Ash spēle">
@@ -18,14 +18,24 @@
           <div id="hearts" aria-label="Dzīvība"></div>
           <div class="xp-track"><div id="xp-fill"></div></div>
           <div id="weapon-rank" class="weapon-rank">Ceļinieka zobens · +0</div>
+          <div id="armor-rank" class="armor-rank">Smagās bruņas · 5% bloks</div>
         </div>
 
         <aside id="minimap-panel" class="minimap-panel" aria-label="Mazā karte">
+          <div class="minimap-actions">
+            <button id="minimap-zoom" type="button" aria-label="Pietuvināt karti">＋</button>
+            <button id="minimap-close" type="button" aria-label="Aizvērt karti">×</button>
+          </div>
           <canvas id="minimap" width="180" height="132"></canvas>
-          <span>KARTE</span>
+          <span id="minimap-label">KARTE · SIENAS</span>
         </aside>
+        <button id="minimap-reopen" class="minimap-reopen is-hidden" type="button" aria-label="Parādīt karti">KARTE</button>
 
-        <div id="objective" class="objective-chip">Atrodi lādi ar atslēgu</div>
+        <aside id="quest-panel" class="quest-panel" aria-label="Stāva uzdevums">
+          <span class="quest-kicker">IZVĒLES UZDEVUMS</span>
+          <strong id="objective">Sakauj stāva bosu</strong>
+          <span id="key-status" class="key-status is-hidden"><i aria-hidden="true"></i> ATSLĒGA ATRASTA</span>
+        </aside>
 
         <div class="hud-panel run-panel">
           <span class="gold-dot"></span><strong id="gold">0</strong>
@@ -42,6 +52,7 @@
       </section>
 
       <div id="prompt" class="prompt is-hidden">Nospied E</div>
+      <div id="loot-toast" class="loot-toast is-hidden" role="status" aria-live="polite"></div>
 
       <section id="mobile-controls" class="is-hidden" aria-label="Skārienvadība">
         <div id="joystick-zone" class="joystick-zone" aria-label="Kustības joystick">
@@ -63,7 +74,7 @@
         <p class="intro">Šī pamācība būs redzama tikai pirmo reizi.</p>
         <div class="intro-steps">
           <span><b>1</b> Pilsētā atrodi trepes uz dungeonu</span>
-          <span><b>2</b> Lādes atveras pašas, kad pieej klāt</span>
+          <span><b>2</b> Lādes atveras pašas un izmet nejaušu lootu</span>
           <span><b>3</b> Burvis atver bonusu koku, kalējs uzlabo zobenu</span>
         </div>
         <button id="start-button" class="primary-button" type="button">SĀKT SPĒLI</button>
@@ -155,6 +166,6 @@
     <script src="vendor/phaser.min.js"></script>
     <script src="map-rules.js?v=28"></script>
     <script src="progression.js?v=28"></script>
-    <script src="game.js?v=40"></script>
+    <script src="game.js?v=41"></script>
   </body>
 </html>

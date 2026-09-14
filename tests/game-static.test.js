@@ -10,6 +10,9 @@ const required = [
   "game.js",
   "vendor/phaser.min.js",
   "assets/frames/knight_m_idle_anim_f0.png",
+  "assets/frames/knight_f_idle_anim_f0.png",
+  "assets/frames/knight_f_run_anim_f3.png",
+  "assets/frames/knight_f_hit_anim_f0.png",
   "assets/frames/atlas_walls_low-16x16.png",
   "assets/frames/atlas_walls_high-16x32.png",
   "assets/frames/big_demon_idle_anim_f0.png",
@@ -39,7 +42,7 @@ const game = fs.readFileSync(path.join(root, "game.js"), "utf8");
 const mapRules = require(path.join(root, "map-rules.js"));
 const { ProgressionSystem } = require(path.join(root, "progression.js"));
 
-for (const id of ["game", "hud", "mobile-controls", "joystick-base", "joystick-knob", "start-button", "result-screen", "talent-screen", "talent-button", "ability-button", "minimap", "smith-screen", "smith-upgrade", "weapon-rank"]) {
+for (const id of ["game", "hud", "mobile-controls", "joystick-base", "joystick-knob", "start-button", "result-screen", "talent-screen", "talent-button", "ability-button", "minimap", "minimap-zoom", "minimap-close", "minimap-reopen", "quest-panel", "key-status", "loot-toast", "smith-screen", "smith-upgrade", "weapon-rank", "armor-rank"]) {
   if (!html.includes(`id="${id}"`)) throw new Error(`HTML trūkst #${id}`);
 }
 
@@ -53,6 +56,8 @@ for (const marker of [
   "buildTown", "townStairs", "town-npc-idle", "guide-npc-idle", "updateAutoChests", "respawnAtGuide",
   "updateEnemyPatrol", "updateBossPatrol", "patrolRadius", "aggroRadius", "castAshWard", "openTalentTree",
   "renderMinimap", "createFogOfWar", "updateFogOfWar", "const revealRadius = 7", "this.fogGraphics.setVisible(false)", "visitedCells", "currentVisibleCells", "isWorldTileVisible", "openSmith", "upgradeWeapon", "ensureSound", "sound.step()", "createBuffer", "updateCarriedWeapon", "createAttackFx", "addLavaFall",
+  "ARMOR_SETS", "player-steel-idle", "player-scout-idle", "applyArmorVisual", "speedMultiplier", "blockChance",
+  "createLootTextures", "loot-key", "collectAt", "toggleMinimapZoom", "toggleMinimap(false)", "Sakauj stāva bosu",
   "Phaser.Scenes.Events.POST_UPDATE", "runHandPoses", "idleHandPoses",
   "setOrigin(0.5, 0.95).setScale(0.74)", "facingLeft ? pose.angle : 360 - pose.angle",
   "this.carriedWeapon.setDepth(this.player.depth + 2)",
@@ -82,7 +87,16 @@ if (!game.includes("fixedStep: false")) throw new Error("Fizika nav piesaistīta
 if (!game.includes("roundPixels: false")) throw new Error("Globālā pikseļu noapaļošana nav izslēgta");
 if (!html.includes('<script src="map-rules.js?v=28"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
 if (!html.includes('<script src="progression.js?v=28"></script>')) throw new Error("HTML neielādē progresa sistēmu");
-if (!html.includes('<script src="game.js?v=40"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
+if (!html.includes('<script src="game.js?v=41"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
+if (!html.includes('<link rel="stylesheet" href="style.css?v=41" />')) throw new Error("HTML neielādē jaunāko HUD noformējumu");
+
+const minimapSource = game.slice(game.indexOf("    renderMinimap(time) {"), game.indexOf("    toggleMinimap(show) {"));
+for (const forbidden of ["this.enemies", "this.chests", "currentVisibleCells.has", "fillRect(0, 0, width, height)"]) {
+  if (minimapSource.includes(forbidden)) throw new Error(`Minikarte joprojām rāda aizliegto slāni: ${forbidden}`);
+}
+if (!minimapSource.includes("this.wallCells") || !minimapSource.includes("this.visitedCells.has")) {
+  throw new Error("Minikarte nerāda tikai jau atklātās sienas");
+}
 
 const floorCells = mapRules.buildFloorCells();
 const wallPlan = mapRules.buildWallPlan(floorCells, 64, 48);
