@@ -464,16 +464,15 @@
       });
 
       [
-        [12, 19], [24, 26], [32, 17], [42, 26], [52, 17], [29, 36], [46, 40], [54, 40]
-      ].forEach(([x, y], index) => {
-        this.add.image(x * TILE + 8, y * TILE + 8, index % 3 === 0 ? "skull" : "wall_hole_2")
-          .setDepth(y * TILE + 8);
+        [12, 19], [24, 26], [42, 26], [29, 36], [46, 40]
+      ].forEach(([x, y]) => {
+        this.add.image(x * TILE + 8, y * TILE + 8, "skull").setDepth(y * TILE + 8);
       });
 
       this.addLavaFall(24, 14);
       this.addLavaFall(42, 15);
       this.addLavaFall(45, 6);
-      this.addLavaFall(29, 33);
+      this.addLavaFall(34, 33);
 
       this.spikeTraps = [
         [12, 12], [27, 18], [51, 21], [33, 37], [48, 34]
