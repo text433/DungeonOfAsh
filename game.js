@@ -905,11 +905,22 @@
 
     createFogOfWar() {
       this.fogGraphics = this.add.graphics().setDepth(1000000);
+      if (this.area === "town") {
+        this.fogGraphics.setVisible(false);
+        for (let y = 0; y < MAP_H; y += 1) {
+          for (let x = 0; x < MAP_W; x += 1) {
+            const key = `${x},${y}`;
+            this.visitedCells.add(key);
+            this.currentVisibleCells.add(key);
+          }
+        }
+        return;
+      }
       this.updateFogOfWar(true);
     }
 
     updateFogOfWar(force = false) {
-      if (!this.player?.active || !this.fogGraphics) return;
+      if (this.area === "town" || !this.player?.active || !this.fogGraphics) return;
       const centerX = Math.floor(this.player.x / TILE);
       const centerY = Math.floor(this.player.y / TILE);
       const tileKey = `${centerX},${centerY}`;
@@ -917,7 +928,7 @@
       this.lastFogTile = tileKey;
       this.currentVisibleCells.clear();
 
-      const revealRadius = 5;
+      const revealRadius = 7;
       for (let dy = -revealRadius; dy <= revealRadius; dy += 1) {
         for (let dx = -revealRadius; dx <= revealRadius; dx += 1) {
           if (dx * dx + dy * dy > revealRadius * revealRadius) continue;
