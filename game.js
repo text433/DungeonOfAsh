@@ -695,7 +695,7 @@
         this.player.y + pose.y
       );
       this.carriedWeapon.setAngle(facingLeft ? pose.angle : 360 - pose.angle);
-      this.carriedWeapon.setDepth(this.player.depth - 1);
+      this.carriedWeapon.setDepth(this.player.depth + 2);
       this.carriedWeapon.setVisible(true);
     }
     spawnEncounters() {

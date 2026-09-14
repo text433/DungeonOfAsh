@@ -55,7 +55,7 @@ for (const marker of [
   "renderMinimap", "openSmith", "upgradeWeapon", "updateCarriedWeapon", "createAttackFx", "addLavaFall",
   "Phaser.Scenes.Events.POST_UPDATE", "runHandPoses", "idleHandPoses",
   "setOrigin(0.5, 0.95).setScale(0.74)", "facingLeft ? pose.angle : 360 - pose.angle",
-  "this.carriedWeapon.setDepth(this.player.depth - 1)",
+  "this.carriedWeapon.setDepth(this.player.depth + 2)",
   "lava-flow", "playerHit", "dungeonOfAshIntroSeenV1"
 ]) {
   if (!game.includes(marker)) throw new Error(`Spēles kodā trūkst ${marker}`);
@@ -82,7 +82,7 @@ if (!game.includes("fixedStep: false")) throw new Error("Fizika nav piesaistīta
 if (!game.includes("roundPixels: false")) throw new Error("Globālā pikseļu noapaļošana nav izslēgta");
 if (!html.includes('<script src="map-rules.js?v=28"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
 if (!html.includes('<script src="progression.js?v=28"></script>')) throw new Error("HTML neielādē progresa sistēmu");
-if (!html.includes('<script src="game.js?v=35"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
+if (!html.includes('<script src="game.js?v=36"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
 
 const floorCells = mapRules.buildFloorCells();
 const wallPlan = mapRules.buildWallPlan(floorCells, 64, 48);
