@@ -694,7 +694,7 @@
         this.player.x + side * pose.x,
         this.player.y + pose.y
       );
-      this.carriedWeapon.setAngle(facingLeft ? 180 - pose.angle : pose.angle);
+      this.carriedWeapon.setAngle(facingLeft ? 180 + pose.angle : pose.angle);
       this.carriedWeapon.setDepth(this.player.depth + 2);
       this.carriedWeapon.setVisible(true);
     }
