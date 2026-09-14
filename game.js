@@ -335,6 +335,9 @@
       this.attackAnimating = false;
       this.minimapNextAt = 0;
       this.stepReadyAt = 0;
+      this.visitedCells = new Set();
+      this.currentVisibleCells = new Set();
+      this.lastFogTile = "";
     }
 
     preload() {
@@ -376,6 +379,7 @@
       else this.state.totalEnemies = 0;
       this.createCollisions();
       this.configureCamera();
+      this.createFogOfWar();
       this.updateHud();
 
       this.ready = true;
@@ -894,7 +898,62 @@
       this.updateInteraction();
       if (this.inputSystem.interactPressed()) this.performInteraction();
       this.updateWardHud(time);
+      this.updateFogOfWar();
       this.renderMinimap(time);
+    }
+
+
+    createFogOfWar() {
+      this.fogGraphics = this.add.graphics().setDepth(1000000);
+      this.updateFogOfWar(true);
+    }
+
+    updateFogOfWar(force = false) {
+      if (!this.player?.active || !this.fogGraphics) return;
+      const centerX = Math.floor(this.player.x / TILE);
+      const centerY = Math.floor(this.player.y / TILE);
+      const tileKey = `${centerX},${centerY}`;
+      if (!force && tileKey === this.lastFogTile) return;
+      this.lastFogTile = tileKey;
+      this.currentVisibleCells.clear();
+
+      const revealRadius = 5;
+      for (let dy = -revealRadius; dy <= revealRadius; dy += 1) {
+        for (let dx = -revealRadius; dx <= revealRadius; dx += 1) {
+          if (dx * dx + dy * dy > revealRadius * revealRadius) continue;
+          const x = centerX + dx;
+          const y = centerY + dy;
+          if (x < 0 || y < 0 || x >= MAP_W || y >= MAP_H) continue;
+          const key = `${x},${y}`;
+          this.currentVisibleCells.add(key);
+          this.visitedCells.add(key);
+        }
+      }
+
+      this.fogGraphics.clear();
+      this.fogGraphics.fillStyle(0x020105, 0.97);
+      for (let y = 0; y < MAP_H; y += 1) {
+        for (let x = 0; x < MAP_W; x += 1) {
+          const key = `${x},${y}`;
+          if (!this.visitedCells.has(key)) this.fogGraphics.fillRect(x * TILE, y * TILE, TILE, TILE);
+        }
+      }
+      this.fogGraphics.fillStyle(0x08060b, 0.48);
+      this.visitedCells.forEach((key) => {
+        if (this.currentVisibleCells.has(key)) return;
+        const [x, y] = key.split(",").map(Number);
+        this.fogGraphics.fillRect(x * TILE, y * TILE, TILE, TILE);
+      });
+    }
+
+    isWorldTileExplored(x, y) {
+      if (!Number.isFinite(x) || !Number.isFinite(y)) return false;
+      return this.visitedCells.has(`${Math.floor(x / TILE)},${Math.floor(y / TILE)}`);
+    }
+
+    isWorldTileVisible(x, y) {
+      if (!Number.isFinite(x) || !Number.isFinite(y)) return false;
+      return this.currentVisibleCells.has(`${Math.floor(x / TILE)},${Math.floor(y / TILE)}`);
     }
 
     renderMinimap(time) {
@@ -904,7 +963,7 @@
       const width = dom.minimap.width;
       const height = dom.minimap.height;
       ctx.clearRect(0, 0, width, height);
-      ctx.fillStyle = "#09080c";
+      ctx.fillStyle = "#030207";
       ctx.fillRect(0, 0, width, height);
 
       const cells = Array.from(this.floorCells, (entry) => entry.split(",").map(Number));
@@ -917,16 +976,25 @@
       const oy = (height - (maxY - minY + 1) * scale) / 2;
       const px = (x) => ox + (x - minX) * scale + scale / 2;
       const py = (y) => oy + (y - minY) * scale + scale / 2;
-      ctx.fillStyle = "#544549";
-      cells.forEach(([x, y]) => ctx.fillRect(ox + (x - minX) * scale, oy + (y - minY) * scale, Math.ceil(scale), Math.ceil(scale)));
-      ctx.fillStyle = "#b49a86";
-      this.wallCells?.forEach((entry) => {
-        const [x, y] = entry.split(",").map(Number);
+      const paintCell = (x, y, color) => {
+        ctx.fillStyle = color;
         ctx.fillRect(ox + (x - minX) * scale, oy + (y - minY) * scale, Math.ceil(scale), Math.ceil(scale));
+      };
+
+      cells.forEach(([x, y]) => {
+        const key = `${x},${y}`;
+        if (!this.visitedCells.has(key)) return;
+        paintCell(x, y, this.currentVisibleCells.has(key) ? "#68565b" : "#292328");
+      });
+      this.wallCells?.forEach((entry) => {
+        if (!this.visitedCells.has(entry)) return;
+        const [x, y] = entry.split(",").map(Number);
+        paintCell(x, y, this.currentVisibleCells.has(entry) ? "#b49a86" : "#51454a");
       });
 
-      const dot = (x, y, color, radius = 2.2) => {
-        if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+      const dot = (x, y, color, radius = 2.2, nearbyOnly = false) => {
+        const discovered = nearbyOnly ? this.isWorldTileVisible(x, y) : this.isWorldTileExplored(x, y);
+        if (!discovered) return;
         ctx.beginPath();
         ctx.arc(px(Math.floor(x / TILE)), py(Math.floor(y / TILE)), radius, 0, Math.PI * 2);
         ctx.fillStyle = color;
@@ -939,10 +1007,17 @@
       } else {
         dot(this.guideNpc?.x, this.guideNpc?.y, "#9ce7ff", 2.6);
         this.chests?.filter((chest) => !chest.getData("opened")).forEach((chest) => dot(chest.x, chest.y, "#ffc05a", 2));
-        this.enemies?.getChildren().filter((enemy) => enemy.active).forEach((enemy) => dot(enemy.x, enemy.y, enemy.getData("type") === "boss" ? "#ff3d59" : "#c75a58", enemy.getData("type") === "boss" ? 3 : 1.5));
+        this.enemies?.getChildren().filter((enemy) => enemy.active).forEach((enemy) => {
+          dot(enemy.x, enemy.y, enemy.getData("type") === "boss" ? "#ff3d59" : "#c75a58", enemy.getData("type") === "boss" ? 3 : 1.5, true);
+        });
         if (this.stairs) dot(this.stairs.x, this.stairs.y, "#f6d36d", 2.7);
       }
-      dot(this.player.x, this.player.y, "#82efff", 3);
+      const playerTileX = Math.floor(this.player.x / TILE);
+      const playerTileY = Math.floor(this.player.y / TILE);
+      ctx.beginPath();
+      ctx.arc(px(playerTileX), py(playerTileY), 3, 0, Math.PI * 2);
+      ctx.fillStyle = "#82efff";
+      ctx.fill();
     }
     castAshWard(time) {
       const bonuses = progression.bonuses();
