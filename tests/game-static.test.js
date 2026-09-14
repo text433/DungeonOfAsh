@@ -12,7 +12,10 @@ const required = [
   "assets/frames/atlas_walls_low-16x16.png",
   "assets/frames/atlas_walls_high-16x32.png",
   "assets/frames/big_demon_idle_anim_f0.png",
-  "assets/frames/chest_full_open_anim_f0.png"
+  "assets/frames/chest_full_open_anim_f0.png",
+  "assets/frames/doors_frame_left.png",
+  "assets/frames/doors_frame_top.png",
+  "assets/frames/doors_frame_right.png"
 ];
 
 for (const relative of required) {
@@ -34,6 +37,7 @@ for (const marker of [
   "createFloorUnderlayFrames", "addWallFloorUnderlay", "rule.facing", "HIGH_WALL_TOP_INSET", "highWallFrame",
   "startFollow(this.player, false, 1, 1)", "setRoundPixels(false)", "this.moveVector.lerp(target, smoothing)",
   "createEnemyHealthBar", "triggerSpikeTrap", "column_wall", "solidDecorations",
+  "bossGateFrameKey", "doors_frame_left", "doors_frame_top", "doors_frame_right",
   "performAttack", "openChest", "openDoor", "nextFloor"
 ]) {
   if (!game.includes(marker)) throw new Error(`Spēles kodā trūkst ${marker}`);
@@ -58,8 +62,8 @@ if (game.includes("startFollow(this.player, true") || game.includes("setRoundPix
 }
 if (!game.includes("fixedStep: false")) throw new Error("Fizika nav piesaistīta ekrāna kadru ritmam");
 if (!game.includes("roundPixels: false")) throw new Error("Globālā pikseļu noapaļošana nav izslēgta");
-if (!html.includes('<script src="map-rules.js?v=23"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
-if (!html.includes('<script src="game.js?v=23"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
+if (!html.includes('<script src="map-rules.js?v=24"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
+if (!html.includes('<script src="game.js?v=24"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
 
 const floorCells = mapRules.buildFloorCells();
 const wallPlan = mapRules.buildWallPlan(floorCells, 80, 56);
@@ -91,6 +95,12 @@ for (let x = bossRoom.left; x <= bossRoom.right; x += 1) {
 }
 if (!game.includes("BOSS_CHAMBER.entranceX * TILE") || !game.includes("BOSS_CHAMBER.wallY + 1")) {
   throw new Error("Boss durvis nav piesaistītas sienas ailei");
+}
+if (!game.includes("BOSS_CHAMBER.gateLeft - 1") || !game.includes("BOSS_CHAMBER.gateRight + 1")) {
+  throw new Error("Durvju arkas malas nav piesaistītas blakus sienu flīzēm");
+}
+if (!game.includes("(BOSS_CHAMBER.wallY - 1) * TILE")) {
+  throw new Error("Virs durvīm trūkst augšējās arkas daļas");
 }
 for (const rule of wallPlan) {
   if (!Number.isInteger(rule.frame) || rule.frame < 0 || rule.frame > 47 || rule.frame === 22 || !rule.body) {

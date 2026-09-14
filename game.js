@@ -35,7 +35,8 @@
     floor: ["floor_1", "floor_2", "floor_3", "floor_4", "floor_5", "floor_6", "floor_7", "floor_8"],
     walls: [
       "wall_banner_red", "wall_banner_blue", "wall_banner_green", "wall_hole_1", "wall_hole_2",
-      "column", "column_wall", "crate", "skull", "doors_leaf_closed", "doors_leaf_open",
+      "column", "column_wall", "crate", "skull",
+      "doors_frame_left", "doors_frame_top", "doors_frame_right", "doors_leaf_closed", "doors_leaf_open",
       "floor_stairs", "floor_spikes_anim_f0", "floor_spikes_anim_f1", "floor_spikes_anim_f2", "floor_spikes_anim_f3"
     ],
     playerIdle: [0, 1, 2, 3].map((i) => `knight_m_idle_anim_f${i}`),
@@ -344,6 +345,11 @@
       );
       this.door.setOrigin(0.5, 1).setDepth(this.door.y).refreshBody();
       this.door.body.setSize(28, 11).setOffset(2, 21);
+      this.doorArch = this.add.image(
+        BOSS_CHAMBER.entranceX * TILE,
+        (BOSS_CHAMBER.wallY - 1) * TILE,
+        "doors_frame_top"
+      ).setOrigin(0.5, 1).setDepth(this.door.y - 1);
 
       this.chest = this.props.create(11 * TILE + 8, 11 * TILE + 8, ASSETS.chest[0]);
       this.chest.setDepth(this.chest.y).refreshBody();
@@ -434,6 +440,24 @@
       this.wallPlan.forEach((rule) => {
         this.wallCells.add(`${rule.x},${rule.y}`);
         this.addWallFloorUnderlay(rule.x, rule.y);
+        const bossGateFrameKey = rule.y === BOSS_CHAMBER.wallY
+          ? rule.x === BOSS_CHAMBER.gateLeft - 1
+            ? "doors_frame_left"
+            : rule.x === BOSS_CHAMBER.gateRight + 1
+              ? "doors_frame_right"
+              : null
+          : null;
+        if (bossGateFrameKey) {
+          this.addWall(
+            rule.x,
+            rule.y,
+            bossGateFrameKey,
+            { width: TILE, height: TILE, offsetX: 0, offsetY: TILE },
+            undefined,
+            "north"
+          );
+          return;
+        }
         const isTall = rule.facing !== "side";
         const key = isTall ? "wall_atlas_high" : "wall_atlas_low";
         const frame = isTall ? this.highWallFrame(rule.frame) : rule.frame;
