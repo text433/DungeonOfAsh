@@ -259,8 +259,15 @@
     }
 
     unlock() {
-      if (!this.context) this.context = new (window.AudioContext || window.webkitAudioContext)();
-      if (this.context.state === "suspended") this.context.resume();
+      try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return false;
+        if (!this.context) this.context = new AudioContextClass();
+        if (this.context.state === "suspended") this.context.resume().catch(() => {});
+        return true;
+      } catch (_error) {
+        return false;
+      }
     }
 
     blip(frequency, duration = 0.06, type = "square", volume = 0.025) {
@@ -274,6 +281,28 @@
       oscillator.connect(gain).connect(this.context.destination);
       oscillator.start();
       oscillator.stop(this.context.currentTime + duration);
+    }
+
+    step() {
+      if (!this.context || !this.enabled || this.context.state !== "running") return;
+      const duration = 0.035;
+      const frames = Math.floor(this.context.sampleRate * duration);
+      const buffer = this.context.createBuffer(1, frames, this.context.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < frames; i += 1) {
+        data[i] = (Math.random() * 2 - 1) * (1 - i / frames);
+      }
+      const source = this.context.createBufferSource();
+      const filter = this.context.createBiquadFilter();
+      const gain = this.context.createGain();
+      source.buffer = buffer;
+      source.playbackRate.value = 0.88 + Math.random() * 0.18;
+      filter.type = "lowpass";
+      filter.frequency.value = 430;
+      gain.gain.setValueAtTime(0.018, this.context.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, this.context.currentTime + duration);
+      source.connect(filter).connect(gain).connect(this.context.destination);
+      source.start();
     }
   }
 
@@ -305,6 +334,7 @@
       this.smithOpen = false;
       this.attackAnimating = false;
       this.minimapNextAt = 0;
+      this.stepReadyAt = 0;
     }
 
     preload() {
@@ -838,6 +868,10 @@
       const movement = this.inputSystem.movement(delta);
       const speed = 76 * progression.bonuses().speedMultiplier;
       this.player.setVelocity(movement.x * speed, movement.y * speed);
+      if (movement.lengthSq() > 0 && time >= this.stepReadyAt) {
+        sound.step();
+        this.stepReadyAt = time + 330;
+      }
       if (movement.lengthSq() > 0) {
         this.lastFacing.copy(movement);
         if (Math.abs(movement.x) > 0.1) this.player.setFlipX(movement.x < 0);
@@ -1612,6 +1646,10 @@
     else if (scene?.talentOpen) scene.closeTalentTree();
     else scene?.togglePause();
   });
+
+  const ensureSound = () => sound.unlock();
+  window.addEventListener("pointerdown", ensureSound, { passive: true });
+  window.addEventListener("keydown", ensureSound);
 
   window.addEventListener("blur", () => {
     const scene = currentScene();
