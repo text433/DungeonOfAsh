@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0b090d" />
     <meta name="description" content="Dungeon of Ash — spēlējama HTML5 dungeon piedzīvojumu spēle." />
     <title>Dungeon of Ash</title>
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="style.css?v=28" />
   </head>
   <body>
     <main id="game-shell" aria-label="Dungeon of Ash spēle">
@@ -17,7 +17,13 @@
         <div class="hud-panel player-panel">
           <div id="hearts" aria-label="Dzīvība"></div>
           <div class="xp-track"><div id="xp-fill"></div></div>
+          <div id="weapon-rank" class="weapon-rank">Ceļinieka zobens · +0</div>
         </div>
+
+        <aside id="minimap-panel" class="minimap-panel" aria-label="Mazā karte">
+          <canvas id="minimap" width="180" height="132"></canvas>
+          <span>KARTE</span>
+        </aside>
 
         <div id="objective" class="objective-chip">Atrodi lādi ar atslēgu</div>
 
@@ -54,9 +60,14 @@
         <div class="sigil" aria-hidden="true"><span></span></div>
         <p class="eyebrow">PIXEL DUNGEON</p>
         <h1>DUNGEON<br /><em>OF ASH</em></h1>
-        <p class="intro">Sāc Pelnu pilsētā, atrodi trepes uz dungeonu un audzē savu varoni Pelnu kokā.</p>
+        <p class="intro">Šī pamācība būs redzama tikai pirmo reizi.</p>
+        <div class="intro-steps">
+          <span><b>1</b> Pilsētā atrodi trepes uz dungeonu</span>
+          <span><b>2</b> Lādes atveras pašas, kad pieej klāt</span>
+          <span><b>3</b> Burvis atver bonusu koku, kalējs uzlabo zobenu</span>
+        </div>
         <button id="start-button" class="primary-button" type="button">SĀKT SPĒLI</button>
-        <p class="controls-hint">WASD / bultiņas · SPACE uzbrukums · E darbība · Q aktīvais bonuss</p>
+        <p class="controls-hint">WASD / joystick · SPACE / ⚔ uzbrukums · E darbība · Q aktīvais bonuss</p>
       </section>
 
       <section id="pause-screen" class="overlay modal">
@@ -87,40 +98,54 @@
             <section class="talent-branch vitality">
               <h3>Dzīvība</h3>
               <button class="talent-node" data-talent="ironHeart" type="button">
-                <span class="node-icon">♥</span><strong>Dzelzs sirds</strong><small>+2 maksimālā dzīvība</small><span class="talent-level">0/1</span>
+                <span class="node-icon"><img src="assets/frames/ui_heart_full.png" alt="" /></span><strong>Dzelzs sirds</strong><small>+2 maksimālā dzīvība</small><span class="talent-level">0/1</span>
               </button>
               <button class="talent-node" data-talent="bloodSip" type="button">
-                <span class="node-icon">✚</span><strong>Dzīvības dzirksts</strong><small>+1 HP par sakautu monstru</small><span class="talent-level">0/1</span>
+                <span class="node-icon"><img src="assets/frames/flask_big_red.png" alt="" /></span><strong>Dzīvības dzirksts</strong><small>+1 HP par sakautu monstru</small><span class="talent-level">0/1</span>
               </button>
               <button class="talent-node" data-talent="stoneGuard" type="button">
-                <span class="node-icon">⬟</span><strong>Akmens sargs</strong><small>20% iespēja bloķēt sitienu</small><span class="talent-level">0/1</span>
+                <span class="node-icon"><img src="assets/frames/column.png" alt="" /></span><strong>Akmens sargs</strong><small>20% iespēja bloķēt sitienu</small><span class="talent-level">0/1</span>
               </button>
             </section>
             <section class="talent-branch hunter">
               <h3>Mednieks</h3>
               <button class="talent-node" data-talent="sharpEdge" type="button">
-                <span class="node-icon">⚔</span><strong>Asā mala</strong><small>+1 uzbrukuma bojājums</small><span class="talent-level">0/1</span>
+                <span class="node-icon"><img src="assets/frames/weapon_regular_sword.png" alt="" /></span><strong>Asā mala</strong><small>+1 uzbrukuma bojājums</small><span class="talent-level">0/1</span>
               </button>
               <button class="talent-node" data-talent="swiftBoots" type="button">
-                <span class="node-icon">➟</span><strong>Ātrie zābaki</strong><small>+15% kustības ātrums</small><span class="talent-level">0/1</span>
+                <span class="node-icon"><img src="assets/frames/weapon_duel_sword.png" alt="" /></span><strong>Ātrie zābaki</strong><small>+15% kustības ātrums</small><span class="talent-level">0/1</span>
               </button>
               <button class="talent-node" data-talent="longReach" type="button">
-                <span class="node-icon">◇</span><strong>Garais cirtiens</strong><small>Lielāks uzbrukuma attālums</small><span class="talent-level">0/1</span>
+                <span class="node-icon"><img src="assets/frames/weapon_spear.png" alt="" /></span><strong>Garais cirtiens</strong><small>Lielāks uzbrukuma attālums</small><span class="talent-level">0/1</span>
               </button>
             </section>
             <section class="talent-branch ash">
               <h3>Pelni</h3>
               <button class="talent-node" data-talent="ashWard" type="button">
-                <span class="node-icon">✦</span><strong>Pelnu vairogs</strong><small>Q: 6 s saņem pusi bojājumu</small><span class="talent-level">0/1</span>
+                <span class="node-icon"><img src="assets/frames/flask_big_blue.png" alt="" /></span><strong>Pelnu vairogs</strong><small>Q: 6 s saņem pusi bojājumu</small><span class="talent-level">0/1</span>
               </button>
               <button class="talent-node" data-talent="burningWard" type="button">
-                <span class="node-icon">✹</span><strong>Degošais vairogs</strong><small>Vairoga laikā +1 bojājums</small><span class="talent-level">0/1</span>
+                <span class="node-icon"><img src="assets/frames/weapon_red_magic_staff.png" alt="" /></span><strong>Degošais vairogs</strong><small>Vairoga laikā +1 bojājums</small><span class="talent-level">0/1</span>
               </button>
               <button class="talent-node" data-talent="renewal" type="button">
-                <span class="node-icon">☼</span><strong>Atdzimšana</strong><small>Aktivējot atjauno 2 HP</small><span class="talent-level">0/1</span>
+                <span class="node-icon"><img src="assets/frames/flask_big_green.png" alt="" /></span><strong>Atdzimšana</strong><small>Aktivējot atjauno 2 HP</small><span class="talent-level">0/1</span>
               </button>
             </section>
           </div>
+        </div>
+      </section>
+
+      <section id="smith-screen" class="overlay modal smith-overlay" aria-label="Kalēja darbnīca">
+        <div class="smith-window">
+          <button id="smith-close" class="talent-close" type="button" aria-label="Aizvērt">×</button>
+          <img class="smith-emblem" src="assets/frames/weapon_big_hammer.png" alt="" />
+          <p class="eyebrow">PELNU KALĒJS</p>
+          <h2>Ieroču darbnīca</h2>
+          <p>Pašreizējais ierocis</p>
+          <strong id="smith-weapon" class="smith-weapon">Ceļinieka zobens</strong>
+          <div class="smith-cost">Cena: <strong id="smith-cost">20 zelta</strong></div>
+          <button id="smith-upgrade" class="primary-button" type="button">KALT PAR 20 ZELTA</button>
+          <small>Katrs līmenis maina zobena izskatu un palielina bojājumus.</small>
         </div>
       </section>
 
@@ -128,8 +153,8 @@
     </main>
 
     <script src="vendor/phaser.min.js"></script>
-    <script src="map-rules.js?v=27"></script>
-    <script src="progression.js?v=27"></script>
-    <script src="game.js?v=27"></script>
+    <script src="map-rules.js?v=28"></script>
+    <script src="progression.js?v=28"></script>
+    <script src="game.js?v=28"></script>
   </body>
 </html>

@@ -19,7 +19,13 @@ const required = [
   "assets/frames/angel_idle_anim_f0.png",
   "assets/frames/doors_frame_left.png",
   "assets/frames/doors_frame_top.png",
-  "assets/frames/doors_frame_right.png"
+  "assets/frames/doors_frame_right.png",
+  "assets/frames/knight_m_hit_anim_f0.png",
+  "assets/frames/doc_idle_anim_f0.png",
+  "assets/frames/wall_fountain_mid_red_anim_f0.png",
+  "assets/frames/wall_fountain_basin_red_anim_f0.png",
+  "assets/frames/weapon_regular_sword.png",
+  "assets/frames/weapon_lavish_sword.png"
 ];
 
 for (const relative of required) {
@@ -33,7 +39,7 @@ const game = fs.readFileSync(path.join(root, "game.js"), "utf8");
 const mapRules = require(path.join(root, "map-rules.js"));
 const { ProgressionSystem } = require(path.join(root, "progression.js"));
 
-for (const id of ["game", "hud", "mobile-controls", "joystick-base", "joystick-knob", "start-button", "result-screen", "talent-screen", "talent-button", "ability-button"]) {
+for (const id of ["game", "hud", "mobile-controls", "joystick-base", "joystick-knob", "start-button", "result-screen", "talent-screen", "talent-button", "ability-button", "minimap", "smith-screen", "smith-upgrade", "weapon-rank"]) {
   if (!html.includes(`id="${id}"`)) throw new Error(`HTML trūkst #${id}`);
 }
 
@@ -41,11 +47,13 @@ for (const marker of [
   "class DungeonScene", "touchVector", "updateJoystick", "buildWallAutotiles", "buildWallPlan", "BOSS_CHAMBER",
   "createFloorUnderlayFrames", "addWallFloorUnderlay", "rule.facing", "HIGH_WALL_TOP_INSET", "highWallFrame",
   "startFollow(this.player, false, 1, 1)", "setRoundPixels(false)", "this.moveVector.lerp(target, smoothing)",
-  "createEnemyHealthBar", "triggerSpikeTrap", "column_wall", "solidDecorations",
-  "bossGateFrameKey", "BOSS_GATE_WALL_FRAME", "columnBaseline", "doors_frame_left", "doors_frame_top", "doors_frame_right",
+  "createEnemyHealthBar", "triggerSpikeTrap", "column_wall",
+  "gateFrameKey", "BOSS_GATE_WALL_FRAME", "columnBaseline", "doors_frame_left", "doors_frame_top", "doors_frame_right",
   "performAttack", "openChest", "openDoor", "nextFloor",
   "buildTown", "townStairs", "town-npc-idle", "guide-npc-idle", "updateAutoChests", "respawnAtGuide",
-  "updateEnemyPatrol", "updateBossPatrol", "patrolRadius", "aggroRadius", "castAshWard", "openTalentTree"
+  "updateEnemyPatrol", "updateBossPatrol", "patrolRadius", "aggroRadius", "castAshWard", "openTalentTree",
+  "renderMinimap", "openSmith", "upgradeWeapon", "updateCarriedWeapon", "createAttackFx", "addLavaFall",
+  "lava-flow", "playerHit", "dungeonOfAshIntroSeenV1"
 ]) {
   if (!game.includes(marker)) throw new Error(`Spēles kodā trūkst ${marker}`);
 }
@@ -69,14 +77,14 @@ if (game.includes("startFollow(this.player, true") || game.includes("setRoundPix
 }
 if (!game.includes("fixedStep: false")) throw new Error("Fizika nav piesaistīta ekrāna kadru ritmam");
 if (!game.includes("roundPixels: false")) throw new Error("Globālā pikseļu noapaļošana nav izslēgta");
-if (!html.includes('<script src="map-rules.js?v=27"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
-if (!html.includes('<script src="progression.js?v=27"></script>')) throw new Error("HTML neielādē progresa sistēmu");
-if (!html.includes('<script src="game.js?v=27"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
+if (!html.includes('<script src="map-rules.js?v=28"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
+if (!html.includes('<script src="progression.js?v=28"></script>')) throw new Error("HTML neielādē progresa sistēmu");
+if (!html.includes('<script src="game.js?v=28"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
 
 const floorCells = mapRules.buildFloorCells();
-const wallPlan = mapRules.buildWallPlan(floorCells, 80, 56);
-if (floorCells.size !== 2044) throw new Error(`Negaidīts grīdas flīžu skaits: ${floorCells.size}`);
-if (wallPlan.length !== 497) throw new Error(`Negaidīts sienu flīžu skaits: ${wallPlan.length}`);
+const wallPlan = mapRules.buildWallPlan(floorCells, 64, 48);
+if (floorCells.size !== 1288) throw new Error(`Negaidīts grīdas flīžu skaits: ${floorCells.size}`);
+if (wallPlan.length !== 397) throw new Error(`Negaidīts sienu flīžu skaits: ${wallPlan.length}`);
 if (mapRules.MINIMAL_MASK_PATTERNS.filter(Boolean).length !== 47) {
   throw new Error("3x3-minimal atlasā nav visu 47 kaimiņu variantu");
 }
@@ -87,7 +95,7 @@ const facingCounts = wallPlan.reduce((counts, rule) => {
   counts[rule.facing] = (counts[rule.facing] || 0) + 1;
   return counts;
 }, {});
-if (facingCounts.north !== 169 || facingCounts.south !== 151 || facingCounts.side !== 177) {
+if (facingCounts.north !== 137 || facingCounts.south !== 120 || facingCounts.side !== 140) {
   throw new Error(`Nepareizi sienu virzieni: ${JSON.stringify(facingCounts)}`);
 }
 
@@ -111,7 +119,7 @@ for (let x = bossRoom.left; x <= bossRoom.right; x += 1) {
 if (!game.includes("BOSS_CHAMBER.entranceX * TILE") || !game.includes("BOSS_CHAMBER.wallY + 1")) {
   throw new Error("Boss durvis nav piesaistītas sienas ailei");
 }
-if (!game.includes("BOSS_CHAMBER.gateLeft - 1") || !game.includes("BOSS_CHAMBER.gateRight + 1")) {
+if (!game.includes("activeGate.gateLeft - 1") || !game.includes("activeGate.gateRight + 1")) {
   throw new Error("Durvju arkas malas nav piesaistītas blakus sienu flīzēm");
 }
 if (!game.includes("this.highWallFrame(BOSS_GATE_WALL_FRAME)")) {
@@ -170,8 +178,8 @@ if (sampleFacing(1, 3) !== "side" || sampleFacing(6, 3) !== "side") {
 }
 
 const townFloorCells = mapRules.buildFloorCells(mapRules.TOWN_RECTS);
-const townWallPlan = mapRules.buildWallPlan(townFloorCells, 80, 56);
-if (townFloorCells.size !== 1182 || townWallPlan.length !== 170) {
+const townWallPlan = mapRules.buildWallPlan(townFloorCells, 64, 48);
+if (townFloorCells.size !== 920 || townWallPlan.length !== 152) {
   throw new Error(`Nepareizs pilsētas plāns: ${townFloorCells.size} grīdas / ${townWallPlan.length} sienas`);
 }
 for (const x of [mapRules.TOWN.gateLeft, mapRules.TOWN.gateRight]) {
@@ -194,9 +202,22 @@ if (!progress.spend("ironHeart") || progress.bonuses().maxHp !== 2) throw new Er
 progress.awardFloorPoint();
 if (!progress.spend("bloodSip") || progress.bonuses().healOnKill !== 1) throw new Error("Bonusa zara turpinājums nedarbojas");
 
+const weaponStorage = {
+  value: null,
+  getItem() { return this.value; },
+  setItem(_key, value) { this.value = value; }
+};
+const weaponProgress = new ProgressionSystem(weaponStorage);
+if (weaponProgress.weaponConfig().texture !== "weapon_regular_sword") throw new Error("Sākuma zobens nav ielādēts");
+if (weaponProgress.upgradeWeapon(19).success) throw new Error("Ieroci var uzlabot bez pietiekama zelta");
+const forged = weaponProgress.upgradeWeapon(20);
+if (!forged.success || weaponProgress.weaponConfig().damage !== 1) throw new Error("Kalēja uzlabojums nedarbojas");
+const restoredWeapon = new ProgressionSystem(weaponStorage);
+if (restoredWeapon.weaponConfig().level !== 1) throw new Error("Ieroča līmenis netiek saglabāts");
+
 const collisionCells = new Set(wallPlan.map(({ x, y }) => `${x},${y}`));
-const reachable = new Set(["8,25"]);
-const queue = [[8, 25]];
+const reachable = new Set(["7,23"]);
+const queue = [[7, 23]];
 while (queue.length) {
   const [x, y] = queue.shift();
   [[0, -1], [1, 0], [0, 1], [-1, 0]].forEach(([dx, dy]) => {
@@ -207,7 +228,7 @@ while (queue.length) {
     }
   });
 }
-for (const target of ["11,11", "68,19", "68,15", "40,47", "55,46"]) {
+for (const target of ["7,11", "48,15", "48,11", "29,37", "50,37", "44,35"]) {
   if (!reachable.has(target)) throw new Error(`Kartes noteikumi noslēdz ceļu uz ${target}`);
 }
 

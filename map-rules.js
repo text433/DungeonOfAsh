@@ -25,59 +25,60 @@
     MINIMAL_MASK_PATTERNS.flatMap((pattern, frame) => pattern ? [[pattern, frame]] : [])
   );
   const BOSS_CHAMBER = Object.freeze({
-    left: 59,
-    right: 75,
-    top: 10,
-    bottom: 18,
-    wallY: 19,
-    gateLeft: 67,
-    gateRight: 68,
-    entranceX: 68
+    left: 40,
+    right: 56,
+    top: 7,
+    bottom: 14,
+    wallY: 15,
+    gateLeft: 47,
+    gateRight: 48,
+    entranceX: 48
   });
   const TOWN = Object.freeze({
-    plazaLeft: 20,
-    plazaRight: 59,
+    plazaLeft: 14,
+    plazaRight: 49,
     plazaTop: 18,
-    plazaBottom: 43,
-    houseLeft: 31,
-    houseRight: 44,
-    houseTop: 7,
+    plazaBottom: 39,
+    houseLeft: 25,
+    houseRight: 38,
+    houseTop: 8,
     houseBottom: 16,
     wallY: 17,
-    gateLeft: 37,
-    gateRight: 38,
-    entranceX: 38,
-    npcX: 38,
+    gateLeft: 31,
+    gateRight: 32,
+    entranceX: 32,
+    npcX: 32,
     npcY: 12,
-    stairsX: 51,
-    stairsY: 31,
-    spawnX: 38,
-    spawnY: 25
+    smithX: 19,
+    smithY: 27,
+    stairsX: 43,
+    stairsY: 29,
+    spawnX: 32,
+    spawnY: 24
   });
   const TOWN_RECTS = Object.freeze([
-    Object.freeze([20, 18, 40, 26]),
-    Object.freeze([31, 7, 14, 10]),
-    Object.freeze([37, 17, 2, 1])
+    Object.freeze([14, 18, 36, 22]),
+    Object.freeze([25, 8, 14, 9]),
+    Object.freeze([31, 17, 2, 1])
   ]);
   const DUNGEON_RECTS = Object.freeze([
-    [4, 18, 20, 16],
-    [4, 8, 18, 7],
-    [18, 15, 4, 3],
-    [24, 24, 4, 4],
-    [28, 13, 24, 21],
-    [40, 10, 5, 3],
-    [33, 3, 19, 7],
-    [52, 23, 7, 4],
-    // The boss chamber and its antechamber are separate rooms. Only the two
-    // gate cells connect them, so the door is part of a real wall instead of
-    // standing on an open floor tile.
-    [59, 10, 17, 9],
-    [67, 19, 2, 1],
-    [59, 20, 17, 17],
-    [42, 34, 4, 8],
-    [34, 42, 20, 10],
-    [54, 45, 4, 4],
-    [58, 41, 18, 11]
+    [3, 18, 13, 11],
+    [3, 8, 13, 7],
+    [9, 15, 3, 3],
+    [16, 22, 4, 3],
+    [20, 15, 15, 14],
+    [25, 11, 4, 4],
+    [20, 5, 15, 6],
+    [35, 20, 5, 3],
+    // Compact boss chamber: its two gate cells are the only opening in the
+    // full-height divider wall, preserving a clean arch with no black seams.
+    [40, 7, 17, 8],
+    [47, 15, 2, 1],
+    [40, 16, 17, 13],
+    [27, 29, 4, 5],
+    [22, 34, 15, 9],
+    [37, 37, 4, 3],
+    [41, 32, 16, 11]
   ].map((rect) => Object.freeze(rect)));
 
   const cellKey = (x, y) => `${x},${y}`;
