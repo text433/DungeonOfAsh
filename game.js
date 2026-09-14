@@ -651,7 +651,7 @@
 
       const weapon = progression.weaponConfig();
       this.carriedWeapon = this.add.image(this.player.x, this.player.y - 11, weapon.texture)
-        .setOrigin(0.5, 0.86).setScale(0.74);
+        .setOrigin(0.5, 0.95).setScale(0.74);
       this.applyWeaponVisual();
       this.updateCarriedWeapon();
       this.events.on(Phaser.Scenes.Events.POST_UPDATE, this.updateCarriedWeapon, this);
@@ -677,16 +677,16 @@
       const animationKey = this.player.anims.currentAnim?.key || "";
       const frameIndex = Math.max(0, (this.player.anims.currentFrame?.index || 1) - 1) % 4;
       const runHandPoses = [
-        { x: 5, y: -9, angle: 126 },
-        { x: 6, y: -10, angle: 140 },
-        { x: 5, y: -8, angle: 150 },
-        { x: 4, y: -9, angle: 136 }
+        { x: 2, y: -6, angle: 126 },
+        { x: 3, y: -7, angle: 140 },
+        { x: 2, y: -5, angle: 150 },
+        { x: 1, y: -6, angle: 136 }
       ];
       const idleHandPoses = [
-        { x: 4, y: -9, angle: 132 },
-        { x: 5, y: -10, angle: 136 },
-        { x: 5, y: -9, angle: 134 },
-        { x: 4, y: -8, angle: 130 }
+        { x: 2, y: -6, angle: 132 },
+        { x: 2, y: -7, angle: 136 },
+        { x: 2, y: -6, angle: 134 },
+        { x: 1, y: -5, angle: 130 }
       ];
       const pose = animationKey === "player-run" ? runHandPoses[frameIndex] : idleHandPoses[frameIndex];
 
