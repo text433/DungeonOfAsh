@@ -146,6 +146,10 @@
   class RunState {
     constructor(data = {}) {
       this.floor = data.level || 1;
+      const incomingRunSeed = Number(data.runSeed);
+      this.runSeed = Number.isFinite(incomingRunSeed)
+        ? incomingRunSeed >>> 0
+        : (Date.now() ^ Math.floor(Math.random() * 0xffffffff)) >>> 0;
       this.maxHp = MAX_HP + progression.bonuses().maxHp;
       this.hp = Phaser.Math.Clamp(data.hp == null ? this.maxHp : data.hp, 1, this.maxHp);
       this.gold = data.gold || 0;
@@ -504,68 +508,56 @@
         this.buildTown();
         return;
       }
-      this.floorCells = mapRules.buildFloorCells();
+      this.mapLayout = mapRules.generateDungeonLayout(this.state.floor, this.state.runSeed, MAP_W, MAP_H);
+      this.floorCells = this.mapLayout.floorCells;
       this.wallCells = new Set();
       this.wallPlan = [];
 
       for (let y = 0; y < MAP_H; y += 1) {
         for (let x = 0; x < MAP_W; x += 1) {
           if (!this.hasFloor(x, y)) continue;
-          const noise = this.hash(x, y, this.state.floor);
+          const noise = this.hash(x, y, this.mapLayout.seed);
           const key = noise % 13 === 0 ? ASSETS.floor[1 + (noise % (ASSETS.floor.length - 1))] : "floor_1";
           this.floorTiles.add(this.add.image(x * TILE + 8, y * TILE + 8, key, "__BASE").setDepth(-30));
         }
       }
 
       this.buildWallAutotiles();
+      const activeGate = this.mapLayout.gate;
 
       this.door = this.props.create(
-        BOSS_CHAMBER.entranceX * TILE,
-        (BOSS_CHAMBER.wallY + 1) * TILE,
+        activeGate.entranceX * TILE,
+        (activeGate.wallY + 1) * TILE,
         "doors_leaf_closed"
       );
       this.door.setOrigin(0.5, 1).setDepth(this.door.y).refreshBody();
       this.door.body.setSize(28, 11).setOffset(2, 21);
       this.doorArch = this.add.image(
-        BOSS_CHAMBER.entranceX * TILE,
-        (BOSS_CHAMBER.wallY - 1) * TILE,
+        activeGate.entranceX * TILE,
+        (activeGate.wallY - 1) * TILE,
         "doors_frame_top"
       ).setOrigin(0.5, 1).setDepth(this.door.y - 1);
 
-      this.chests = [
-        this.createChest(7, 11, 0.42),
-        this.createChest(30, 19, 0.42),
-        this.createChest(50, 37, 0.42)
-      ];
+      this.chests = this.mapLayout.chests.map(({ x, y, keyChance }) => this.createChest(x, y, keyChance));
 
-      this.guideNpc = this.add.sprite(5 * TILE + 8, 21 * TILE + 8, ASSETS.guideNpc[0])
-        .setOrigin(0.5, 1).setDepth(21 * TILE + 8).play("guide-npc-idle");
-      this.respawnPoint = { x: 7 * TILE + 8, y: 23 * TILE + 8 };
+      const guide = this.mapLayout.guide;
+      this.guideNpc = this.add.sprite(guide.x * TILE + 8, guide.y * TILE + 8, ASSETS.guideNpc[0])
+        .setOrigin(0.5, 1).setDepth(guide.y * TILE + 8).play("guide-npc-idle");
+      const spawn = this.mapLayout.spawn;
+      this.respawnPoint = { x: spawn.x * TILE + 8, y: spawn.y * TILE + 8 };
 
-      [
-        [7, 7, "wall_banner_blue"], [27, 4, "wall_banner_red"],
-        [43, 6, "wall_banner_green"], [54, 6, "wall_banner_red"],
-        [21, 14, "wall_hole_2"], [41, 15, "wall_hole_1"], [55, 15, "wall_hole_2"],
-        [23, 33, "wall_banner_yellow"], [44, 31, "wall_hole_1"]
-      ].forEach(([x, y, key]) => {
-        this.add.image(x * TILE + 8, y * TILE + 8, key).setDepth(y * TILE + 8);
-      });
+      this.addProceduralWallDecorations();
 
-      [[44, BOSS_CHAMBER.wallY], [52, BOSS_CHAMBER.wallY]].forEach(([x, y]) => {
+      [[44, activeGate.wallY], [52, activeGate.wallY]].forEach(([x, y]) => {
         const columnBaseline = (y + 2) * TILE;
         this.add.image(x * TILE + 8, columnBaseline, "column_wall")
           .setOrigin(0.5, 1).setDepth(columnBaseline - 1);
       });
 
-      [
-        [13, 25, "crate"], [33, 26, "crate"], [53, 24, "crate"],
-        [22, 20, "column"], [33, 20, "column"],
-        [24, 39, "column"], [35, 39, "column"],
-        [43, 35, "crate"], [55, 35, "column"]
-      ].forEach(([x, y, key]) => {
-        const propY = key === "column" ? (y + 1) * TILE : y * TILE + 8;
-        const prop = this.props.create(x * TILE + 8, propY, key);
-        if (key === "column") {
+      this.mapLayout.props.forEach(({ x, y, type }) => {
+        const propY = type === "column" ? (y + 1) * TILE : y * TILE + 8;
+        const prop = this.props.create(x * TILE + 8, propY, type);
+        if (type === "column") {
           prop.setOrigin(0.5, 1).setDepth(propY + 1).refreshBody();
           prop.body.setSize(12, 10).setOffset(2, 38);
         } else {
@@ -573,20 +565,13 @@
         }
       });
 
-      [
-        [12, 19], [24, 26], [42, 26], [29, 36], [46, 40]
-      ].forEach(([x, y]) => {
+      this.mapLayout.skulls.forEach(({ x, y }) => {
         this.add.image(x * TILE + 8, y * TILE + 8, "skull").setDepth(y * TILE + 8);
       });
 
-      this.addLavaFall(24, 14);
-      this.addLavaFall(42, 15);
-      this.addLavaFall(45, 6);
-      this.addLavaFall(34, 33);
-
-      this.spikeTraps = [
-        [12, 12], [27, 18], [51, 21], [33, 37], [48, 34]
-      ].map(([x, y]) => this.add.sprite(x * TILE + 8, y * TILE + 8, "floor_spikes_anim_f0").setDepth(-2).play("spikes"));
+      this.spikeTraps = this.mapLayout.traps.map(({ x, y }) => (
+        this.add.sprite(x * TILE + 8, y * TILE + 8, "floor_spikes_anim_f0").setDepth(-2).play("spikes")
+      ));
       this.spikes = this.spikeTraps[0];
       this.stairs = null;
       this.townStairs = null;
@@ -644,6 +629,44 @@
       });
 
       this.addLavaFall(19, 17);
+    }
+
+    addProceduralWallDecorations() {
+      const gate = this.mapLayout.gate;
+      const candidates = this.wallPlan
+        .filter((rule) => (
+          rule.facing === "north"
+          && this.hasFloor(rule.x, rule.y + 1)
+          && rule.y !== gate.wallY
+          && rule.x > 2 && rule.x < MAP_W - 3
+          && rule.y > 2 && rule.y < MAP_H - 3
+        ))
+        .sort((a, b) => (
+          this.hash(a.x, a.y, this.mapLayout.seed + 911)
+          - this.hash(b.x, b.y, this.mapLayout.seed + 911)
+        ));
+      const used = [];
+      const takeSpaced = (count, spacing) => {
+        const picked = [];
+        for (const candidate of candidates) {
+          if (picked.length >= count) break;
+          if (used.some((item) => Math.abs(item.x - candidate.x) + Math.abs(item.y - candidate.y) < spacing)) continue;
+          used.push(candidate);
+          picked.push(candidate);
+        }
+        return picked;
+      };
+
+      const lavaCount = 2 + (this.mapLayout.seed % 3);
+      takeSpaced(lavaCount, 7).forEach(({ x, y }) => this.addLavaFall(x, y));
+      const wallArt = [
+        "wall_banner_red", "wall_banner_blue", "wall_banner_green", "wall_banner_yellow",
+        "wall_hole_1", "wall_hole_2", "wall_hole_1"
+      ];
+      takeSpaced(wallArt.length, 4).forEach(({ x, y }, index) => {
+        const key = wallArt[(index + this.state.floor) % wallArt.length];
+        this.add.image(x * TILE + 8, y * TILE + 8, key).setDepth(y * TILE + 9);
+      });
     }
 
     addLavaFall(tileX, wallY) {
@@ -827,21 +850,8 @@
     }
     spawnEncounters() {
       const scale = 1 + (this.state.floor - 1) * 0.18;
-      const positions = [
-        [12, 21, "zombie"], [9, 26, "goblin"],
-        [6, 11, "skeleton"], [12, 10, "zombie"],
-        [23, 18, "orc"], [31, 18, "goblin"], [25, 25, "zombie"], [32, 25, "skeleton"],
-        [23, 8, "imp"], [31, 8, "orc"],
-        [42, 19, "zombie"], [52, 19, "orc"], [44, 26, "goblin"], [53, 26, "imp"],
-        [25, 37, "skeleton"], [34, 39, "orc"],
-        [44, 35, "goblin"], [53, 36, "skeleton"], [47, 40, "imp"], [55, 40, "orc"],
-        [5, 25, "imp"], [14, 12, "orc"], [28, 22, "goblin"],
-        [46, 18, "skeleton"], [50, 25, "zombie"], [43, 39, "orc"]
-      ];
-      if (this.state.floor >= 2) positions.push([27, 31, "goblin"], [39, 38, "skeleton"], [49, 22, "orc"]);
-      if (this.state.floor >= 3) positions.push([28, 8, "imp"], [46, 24, "zombie"], [31, 36, "orc"]);
-      positions.forEach(([x, y, type]) => this.spawnEnemy(x, y, type, scale));
-      this.boss = this.spawnEnemy(48, 11, "boss", scale);
+      this.mapLayout.enemies.forEach(({ x, y, type }) => this.spawnEnemy(x, y, type, scale));
+      this.boss = this.spawnEnemy(this.mapLayout.boss.x, this.mapLayout.boss.y, "boss", scale);
       this.state.totalEnemies = this.enemies.countActive(true);
     }
     spawnEnemy(tileX, tileY, type, scale) {
@@ -1578,7 +1588,8 @@
 
 
     revealStairs() {
-      this.stairs = this.add.image(53 * TILE + 8, 11 * TILE + 8, "floor_stairs").setDepth(-1).setAlpha(0);
+      const stairs = this.mapLayout.stairs;
+      this.stairs = this.add.image(stairs.x * TILE + 8, stairs.y * TILE + 8, "floor_stairs").setDepth(-1).setAlpha(0);
       this.tweens.add({ targets: this.stairs, alpha: 1, duration: 500 });
     }
     nextFloor() {
@@ -1594,6 +1605,7 @@
           autoStart: true,
           area: "dungeon",
           level: next,
+          runSeed: this.state.runSeed,
           gold: this.state.gold,
           hp: Math.min(this.state.maxHp, this.state.hp + 2)
         });
@@ -1617,6 +1629,7 @@
           autoStart: true,
           area: "dungeon",
           level: this.state.floor,
+          runSeed: this.state.runSeed,
           gold: this.state.gold,
           hp: this.state.hp
         });
@@ -1632,6 +1645,7 @@
           autoStart: true,
           area: "town",
           level: this.state.floor,
+          runSeed: this.state.runSeed,
           gold: this.state.gold,
           hp: this.state.hp
         });

@@ -93,6 +93,213 @@
     return cells;
   }
 
+  function mixSeed(value) {
+    let mixed = value >>> 0;
+    mixed = Math.imul(mixed ^ (mixed >>> 16), 0x7feb352d);
+    mixed = Math.imul(mixed ^ (mixed >>> 15), 0x846ca68b);
+    return (mixed ^ (mixed >>> 16)) >>> 0;
+  }
+
+  function createSeededRandom(seed) {
+    let state = seed >>> 0;
+    const next = () => {
+      state = (state + 0x6d2b79f5) >>> 0;
+      let value = state;
+      value = Math.imul(value ^ (value >>> 15), value | 1);
+      value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
+      return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+    };
+    return Object.freeze({
+      next,
+      int(min, max) {
+        return min + Math.floor(next() * (max - min + 1));
+      },
+      pick(items) {
+        return items[Math.floor(next() * items.length)];
+      },
+      chance(probability) {
+        return next() < probability;
+      }
+    });
+  }
+
+  function makeRoom(centerX, centerY, width, height, label, mapWidth, mapHeight) {
+    const left = Math.max(2, Math.min(mapWidth - width - 3, Math.round(centerX - width / 2)));
+    const top = Math.max(2, Math.min(mapHeight - height - 3, Math.round(centerY - height / 2)));
+    return Object.freeze({
+      label,
+      left,
+      top,
+      width,
+      height,
+      right: left + width - 1,
+      bottom: top + height - 1,
+      centerX: left + Math.floor(width / 2),
+      centerY: top + Math.floor(height / 2)
+    });
+  }
+
+  function roomRectangle(room) {
+    return [room.left, room.top, room.width, room.height];
+  }
+
+  function carveCorridor(cells, from, to, random, mapWidth, mapHeight, horizontalFirst = random.chance(0.5)) {
+    const add = (x, y) => {
+      if (x < 1 || y < 1 || x >= mapWidth - 1 || y >= mapHeight - 1) return;
+      cells.add(cellKey(x, y));
+    };
+    const horizontal = (fromX, toX, y) => {
+      for (let x = Math.min(fromX, toX); x <= Math.max(fromX, toX); x += 1) {
+        add(x, y);
+        add(x, y + 1);
+      }
+    };
+    const vertical = (fromY, toY, x) => {
+      for (let y = Math.min(fromY, toY); y <= Math.max(fromY, toY); y += 1) {
+        add(x, y);
+        add(x + 1, y);
+      }
+    };
+
+    if (horizontalFirst) {
+      horizontal(from.centerX, to.centerX, from.centerY);
+      vertical(from.centerY, to.centerY, to.centerX);
+    } else {
+      vertical(from.centerY, to.centerY, from.centerX);
+      horizontal(from.centerX, to.centerX, to.centerY);
+    }
+  }
+
+  function generateDungeonLayout(floor = 1, runSeed = 1, mapWidth = 64, mapHeight = 48) {
+    if (mapWidth < 60 || mapHeight < 44) throw new Error("Procedurālajai kartei vajag vismaz 60x44 flīzes");
+    const level = Math.max(1, Math.floor(Number(floor) || 1));
+    const seed = mixSeed((Number(runSeed) >>> 0) ^ Math.imul(level, 0x9e3779b1));
+    const random = createSeededRandom(seed);
+    const sizedRoom = (centerX, centerY, minWidth, maxWidth, minHeight, maxHeight, label) => (
+      makeRoom(
+        centerX,
+        centerY,
+        random.int(minWidth, maxWidth),
+        random.int(minHeight, maxHeight),
+        label,
+        mapWidth,
+        mapHeight
+      )
+    );
+
+    // Rooms stay compact and live in separate bands. Random dimensions and
+    // corridor turns make every floor different without producing overlaps
+    // that are too large to read on a phone.
+    const startRoom = sizedRoom(8, random.int(34, 38), 8, 10, 6, 8, "start");
+    const lowerMid = sizedRoom(random.int(19, 22), random.int(35, 39), 7, 10, 5, 7, "lower-mid");
+    const lowerRight = sizedRoom(random.int(33, 37), random.int(35, 39), 7, 10, 5, 7, "lower-right");
+    const midRight = sizedRoom(random.int(37, 41), random.int(25, 29), 7, 10, 5, 7, "mid-right");
+    const centerRoom = sizedRoom(random.int(24, 29), random.int(22, 26), 7, 10, 5, 7, "center");
+    const leftMid = sizedRoom(random.int(9, 13), random.int(21, 25), 7, 10, 5, 7, "left-mid");
+    const upperLeft = sizedRoom(random.int(9, 14), random.int(9, 13), 7, 10, 5, 7, "upper-left");
+    const upperMid = sizedRoom(random.int(24, 30), random.int(9, 13), 7, 10, 5, 7, "upper-mid");
+    const antechamber = makeRoom(48, 19, 11, 6, "antechamber", mapWidth, mapHeight);
+    const bossRoom = Object.freeze({
+      label: "boss",
+      left: BOSS_CHAMBER.left,
+      top: BOSS_CHAMBER.top,
+      width: BOSS_CHAMBER.right - BOSS_CHAMBER.left + 1,
+      height: BOSS_CHAMBER.bottom - BOSS_CHAMBER.top + 1,
+      right: BOSS_CHAMBER.right,
+      bottom: BOSS_CHAMBER.bottom,
+      centerX: BOSS_CHAMBER.entranceX,
+      centerY: 11
+    });
+    const rooms = [startRoom, lowerMid, lowerRight, midRight, centerRoom, leftMid, upperLeft, upperMid, antechamber, bossRoom];
+    const floorCells = buildFloorCells(rooms.map(roomRectangle));
+
+    // A connected main route plus two branches/loops. The boss is reached
+    // only through its guarded two-cell gate, never through a random tunnel.
+    carveCorridor(floorCells, startRoom, lowerMid, random, mapWidth, mapHeight);
+    carveCorridor(floorCells, lowerMid, lowerRight, random, mapWidth, mapHeight);
+    carveCorridor(floorCells, lowerRight, midRight, random, mapWidth, mapHeight);
+    carveCorridor(floorCells, midRight, antechamber, random, mapWidth, mapHeight, true);
+    carveCorridor(floorCells, lowerMid, centerRoom, random, mapWidth, mapHeight);
+    carveCorridor(floorCells, centerRoom, leftMid, random, mapWidth, mapHeight);
+    carveCorridor(floorCells, leftMid, upperLeft, random, mapWidth, mapHeight);
+    carveCorridor(floorCells, centerRoom, upperMid, random, mapWidth, mapHeight);
+    if (random.chance(0.7)) carveCorridor(floorCells, upperLeft, upperMid, random, mapWidth, mapHeight);
+    if (random.chance(0.55)) carveCorridor(floorCells, centerRoom, midRight, random, mapWidth, mapHeight);
+    for (let x = BOSS_CHAMBER.gateLeft; x <= BOSS_CHAMBER.gateRight; x += 1) {
+      floorCells.add(cellKey(x, BOSS_CHAMBER.wallY));
+    }
+
+    const occupied = new Set();
+    const reserve = (point) => {
+      occupied.add(cellKey(point.x, point.y));
+      return Object.freeze(point);
+    };
+    const spawn = reserve({ x: startRoom.centerX, y: startRoom.centerY });
+    const guide = reserve({ x: startRoom.left + 2, y: startRoom.centerY });
+    const boss = reserve({ x: BOSS_CHAMBER.entranceX, y: 11 });
+    const stairs = reserve({ x: BOSS_CHAMBER.right - 3, y: 11 });
+    reserve({ x: BOSS_CHAMBER.gateLeft, y: BOSS_CHAMBER.wallY });
+    reserve({ x: BOSS_CHAMBER.gateRight, y: BOSS_CHAMBER.wallY });
+
+    const combatRooms = [lowerMid, lowerRight, midRight, centerRoom, leftMid, upperLeft, upperMid, antechamber];
+    const pointInRoom = (room, margin = 1) => ({
+      x: random.int(room.left + margin, room.right - margin),
+      y: random.int(room.top + margin, room.bottom - margin)
+    });
+    const claimPoint = (pool = combatRooms, margin = 1) => {
+      for (let attempt = 0; attempt < 160; attempt += 1) {
+        const point = pointInRoom(random.pick(pool), margin);
+        const key = cellKey(point.x, point.y);
+        if (!floorCells.has(key) || occupied.has(key)) continue;
+        if (Math.abs(point.x - spawn.x) + Math.abs(point.y - spawn.y) < 4) continue;
+        occupied.add(key);
+        return Object.freeze(point);
+      }
+      throw new Error("Neizdevās atrast brīvu vietu procedurālās kartes objektam");
+    };
+
+    const chestCount = Math.min(5, 3 + Math.floor((level - 1) / 3));
+    const chests = Array.from({ length: chestCount }, () => Object.freeze({
+      ...claimPoint(combatRooms, 2),
+      keyChance: Math.min(0.55, 0.39 + level * 0.01)
+    }));
+    const trapCount = Math.min(7, 4 + Math.floor(level / 2));
+    const traps = Array.from({ length: trapCount }, () => claimPoint(combatRooms, 1));
+    const props = Array.from({ length: 8 }, (_, index) => Object.freeze({
+      ...claimPoint(combatRooms, 2),
+      type: index % 3 === 0 ? "column" : "crate"
+    }));
+    const skulls = Array.from({ length: 6 }, () => claimPoint(combatRooms, 1));
+
+    const enemyPool = ["zombie", "zombie", "goblin", "goblin", "skeleton", "imp", "orc"];
+    if (level >= 3) enemyPool.push("imp", "orc", "skeleton");
+    if (level >= 6) enemyPool.push("orc", "orc", "imp");
+    const enemyCount = 18 + Math.min(12, level * 2);
+    const enemies = Array.from({ length: enemyCount }, () => Object.freeze({
+      ...claimPoint(combatRooms, 1),
+      type: random.pick(enemyPool)
+    }));
+
+    return Object.freeze({
+      seed,
+      level,
+      rooms: Object.freeze(rooms),
+      rectangles: Object.freeze(rooms.map((room) => Object.freeze(roomRectangle(room)))),
+      floorCells,
+      startRoom,
+      spawn,
+      guide,
+      boss,
+      stairs,
+      chests: Object.freeze(chests),
+      traps: Object.freeze(traps),
+      props: Object.freeze(props),
+      skulls: Object.freeze(skulls),
+      enemies: Object.freeze(enemies),
+      gate: BOSS_CHAMBER
+    });
+  }
+
   function wallMaskAt(floorCells, x, y) {
     let mask = 0;
     if (!floorCells.has(cellKey(x, y - 1))) mask |= WALL_EDGE.NORTH;
@@ -210,6 +417,9 @@
     TOWN_RECTS,
     DUNGEON_RECTS,
     MINIMAL_MASK_PATTERNS,
+    mixSeed,
+    createSeededRandom,
+    generateDungeonLayout,
     buildFloorCells,
     buildWallCells,
     wallMaskAt,
