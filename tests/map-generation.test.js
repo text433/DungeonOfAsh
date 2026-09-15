@@ -51,9 +51,12 @@ function validateLayout(layout, floor, runSeed) {
 
   const wallPlan = mapRules.buildWallPlan(layout.floorCells, MAP_W, MAP_H);
   assert(new Set(wallPlan.map(({ x, y }) => cellKey(x, y))).size === wallPlan.length, `Stāvā ${floor} siena uzzīmēta divreiz`);
+  const wallByCell = new Map(wallPlan.map((rule) => [cellKey(rule.x, rule.y), rule]));
   wallPlan.forEach((rule) => {
     assert(mapRules.MINIMAL_MASK_PATTERNS[rule.frame] === rule.mask, `Stāvā ${floor} sienai izvēlēta nepareiza flīze`);
     assert(!layout.floorCells.has(cellKey(rule.x, rule.y)), `Stāvā ${floor} siena pārklāj grīdu`);
+    const right = wallByCell.get(cellKey(rule.x + 1, rule.y));
+    assert(!right || right.facing === rule.facing, `Stāvā ${floor} vienā sienas posmā atšķiras augstumi`);
   });
 }
 

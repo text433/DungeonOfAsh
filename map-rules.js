@@ -388,6 +388,43 @@
     return "side";
   }
 
+  function normalizeHorizontalWallRuns(plans, floorCells) {
+    const rows = new Map();
+    plans.forEach((plan) => {
+      if (!rows.has(plan.y)) rows.set(plan.y, []);
+      rows.get(plan.y).push(plan);
+    });
+
+    rows.forEach((row) => {
+      row.sort((a, b) => a.x - b.x);
+      let start = 0;
+      while (start < row.length) {
+        let end = start + 1;
+        while (end < row.length && row[end].x === row[end - 1].x + 1) end += 1;
+        const run = row.slice(start, end);
+        const tallParts = run.filter((plan) => plan.facing !== "side");
+
+        // A continuous horizontal wall must use one 32 px baseline. At a
+        // procedural T-junction the local neighbour check can otherwise mix
+        // north, south and 16 px side tiles in the same visible brick run.
+        if (run.length > 1 && tallParts.length > 0) {
+          let northScore = 0;
+          let southScore = 0;
+          run.forEach((plan) => {
+            if (plan.facing === "north") northScore += 2;
+            if (plan.facing === "south") southScore += 2;
+            if (floorCells.has(cellKey(plan.x, plan.y + 1))) northScore += 3;
+            if (floorCells.has(cellKey(plan.x, plan.y - 1))) southScore += 3;
+          });
+          const facing = northScore >= southScore ? "north" : "south";
+          run.forEach((plan) => { plan.facing = facing; });
+        }
+        start = end;
+      }
+    });
+    return plans;
+  }
+
   function buildWallPlan(floorCells, mapWidth, mapHeight) {
     const wallCells = buildWallCells(floorCells, mapWidth, mapHeight);
     const plans = [];
@@ -407,7 +444,7 @@
         });
       }
     }
-    return plans;
+    return normalizeHorizontalWallRuns(plans, floorCells);
   }
 
   return Object.freeze({

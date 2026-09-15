@@ -91,7 +91,7 @@ if (game.includes("startFollow(this.player, true") || game.includes("setRoundPix
 }
 if (!game.includes("fixedStep: false")) throw new Error("Fizika nav piesaistīta ekrāna kadru ritmam");
 if (!game.includes("roundPixels: false")) throw new Error("Globālā pikseļu noapaļošana nav izslēgta");
-if (!html.includes('<script src="map-rules.js?v=44"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
+if (!html.includes('<script src="map-rules.js?v=46"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
 if (!html.includes('<script src="progression.js?v=28"></script>')) throw new Error("HTML neielādē progresa sistēmu");
 if (!html.includes('<script src="game.js?v=45"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
 if (!html.includes('<link rel="stylesheet" href="style.css?v=42" />')) throw new Error("HTML neielādē jaunāko HUD noformējumu");
@@ -116,6 +116,13 @@ if (mapRules.MINIMAL_MASK_PATTERNS.filter(Boolean).length !== 47) {
 }
 if (new Set(wallPlan.map(({ x, y }) => `${x},${y}`)).size !== wallPlan.length) {
   throw new Error("Kartes noteikumi vienā šūnā izveido vairākas sienas");
+}
+const wallByCell = new Map(wallPlan.map((rule) => [`${rule.x},${rule.y}`, rule]));
+for (const rule of wallPlan) {
+  const right = wallByCell.get(`${rule.x + 1},${rule.y}`);
+  if (right && right.facing !== rule.facing) {
+    throw new Error(`Vienā sienas posmā atšķiras augstumi pie ${rule.x},${rule.y}`);
+  }
 }
 const facingCounts = wallPlan.reduce((counts, rule) => {
   counts[rule.facing] = (counts[rule.facing] || 0) + 1;
