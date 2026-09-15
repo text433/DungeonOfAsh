@@ -13,11 +13,11 @@ const required = [
   "assets/frames/knight_f_idle_anim_f0.png",
   "assets/frames/knight_f_run_anim_f3.png",
   "assets/frames/knight_f_hit_anim_f0.png",
-  "assets/frames/knight_ash_idle_anim_f0.png",
-  "assets/frames/knight_ash_idle_anim_f3.png",
-  "assets/frames/knight_ash_run_anim_f0.png",
-  "assets/frames/knight_ash_run_anim_f3.png",
-  "assets/frames/knight_ash_hit_anim_f0.png",
+  "assets/frames/knight_ash_v2_idle_anim_f0.png",
+  "assets/frames/knight_ash_v2_idle_anim_f3.png",
+  "assets/frames/knight_ash_v2_run_anim_f0.png",
+  "assets/frames/knight_ash_v2_run_anim_f3.png",
+  "assets/frames/knight_ash_v2_hit_anim_f0.png",
   "assets/frames/atlas_walls_low-16x16.png",
   "assets/frames/atlas_walls_high-16x32.png",
   "assets/frames/big_demon_idle_anim_f0.png",
@@ -92,7 +92,7 @@ if (!game.includes("fixedStep: false")) throw new Error("Fizika nav piesaistīta
 if (!game.includes("roundPixels: false")) throw new Error("Globālā pikseļu noapaļošana nav izslēgta");
 if (!html.includes('<script src="map-rules.js?v=28"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
 if (!html.includes('<script src="progression.js?v=28"></script>')) throw new Error("HTML neielādē progresa sistēmu");
-if (!html.includes('<script src="game.js?v=42"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
+if (!html.includes('<script src="game.js?v=43"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
 if (!html.includes('<link rel="stylesheet" href="style.css?v=42" />')) throw new Error("HTML neielādē jaunāko HUD noformējumu");
 
 const minimapSource = game.slice(game.indexOf("    renderMinimap(time) {"), game.indexOf("    toggleMinimap(show) {"));
