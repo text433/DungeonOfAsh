@@ -1080,11 +1080,15 @@
       const height = dom.minimap.height;
       ctx.clearRect(0, 0, width, height);
 
-      const cells = Array.from(this.floorCells, (entry) => entry.split(",").map(Number));
-      let minX = Math.min(...cells.map(([x]) => x));
-      let maxX = Math.max(...cells.map(([x]) => x));
-      let minY = Math.min(...cells.map(([, y]) => y));
-      let maxY = Math.max(...cells.map(([, y]) => y));
+      const floorBoundsCells = Array.from(this.floorCells, (entry) => entry.split(",").map(Number));
+      const wallBoundsCells = Array.from(this.wallCells || [], (entry) => entry.split(",").map(Number));
+      // Walls sit one tile outside the walkable floor. Include them in the
+      // bounds so the north/top wall is not clipped off the minimap.
+      const boundsCells = floorBoundsCells.concat(wallBoundsCells);
+      let minX = Math.min(...boundsCells.map(([x]) => x));
+      let maxX = Math.max(...boundsCells.map(([x]) => x));
+      let minY = Math.min(...boundsCells.map(([, y]) => y));
+      let maxY = Math.max(...boundsCells.map(([, y]) => y));
       if (this.minimapZoomed) {
         const centerX = Math.floor(this.player.x / TILE);
         const centerY = Math.floor(this.player.y / TILE);
