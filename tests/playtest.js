@@ -42,6 +42,40 @@ const server = require("../server.js");
   });
   if (!dungeonReady) throw new Error("Dungeon enemies or optional boss quest did not initialize");
 
+  const dormantMimic = await page.evaluate(() => {
+    const scene = window.__DUNGEON_DEBUG__.scene;
+    return {
+      active: scene.mimic?.active,
+      type: scene.mimic?.getData("type"),
+      dormant: scene.mimic?.getData("dormant"),
+      texture: scene.mimic?.texture?.key,
+      healthBar: Boolean(scene.mimic?.healthBar)
+    };
+  });
+  if (!dormantMimic.active || dormantMimic.type !== "mimic" || !dormantMimic.dormant ||
+      dormantMimic.texture !== "chest_mimic_open_anim_f0" || dormantMimic.healthBar) {
+    throw new Error(`Mimic did not begin disguised as a chest: ${JSON.stringify(dormantMimic)}`);
+  }
+
+  await page.evaluate(() => {
+    const scene = window.__DUNGEON_DEBUG__.scene;
+    scene.player.setPosition(scene.mimic.x - 50, scene.mimic.y);
+  });
+  await page.waitForTimeout(150);
+  await page.screenshot({ path: "screenshots/03-mimic-awaken-desktop.png" });
+  await page.waitForTimeout(300);
+  const awakeMimic = await page.evaluate(() => {
+    const scene = window.__DUNGEON_DEBUG__.scene;
+    return {
+      dormant: scene.mimic.getData("dormant"),
+      animation: scene.mimic.anims.currentAnim?.key,
+      healthBar: Boolean(scene.mimic.healthBar)
+    };
+  });
+  if (awakeMimic.dormant || !awakeMimic.healthBar || !["mimic-awaken", "mimic-run"].includes(awakeMimic.animation)) {
+    throw new Error(`Mimic did not wake and attack: ${JSON.stringify(awakeMimic)}`);
+  }
+
   await page.evaluate(() => {
     const scene = window.__DUNGEON_DEBUG__.scene;
     const chest = scene.chests[0];
@@ -49,36 +83,63 @@ const server = require("../server.js");
     Math.random = () => 0;
     scene.openChest(chest);
     Math.random = originalRandom;
-    scene.player.setPosition(chest.x - 22, chest.y + 14);
+    scene.player.setPosition(chest.x - 48, chest.y + 20);
   });
   await page.waitForTimeout(330);
-  await page.screenshot({ path: "screenshots/03-chest-loot-desktop.png" });
+  await page.screenshot({ path: "screenshots/04-chest-loot-desktop.png" });
 
   const dropState = await page.evaluate(() => {
     const scene = window.__DUNGEON_DEBUG__.scene;
+    const chest = scene.chests[0];
     return {
       types: scene.drops.getChildren().filter((drop) => drop.active).map((drop) => drop.getData("type")),
-      keyBeforePickup: scene.state.hasKey
+      keyBeforePickup: scene.state.hasKey,
+      minScatter: Math.min(...scene.drops.getChildren().filter((drop) => drop.active).map((drop) => (
+        Phaser.Math.Distance.Between(chest.x, chest.y - 7, drop.x, drop.y)
+      )))
     };
   });
   for (const type of ["coin", "potion", "key", "armor"]) {
     if (!dropState.types.includes(type)) throw new Error(`Chest did not visibly drop ${type}`);
   }
   if (dropState.keyBeforePickup) throw new Error("Key was granted before its world drop was collected");
+  if (dropState.minScatter < 20) throw new Error(`Chest loot remained inside the chest: ${dropState.minScatter}`);
 
   await page.waitForTimeout(180);
   const pickupState = await page.evaluate(() => {
     const scene = window.__DUNGEON_DEBUG__.scene;
-    scene.drops.getChildren().filter((drop) => drop.active).forEach((drop) => scene.collectDrop(scene.player, drop));
+    const drop = scene.drops.getChildren().find((candidate) => candidate.active);
+    scene.player.setPosition(drop.x - 30, drop.y);
+    const pickupDistance = Phaser.Math.Distance.Between(scene.player.x, scene.player.y, drop.x, drop.y);
+    scene.updateDropPickup();
     return {
       hasKey: scene.state.hasKey,
       armorId: scene.state.armorId,
       armorText: document.querySelector("#armor-rank")?.textContent,
-      keyVisible: Boolean(document.querySelector("#key-status")?.offsetParent)
+      keyVisible: Boolean(document.querySelector("#key-status")?.offsetParent),
+      pickupDistance,
+      activeDrops: scene.drops.getChildren().filter((candidate) => candidate.active).length
     };
   });
-  if (!pickupState.hasKey || pickupState.armorId !== "ash" || !pickupState.keyVisible || !pickupState.armorText?.includes("Pelnu bruņas")) {
+  if (!pickupState.hasKey || pickupState.armorId !== "ash" || !pickupState.keyVisible ||
+      !pickupState.armorText?.includes("Pelnu bruņas") || pickupState.pickupDistance < 24 || pickupState.activeDrops !== 0) {
     throw new Error(`Loot pickup failed: ${JSON.stringify(pickupState)}`);
+  }
+
+  const wallFogState = await page.evaluate(() => {
+    const scene = window.__DUNGEON_DEBUG__.scene;
+    scene.updateFogOfWar(true);
+    const visibleWallKey = Array.from(scene.currentVisibleCells).find((key) => scene.wallCells.has(key));
+    if (!visibleWallKey) return { found: false };
+    const [x, y] = visibleWallKey.split(",").map(Number);
+    return {
+      found: true,
+      above: y <= 0 || scene.currentVisibleCells.has(`${x},${y - 1}`),
+      below: y >= 47 || scene.currentVisibleCells.has(`${x},${y + 1}`)
+    };
+  });
+  if (!wallFogState.found || !wallFogState.above || !wallFogState.below) {
+    throw new Error(`Fog still cuts a tall wall into a floating brick row: ${JSON.stringify(wallFogState)}`);
   }
 
   await page.click("#minimap-zoom");
@@ -89,7 +150,7 @@ const server = require("../server.js");
   if (await page.locator("#minimap-panel").isVisible()) throw new Error("Minimap did not close");
   await page.click("#minimap-reopen");
   if (!(await page.locator("#minimap-panel").isVisible())) throw new Error("Minimap did not reopen");
-  await page.screenshot({ path: "screenshots/04-dungeon-hud-desktop.png" });
+  await page.screenshot({ path: "screenshots/05-dungeon-hud-desktop.png" });
 
   const mobileContext = await browser.newContext({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true });
   const mobilePage = await mobileContext.newPage();
@@ -101,11 +162,11 @@ const server = require("../server.js");
   await mobilePage.waitForFunction(() => window.__DUNGEON_DEBUG__?.scene?.area === "dungeon");
   await mobilePage.waitForTimeout(450);
   if (!(await mobilePage.locator("#joystick-base").isVisible())) throw new Error("Mobile joystick is not visible");
-  await mobilePage.screenshot({ path: "screenshots/05-dungeon-mobile-landscape.png" });
+  await mobilePage.screenshot({ path: "screenshots/06-dungeon-mobile-landscape.png" });
   await mobileContext.close();
 
   if (errors.length) throw new Error(errors.join("\n"));
-  console.log("Browser playtest passed: animated Ash Armor, physical chest loot, key pickup, optional quest, wall minimap controls and mobile HUD.");
+  console.log("Browser playtest passed: mimic ambush, scattered chest loot, radius pickup, complete fog-edge walls, minimap controls and mobile HUD.");
   await context.close();
   await browser.close();
   server.close();

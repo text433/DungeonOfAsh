@@ -3,6 +3,9 @@
 
   const TILE = 16;
   const HIGH_WALL_TOP_INSET = 11;
+  const DROP_PICKUP_RADIUS = 34;
+  const CHEST_DROP_MIN_DISTANCE = 22;
+  const CHEST_DROP_MAX_DISTANCE = 30;
   const MAP_W = 64;
   const MAP_H = 48;
   const WORLD_W = MAP_W * TILE;
@@ -95,6 +98,7 @@
     bossIdle: [0, 1, 2, 3].map((i) => `big_demon_idle_anim_f${i}`),
     bossRun: [0, 1, 2, 3].map((i) => `big_demon_run_anim_f${i}`),
     chest: [0, 1, 2].map((i) => `chest_full_open_anim_f${i}`),
+    mimic: [0, 1, 2].map((i) => `chest_mimic_open_anim_f${i}`),
     coin: [0, 1, 2, 3].map((i) => `coin_anim_f${i}`),
     items: ["weapon_golden_sword", "flask_big_red", "ui_heart_full", "ui_heart_half", "ui_heart_empty"]
   };
@@ -414,7 +418,7 @@
         ...ASSETS.zombie, ...ASSETS.goblinIdle, ...ASSETS.goblinRun,
         ...ASSETS.skeletonIdle, ...ASSETS.skeletonRun, ...ASSETS.impIdle, ...ASSETS.impRun,
         ...ASSETS.townNpc, ...ASSETS.guideNpc, ...ASSETS.orcIdle, ...ASSETS.orcRun,
-        ...ASSETS.bossIdle, ...ASSETS.bossRun, ...ASSETS.chest, ...ASSETS.coin, ...ASSETS.items
+        ...ASSETS.bossIdle, ...ASSETS.bossRun, ...ASSETS.chest, ...ASSETS.mimic, ...ASSETS.coin, ...ASSETS.items
       ];
       [...new Set(allKeys)].forEach((key) => this.load.image(key, `${key}.png`));
     }
@@ -483,6 +487,8 @@
       create("coin-spin", ASSETS.coin, 9);
       create("spikes", ["floor_spikes_anim_f0", "floor_spikes_anim_f1", "floor_spikes_anim_f2", "floor_spikes_anim_f3"], 5);
       create("chest-open", ASSETS.chest, 8, 0);
+      create("mimic-awaken", ASSETS.mimic, 9, 0);
+      create("mimic-run", [ASSETS.mimic[1], ASSETS.mimic[2]], 7);
     }
 
     createLootTextures() {
@@ -851,6 +857,7 @@
     spawnEncounters() {
       const scale = 1 + (this.state.floor - 1) * 0.18;
       this.mapLayout.enemies.forEach(({ x, y, type }) => this.spawnEnemy(x, y, type, scale));
+      this.mimic = this.spawnEnemy(this.mapLayout.mimic.x, this.mapLayout.mimic.y, "mimic", scale);
       this.boss = this.spawnEnemy(this.mapLayout.boss.x, this.mapLayout.boss.y, "boss", scale);
       this.state.totalEnemies = this.enemies.countActive(true);
     }
@@ -861,13 +868,15 @@
         skeleton: { texture: ASSETS.skeletonIdle[0], idle: "skeleton-idle", run: "skeleton-run", hp: 3, speed: 36, damage: 1, reward: 3, aggroRadius: 158, patrolRadius: 52 },
         imp: { texture: ASSETS.impIdle[0], idle: "imp-idle", run: "imp-run", hp: 3, speed: 43, damage: 1, reward: 4, aggroRadius: 170, patrolRadius: 62 },
         orc: { texture: ASSETS.orcIdle[0], idle: "orc-idle", run: "orc-run", hp: 4, speed: 39, damage: 1, reward: 4, aggroRadius: 185, patrolRadius: 54 },
+        mimic: { texture: ASSETS.mimic[0], idle: "mimic-run", run: "mimic-run", hp: 5, speed: 52, damage: 1, reward: 7, aggroRadius: 150, patrolRadius: 0 },
         boss: { texture: ASSETS.bossIdle[0], idle: "boss-idle", run: "boss-run", hp: 16, speed: 34, damage: 2, reward: 20, aggroRadius: 390, patrolRadius: 70 }
       };
       const def = definitions[type];
       const originX = tileX * TILE + 8;
       const originY = tileY * TILE + 8;
       const enemy = this.enemies.create(originX, originY, def.texture);
-      enemy.setOrigin(0.5, 1).setDepth(enemy.y).play(def.idle);
+      enemy.setOrigin(0.5, 1).setDepth(enemy.y);
+      if (type !== "mimic" && def.idle) enemy.play(def.idle);
       enemy.setData({
         type,
         idle: def.idle,
@@ -886,20 +895,22 @@
         aiState: "idle",
         decisionAt: this.time.now + Phaser.Math.Between(250, 1300),
         patrolDirection: Math.random() < 0.5 ? -1 : 1,
+        dormant: type === "mimic",
         staggerUntil: 0
       });
       if (type === "boss") enemy.body.setSize(22, 20).setOffset(5, 15);
+      else if (type === "mimic") enemy.body.setSize(15, 11).setOffset(0, 5);
       else if (type === "orc") enemy.body.setSize(11, 11).setOffset(2, 11);
       else enemy.body.setSize(10, 9).setOffset(3, 7);
       enemy.setCollideWorldBounds(true);
-      this.createEnemyHealthBar(enemy, type);
+      if (type !== "mimic") this.createEnemyHealthBar(enemy, type);
       return enemy;
     }
 
     createEnemyHealthBar(enemy, type) {
-      const width = type === "boss" ? 34 : 18;
+      const width = type === "boss" ? 34 : type === "mimic" ? 22 : 18;
       const height = type === "boss" ? 4 : 3;
-      const offsetY = type === "boss" ? 42 : type === "orc" ? 29 : 22;
+      const offsetY = type === "boss" ? 42 : type === "orc" ? 29 : type === "mimic" ? 19 : 22;
       const background = this.add.rectangle(enemy.x, enemy.y - offsetY, width + 2, height + 2, 0x120c10, 0.96)
         .setStrokeStyle(1, 0x4d3030, 1);
       const fill = this.add.rectangle(enemy.x - width / 2, enemy.y - offsetY, width, height, 0xc44336, 1)
@@ -996,6 +1007,7 @@
       if (this.area === "dungeon") {
         this.updateEnemies(time);
         this.updateAutoChests();
+        this.updateDropPickup();
         this.updateSpikeTrap(time);
       } else {
         this.updateTownEntrance();
@@ -1045,6 +1057,21 @@
           this.visitedCells.add(key);
         }
       }
+
+      // A 32 px wall sprite crosses the neighbouring vertical tiles. Reveal
+      // those tiles together so fog never cuts away the wall body and leaves
+      // a single floating row of bricks at the edge of the visible circle.
+      Array.from(this.currentVisibleCells).forEach((key) => {
+        if (!this.wallCells?.has(key)) return;
+        const [wallX, wallY] = key.split(",").map(Number);
+        for (let paddingY = -1; paddingY <= 1; paddingY += 1) {
+          const paddedY = wallY + paddingY;
+          if (paddedY < 0 || paddedY >= MAP_H) continue;
+          const paddedKey = `${wallX},${paddedY}`;
+          this.currentVisibleCells.add(paddedKey);
+          this.visitedCells.add(paddedKey);
+        }
+      });
 
       this.fogGraphics.clear();
       this.fogGraphics.fillStyle(0x020105, 0.97);
@@ -1246,6 +1273,7 @@
     }
 
     hitEnemy(enemy, damage, direction, time) {
+      if (enemy.getData("type") === "mimic" && enemy.getData("dormant")) this.awakenMimic(enemy, time);
       const hp = enemy.getData("hp") - damage;
       enemy.setData("hp", hp);
       enemy.setData("staggerUntil", time + 130);
@@ -1295,7 +1323,7 @@
       this.updateObjective();
     }
 
-    spawnDrop(x, y, type, value) {
+    spawnDrop(x, y, type, value, options = {}) {
       const armor = type === "armor" ? (ARMOR_SETS[value] || ARMOR_SETS.scout) : null;
       const key = type === "coin"
         ? ASSETS.coin[0]
@@ -1304,8 +1332,13 @@
           : type === "key"
             ? "loot-key"
             : armor.idle[0];
-      const targetX = x + Phaser.Math.Between(-14, 14);
-      const targetY = y + Phaser.Math.Between(-11, 9);
+      const fromChest = Boolean(options.fromChest);
+      const minDistance = fromChest ? CHEST_DROP_MIN_DISTANCE : 8;
+      const maxDistance = fromChest ? CHEST_DROP_MAX_DISTANCE : 14;
+      const scatterAngle = Phaser.Math.FloatBetween(0, Math.PI * 2);
+      const scatterDistance = Phaser.Math.Between(minDistance, maxDistance);
+      const targetX = x + Math.cos(scatterAngle) * scatterDistance;
+      const targetY = y + Math.sin(scatterAngle) * scatterDistance;
       const drop = this.drops.create(x, y - 3, key)
         .setDepth(targetY + 2)
         .setData({ type, value, collectAt: this.time.now + 430 });
@@ -1327,7 +1360,7 @@
     }
 
     collectDrop(_player, drop) {
-      if (this.time.now < drop.getData("collectAt")) return;
+      if (!drop?.active || this.time.now < drop.getData("collectAt")) return;
       const type = drop.getData("type");
       if (type === "coin") {
         this.state.addGold(drop.getData("value"));
@@ -1353,6 +1386,15 @@
       this.updateHud();
     }
 
+    updateDropPickup() {
+      this.drops.getChildren().forEach((drop) => {
+        if (!drop.active || this.time.now < drop.getData("collectAt")) return;
+        if (Phaser.Math.Distance.Between(this.player.x, this.player.y, drop.x, drop.y) <= DROP_PICKUP_RADIUS) {
+          this.collectDrop(this.player, drop);
+        }
+      });
+    }
+
     showLootToast(message, type = "") {
       if (!dom.lootToast) return;
       dom.lootToast.textContent = message;
@@ -1364,13 +1406,18 @@
     updateEnemies(time) {
       this.enemies.getChildren().forEach((enemy) => {
         if (!enemy.active) return;
+        const type = enemy.getData("type");
+        const distance = Phaser.Math.Distance.Between(enemy.x, enemy.y, this.player.x, this.player.y);
+        if (type === "mimic" && enemy.getData("dormant")) {
+          enemy.setVelocity(0, 0).setDepth(enemy.y);
+          if (distance < 58) this.awakenMimic(enemy, time);
+          return;
+        }
         if (time < enemy.getData("staggerUntil")) {
           enemy.setDepth(enemy.y);
           this.updateEnemyHealthBar(enemy);
           return;
         }
-        const distance = Phaser.Math.Distance.Between(enemy.x, enemy.y, this.player.x, this.player.y);
-        const type = enemy.getData("type");
         const canChase = distance < enemy.getData("aggroRadius") && (type !== "boss" || this.state.doorOpened);
         if (canChase && distance > 18) {
           const direction = new Phaser.Math.Vector2(this.player.x - enemy.x, this.player.y - enemy.y).normalize();
@@ -1385,6 +1432,23 @@
         enemy.setDepth(enemy.y);
         this.updateEnemyHealthBar(enemy);
       });
+    }
+
+    awakenMimic(enemy, time = this.time.now) {
+      if (!enemy?.active || enemy.getData("type") !== "mimic" || !enemy.getData("dormant")) return;
+      enemy.setData({
+        dormant: false,
+        aiState: "chase",
+        staggerUntil: time + 300
+      });
+      enemy.play("mimic-awaken");
+      enemy.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
+        if (enemy.active) enemy.play("mimic-run");
+      });
+      this.createEnemyHealthBar(enemy, "mimic");
+      this.showLootToast("MIMIKS! LĀDE UZBRŪK");
+      this.cameras.main.shake(120, 0.004);
+      sound.blip(94, 0.2, "sawtooth", 0.045);
     }
 
     updateEnemyPatrol(enemy, time) {
@@ -1463,6 +1527,10 @@
     handleEnemyContact(player, enemy) {
       const now = this.time.now;
       if (now < this.hurtReadyAt || !enemy.active) return;
+      if (enemy.getData("type") === "mimic" && enemy.getData("dormant")) {
+        this.awakenMimic(enemy, now);
+        return;
+      }
       this.hurtReadyAt = now + 850;
       const dealt = this.applyPlayerDamage(enemy.getData("damage"));
       if (!dealt) return;
@@ -1562,11 +1630,11 @@
       chest.setData("opened", true);
       chest.play("chest-open");
       this.state.chestOpened = true;
-      this.spawnDrop(chest.x, chest.y - 7, "coin", Phaser.Math.Between(3, 8));
-      if (Math.random() < 0.34) this.spawnDrop(chest.x, chest.y - 7, "coin", Phaser.Math.Between(2, 5));
-      if (Math.random() < 0.58) this.spawnDrop(chest.x, chest.y - 7, "potion", 2);
+      this.spawnDrop(chest.x, chest.y - 7, "coin", Phaser.Math.Between(3, 8), { fromChest: true });
+      if (Math.random() < 0.34) this.spawnDrop(chest.x, chest.y - 7, "coin", Phaser.Math.Between(2, 5), { fromChest: true });
+      if (Math.random() < 0.58) this.spawnDrop(chest.x, chest.y - 7, "potion", 2, { fromChest: true });
       if (!this.state.hasKey && !this.state.doorOpened && Math.random() < chest.getData("keyChance")) {
-        this.spawnDrop(chest.x, chest.y - 7, "key", 1);
+        this.spawnDrop(chest.x, chest.y - 7, "key", 1, { fromChest: true });
       }
       const unopenedChests = this.chests.filter((candidate) => !candidate.getData("opened")).length;
       if (Math.random() < 0.36 || (!this.state.armorDropSeen && unopenedChests === 0)) {
@@ -1574,7 +1642,7 @@
           ? Phaser.Utils.Array.GetRandom(["steel", "scout"])
           : "ash";
         this.state.armorDropSeen = true;
-        this.spawnDrop(chest.x, chest.y - 7, "armor", armorId);
+        this.spawnDrop(chest.x, chest.y - 7, "armor", armorId, { fromChest: true });
       }
       sound.blip(480, 0.16, "triangle", 0.04);
       this.cameras.main.flash(130, 138, 85, 30, false);

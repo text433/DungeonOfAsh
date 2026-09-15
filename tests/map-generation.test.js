@@ -32,7 +32,7 @@ function validateLayout(layout, floor, runSeed) {
   assert(layout.rooms.filter((room) => room.label !== "boss").every((room) => room.width <= 11 && room.height <= 8), `Stāvā ${floor} ir pārāk liela istaba`);
 
   const content = [
-    layout.spawn, layout.guide, layout.boss, layout.stairs,
+    layout.spawn, layout.guide, layout.boss, layout.stairs, layout.mimic,
     ...layout.chests, ...layout.traps, ...layout.props, ...layout.skulls, ...layout.enemies
   ];
   content.forEach(({ x, y }) => {
@@ -41,6 +41,7 @@ function validateLayout(layout, floor, runSeed) {
   });
   assert(new Set(content.map(({ x, y }) => cellKey(x, y))).size === content.length, `Stāvā ${floor} objekti pārklājas`);
   assert(layout.chests.length >= 3 && layout.chests.length <= 5, `Nepareizs lāžu skaits stāvā ${floor}`);
+  assert(layout.mimic && layout.floorCells.has(cellKey(layout.mimic.x, layout.mimic.y)), `Stāvā ${floor} trūkst mimika lādes`);
   assert(layout.enemies.length >= 20 && layout.enemies.length <= 30, `Nepareizs monstru skaits stāvā ${floor}`);
 
   const bossRoom = mapRules.BOSS_CHAMBER;

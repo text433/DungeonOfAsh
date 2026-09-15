@@ -263,6 +263,9 @@
       ...claimPoint(combatRooms, 2),
       keyChance: Math.min(0.55, 0.39 + level * 0.01)
     }));
+    // One extra chest is a mimic. It gets its own reserved floor cell so it
+    // never replaces a real loot chest or reduces the chance of finding the key.
+    const mimic = claimPoint(combatRooms, 2);
     const trapCount = Math.min(7, 4 + Math.floor(level / 2));
     const traps = Array.from({ length: trapCount }, () => claimPoint(combatRooms, 1));
     const props = Array.from({ length: 8 }, (_, index) => Object.freeze({
@@ -292,6 +295,7 @@
       boss,
       stairs,
       chests: Object.freeze(chests),
+      mimic,
       traps: Object.freeze(traps),
       props: Object.freeze(props),
       skulls: Object.freeze(skulls),

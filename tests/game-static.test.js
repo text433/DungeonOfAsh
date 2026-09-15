@@ -22,6 +22,9 @@ const required = [
   "assets/frames/atlas_walls_high-16x32.png",
   "assets/frames/big_demon_idle_anim_f0.png",
   "assets/frames/chest_full_open_anim_f0.png",
+  "assets/frames/chest_mimic_open_anim_f0.png",
+  "assets/frames/chest_mimic_open_anim_f1.png",
+  "assets/frames/chest_mimic_open_anim_f2.png",
   "assets/frames/floor_ladder.png",
   "assets/frames/wizzard_m_idle_anim_f0.png",
   "assets/frames/angel_idle_anim_f0.png",
@@ -64,6 +67,7 @@ for (const marker of [
   "renderMinimap", "createFogOfWar", "updateFogOfWar", "const revealRadius = 7", "this.fogGraphics.setVisible(false)", "visitedCells", "currentVisibleCells", "isWorldTileVisible", "openSmith", "upgradeWeapon", "ensureSound", "sound.step()", "createBuffer", "updateCarriedWeapon", "createAttackFx", "addLavaFall",
   "ARMOR_SETS", "player-steel-idle", "player-scout-idle", "player-ash-idle", "player-ash-run", "Pelnu bruņas", "applyArmorVisual", "speedMultiplier", "blockChance",
   "createLootTextures", "loot-key", "collectAt", "toggleMinimapZoom", "toggleMinimap(false)", "Sakauj stāva bosu",
+  "DROP_PICKUP_RADIUS", "CHEST_DROP_MIN_DISTANCE", "fromChest", "updateDropPickup", "mimic-awaken", "mimic-run", "awakenMimic", "MIMIKS! LĀDE UZBRŪK",
   "Phaser.Scenes.Events.POST_UPDATE", "runHandPoses", "idleHandPoses",
   "setOrigin(0.5, 0.95).setScale(0.74)", "facingLeft ? pose.angle : 360 - pose.angle",
   "this.carriedWeapon.setDepth(this.player.depth + 2)",
@@ -91,9 +95,9 @@ if (game.includes("startFollow(this.player, true") || game.includes("setRoundPix
 }
 if (!game.includes("fixedStep: false")) throw new Error("Fizika nav piesaistīta ekrāna kadru ritmam");
 if (!game.includes("roundPixels: false")) throw new Error("Globālā pikseļu noapaļošana nav izslēgta");
-if (!html.includes('<script src="map-rules.js?v=46"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
+if (!html.includes('<script src="map-rules.js?v=47"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
 if (!html.includes('<script src="progression.js?v=28"></script>')) throw new Error("HTML neielādē progresa sistēmu");
-if (!html.includes('<script src="game.js?v=45"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
+if (!html.includes('<script src="game.js?v=47"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
 if (!html.includes('<link rel="stylesheet" href="style.css?v=42" />')) throw new Error("HTML neielādē jaunāko HUD noformējumu");
 
 const minimapSource = game.slice(game.indexOf("    renderMinimap(time) {"), game.indexOf("    toggleMinimap(show) {"));
