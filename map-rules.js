@@ -246,13 +246,46 @@
       x: random.int(room.left + margin, room.right - margin),
       y: random.int(room.top + margin, room.bottom - margin)
     });
-    const claimPoint = (pool = combatRooms, margin = 1) => {
-      for (let attempt = 0; attempt < 160; attempt += 1) {
+    const solidCells = new Set();
+    const solidPoints = [];
+    const floorStaysConnected = (candidateKey) => {
+      const blocked = new Set(solidCells);
+      blocked.add(candidateKey);
+      const startKey = cellKey(spawn.x, spawn.y);
+      if (blocked.has(startKey)) return false;
+      const visited = new Set([startKey]);
+      const queue = [[spawn.x, spawn.y]];
+      for (let cursor = 0; cursor < queue.length; cursor += 1) {
+        const [x, y] = queue[cursor];
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const nextX = x + dx;
+          const nextY = y + dy;
+          const key = cellKey(nextX, nextY);
+          if (!floorCells.has(key) || blocked.has(key) || visited.has(key)) continue;
+          visited.add(key);
+          queue.push([nextX, nextY]);
+        }
+      }
+      return visited.size === floorCells.size - blocked.size;
+    };
+    const claimPoint = (pool = combatRooms, margin = 1, options = {}) => {
+      const solid = Boolean(options.solid);
+      const spacing = Math.max(0, Number(options.spacing) || 0);
+      const maxAttempts = solid ? 1200 : 160;
+      for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
         const point = pointInRoom(random.pick(pool), margin);
         const key = cellKey(point.x, point.y);
         if (!floorCells.has(key) || occupied.has(key)) continue;
         if (Math.abs(point.x - spawn.x) + Math.abs(point.y - spawn.y) < 4) continue;
+        if (solid && solidPoints.some((other) => (
+          Math.max(Math.abs(point.x - other.x), Math.abs(point.y - other.y)) < spacing
+        ))) continue;
+        if (solid && !floorStaysConnected(key)) continue;
         occupied.add(key);
+        if (solid) {
+          solidCells.add(key);
+          solidPoints.push(point);
+        }
         return Object.freeze(point);
       }
       throw new Error("Neizdevās atrast brīvu vietu procedurālās kartes objektam");
@@ -260,16 +293,16 @@
 
     const chestCount = Math.min(5, 3 + Math.floor((level - 1) / 3));
     const chests = Array.from({ length: chestCount }, () => Object.freeze({
-      ...claimPoint(combatRooms, 2),
+      ...claimPoint(combatRooms, 2, { solid: true, spacing: 3 }),
       keyChance: Math.min(0.55, 0.39 + level * 0.01)
     }));
     // One extra chest is a mimic. It gets its own reserved floor cell so it
     // never replaces a real loot chest or reduces the chance of finding the key.
-    const mimic = claimPoint(combatRooms, 2);
+    const mimic = claimPoint(combatRooms, 2, { solid: true, spacing: 3 });
     const trapCount = Math.min(7, 4 + Math.floor(level / 2));
     const traps = Array.from({ length: trapCount }, () => claimPoint(combatRooms, 1));
     const props = Array.from({ length: 8 }, (_, index) => Object.freeze({
-      ...claimPoint(combatRooms, 2),
+      ...claimPoint(combatRooms, 2, { solid: true, spacing: 2 }),
       type: index % 3 === 0 ? "column" : "crate"
     }));
     const skulls = Array.from({ length: 6 }, () => claimPoint(combatRooms, 1));

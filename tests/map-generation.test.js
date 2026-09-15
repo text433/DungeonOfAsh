@@ -25,6 +25,24 @@ function connectedCellCount(layout) {
   return visited.size;
 }
 
+function connectedWalkableCount(layout, blocked) {
+  const startKey = cellKey(layout.spawn.x, layout.spawn.y);
+  if (blocked.has(startKey)) return 0;
+  const visited = new Set([startKey]);
+  const queue = [[layout.spawn.x, layout.spawn.y]];
+  for (let cursor = 0; cursor < queue.length; cursor += 1) {
+    const [x, y] = queue[cursor];
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const next = [x + dx, y + dy];
+      const key = cellKey(next[0], next[1]);
+      if (!layout.floorCells.has(key) || blocked.has(key) || visited.has(key)) continue;
+      visited.add(key);
+      queue.push(next);
+    }
+  }
+  return visited.size;
+}
+
 function validateLayout(layout, floor, runSeed) {
   assert(layout.level === floor, `Nepareizs stāvs sēklai ${runSeed}`);
   assert(layout.floorCells.size >= 620 && layout.floorCells.size <= 850, `Nesamērīgs kartes izmērs: ${layout.floorCells.size}`);
@@ -43,6 +61,32 @@ function validateLayout(layout, floor, runSeed) {
   assert(layout.chests.length >= 3 && layout.chests.length <= 5, `Nepareizs lāžu skaits stāvā ${floor}`);
   assert(layout.mimic && layout.floorCells.has(cellKey(layout.mimic.x, layout.mimic.y)), `Stāvā ${floor} trūkst mimika lādes`);
   assert(layout.enemies.length >= 20 && layout.enemies.length <= 30, `Nepareizs monstru skaits stāvā ${floor}`);
+
+  const solidObjects = [...layout.chests, layout.mimic, ...layout.props];
+  for (let i = 0; i < solidObjects.length; i += 1) {
+    for (let j = i + 1; j < solidObjects.length; j += 1) {
+      const distance = Math.max(
+        Math.abs(solidObjects[i].x - solidObjects[j].x),
+        Math.abs(solidObjects[i].y - solidObjects[j].y)
+      );
+      assert(distance >= 2, `Stāvā ${floor} divi cietie objekti aizsprosto eju`);
+    }
+  }
+  const chestLikeObjects = [...layout.chests, layout.mimic];
+  for (let i = 0; i < chestLikeObjects.length; i += 1) {
+    for (let j = i + 1; j < chestLikeObjects.length; j += 1) {
+      const distance = Math.max(
+        Math.abs(chestLikeObjects[i].x - chestLikeObjects[j].x),
+        Math.abs(chestLikeObjects[i].y - chestLikeObjects[j].y)
+      );
+      assert(distance >= 3, `Stāvā ${floor} divas lādes atrodas pārāk tuvu`);
+    }
+  }
+  const blocked = new Set(solidObjects.map(({ x, y }) => cellKey(x, y)));
+  assert(
+    connectedWalkableCount(layout, blocked) === layout.floorCells.size - blocked.size,
+    `Stāvā ${floor} kastes vai dekorācijas sadala karti nepieejamās daļās`
+  );
 
   const bossRoom = mapRules.BOSS_CHAMBER;
   for (let x = bossRoom.left; x <= bossRoom.right; x += 1) {
