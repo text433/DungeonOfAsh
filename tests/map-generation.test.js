@@ -100,6 +100,7 @@ function validateLayout(layout, floor, runSeed) {
   );
 
   const bossRoom = mapRules.BOSS_CHAMBER;
+  assert(bossRoom.gateRight - bossRoom.gateLeft + 1 >= 3, "Bosa vārtu ailei jābūt vismaz trīs flīzes platai");
   for (let x = bossRoom.left; x <= bossRoom.right; x += 1) {
     const isGate = x >= bossRoom.gateLeft && x <= bossRoom.gateRight;
     assert(layout.floorCells.has(cellKey(x, bossRoom.wallY)) === isGate, `Boss sienā ir nepareiza aile pie ${x},${bossRoom.wallY}`);

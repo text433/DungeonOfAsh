@@ -31,7 +31,7 @@
     bottom: 14,
     wallY: 15,
     gateLeft: 47,
-    gateRight: 48,
+    gateRight: 49,
     entranceX: 48
   });
   const TOWN = Object.freeze({
@@ -73,7 +73,7 @@
     // Compact boss chamber: its two gate cells are the only opening in the
     // full-height divider wall, preserving a clean arch with no black seams.
     [40, 7, 17, 8],
-    [47, 15, 2, 1],
+    [47, 15, 3, 1],
     [40, 16, 17, 13],
     [27, 29, 4, 5],
     [22, 34, 15, 9],
@@ -290,7 +290,7 @@
         return Object.freeze(point);
       }
       if (options.optional) return null;
-      throw new Error(`Neizdevās atrast brīvu vietu procedurālās kartes objektam (floor ${level}, solid ${solidPoints.length}, points ${JSON.stringify(solidPoints)})`);
+      throw new Error("Neizdevās atrast brīvu vietu procedurālās kartes objektam");
     };
 
     const chestCount = Math.min(5, 3 + Math.floor((level - 1) / 3));

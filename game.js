@@ -537,7 +537,9 @@
         "doors_leaf_closed"
       );
       this.door.setOrigin(0.5, 1).setDepth(this.door.y).refreshBody();
-      this.door.body.setSize(28, 11).setOffset(2, 21);
+      // The gate is three tiles wide. Keep the closed door collision across
+      // the whole opening so it cannot be bypassed around the visible leaf.
+      this.door.body.setSize(48, 11).setOffset(0, 21);
       this.doorArch = this.add.image(
         activeGate.entranceX * TILE,
         (activeGate.wallY - 1) * TILE,

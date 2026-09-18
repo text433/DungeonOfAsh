@@ -95,7 +95,7 @@ if (game.includes("startFollow(this.player, true") || game.includes("setRoundPix
 }
 if (!game.includes("fixedStep: false")) throw new Error("Fizika nav piesaistīta ekrāna kadru ritmam");
 if (!game.includes("roundPixels: false")) throw new Error("Globālā pikseļu noapaļošana nav izslēgta");
-if (!html.includes('<script src="map-rules.js?v=49"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
+if (!html.includes('<script src="map-rules.js?v=50"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
 if (!html.includes('<script src="progression.js?v=28"></script>')) throw new Error("HTML neielādē progresa sistēmu");
 if (!html.includes('<script src="game.js?v=47"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
 if (!html.includes('<link rel="stylesheet" href="style.css?v=42" />')) throw new Error("HTML neielādē jaunāko HUD noformējumu");
@@ -113,8 +113,8 @@ if (!minimapSource.includes("floorBoundsCells.concat(wallBoundsCells)")) {
 
 const floorCells = mapRules.buildFloorCells();
 const wallPlan = mapRules.buildWallPlan(floorCells, 64, 48);
-if (floorCells.size !== 1288) throw new Error(`Negaidīts grīdas flīžu skaits: ${floorCells.size}`);
-if (wallPlan.length !== 397) throw new Error(`Negaidīts sienu flīžu skaits: ${wallPlan.length}`);
+if (floorCells.size !== 1289) throw new Error(`Negaidīts grīdas flīžu skaits: ${floorCells.size}`);
+if (wallPlan.length !== 396) throw new Error(`Negaidīts sienu flīžu skaits: ${wallPlan.length}`);
 if (mapRules.MINIMAL_MASK_PATTERNS.filter(Boolean).length !== 47) {
   throw new Error("3x3-minimal atlasā nav visu 47 kaimiņu variantu");
 }
@@ -132,7 +132,7 @@ const facingCounts = wallPlan.reduce((counts, rule) => {
   counts[rule.facing] = (counts[rule.facing] || 0) + 1;
   return counts;
 }, {});
-if (facingCounts.north !== 137 || facingCounts.south !== 120 || facingCounts.side !== 140) {
+if (facingCounts.north !== 136 || facingCounts.south !== 120 || facingCounts.side !== 140) {
   throw new Error(`Nepareizi sienu virzieni: ${JSON.stringify(facingCounts)}`);
 }
 
