@@ -97,7 +97,7 @@ if (!game.includes("fixedStep: false")) throw new Error("Fizika nav piesaistīta
 if (!game.includes("roundPixels: false")) throw new Error("Globālā pikseļu noapaļošana nav izslēgta");
 if (!html.includes('<script src="map-rules.js?v=50"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
 if (!html.includes('<script src="progression.js?v=28"></script>')) throw new Error("HTML neielādē progresa sistēmu");
-if (!html.includes('<script src="game.js?v=47"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
+if (!html.includes('<script src="game.js?v=50"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
 if (!html.includes('<link rel="stylesheet" href="style.css?v=42" />')) throw new Error("HTML neielādē jaunāko HUD noformējumu");
 
 const minimapSource = game.slice(game.indexOf("    renderMinimap(time) {"), game.indexOf("    toggleMinimap(show) {"));
