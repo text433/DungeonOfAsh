@@ -95,7 +95,7 @@ if (game.includes("startFollow(this.player, true") || game.includes("setRoundPix
 }
 if (!game.includes("fixedStep: false")) throw new Error("Fizika nav piesaistīta ekrāna kadru ritmam");
 if (!game.includes("roundPixels: false")) throw new Error("Globālā pikseļu noapaļošana nav izslēgta");
-if (!html.includes('<script src="map-rules.js?v=48"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
+if (!html.includes('<script src="map-rules.js?v=49"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
 if (!html.includes('<script src="progression.js?v=28"></script>')) throw new Error("HTML neielādē progresa sistēmu");
 if (!html.includes('<script src="game.js?v=47"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
 if (!html.includes('<link rel="stylesheet" href="style.css?v=42" />')) throw new Error("HTML neielādē jaunāko HUD noformējumu");

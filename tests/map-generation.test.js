@@ -82,6 +82,17 @@ function validateLayout(layout, floor, runSeed) {
       assert(distance >= 3, `Stāvā ${floor} divas lādes atrodas pārāk tuvu`);
     }
   }
+  const wideClearanceObjects = [...chestLikeObjects, ...layout.props.filter(({ type }) => type === "column")];
+  wideClearanceObjects.forEach((wideObject) => {
+    solidObjects.forEach((solidObject) => {
+      if (wideObject === solidObject) return;
+      const distance = Math.max(
+        Math.abs(wideObject.x - solidObject.x),
+        Math.abs(wideObject.y - solidObject.y)
+      );
+      assert(distance >= 3, `Stāvā ${floor} kolonna vai lāde atrodas pārāk tuvu citam šķērslim`);
+    });
+  });
   const blocked = new Set(solidObjects.map(({ x, y }) => cellKey(x, y)));
   assert(
     connectedWalkableCount(layout, blocked) === layout.floorCells.size - blocked.size,

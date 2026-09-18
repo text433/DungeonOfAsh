@@ -277,18 +277,20 @@
         const key = cellKey(point.x, point.y);
         if (!floorCells.has(key) || occupied.has(key)) continue;
         if (Math.abs(point.x - spawn.x) + Math.abs(point.y - spawn.y) < 4) continue;
-        if (solid && solidPoints.some((other) => (
-          Math.max(Math.abs(point.x - other.x), Math.abs(point.y - other.y)) < spacing
-        ))) continue;
+        if (solid && solidPoints.some((other) => {
+          const requiredSpacing = Math.max(spacing, other.spacing);
+          return Math.max(Math.abs(point.x - other.x), Math.abs(point.y - other.y)) < requiredSpacing;
+        })) continue;
         if (solid && !floorStaysConnected(key)) continue;
         occupied.add(key);
         if (solid) {
           solidCells.add(key);
-          solidPoints.push(point);
+          solidPoints.push({ ...point, spacing });
         }
         return Object.freeze(point);
       }
-      throw new Error("Neizdevās atrast brīvu vietu procedurālās kartes objektam");
+      if (options.optional) return null;
+      throw new Error(`Neizdevās atrast brīvu vietu procedurālās kartes objektam (floor ${level}, solid ${solidPoints.length}, points ${JSON.stringify(solidPoints)})`);
     };
 
     const chestCount = Math.min(5, 3 + Math.floor((level - 1) / 3));
@@ -301,10 +303,16 @@
     const mimic = claimPoint(combatRooms, 2, { solid: true, spacing: 3 });
     const trapCount = Math.min(7, 4 + Math.floor(level / 2));
     const traps = Array.from({ length: trapCount }, () => claimPoint(combatRooms, 1));
-    const props = Array.from({ length: 8 }, (_, index) => Object.freeze({
-      ...claimPoint(combatRooms, 2, { solid: true, spacing: 2 }),
-      type: index % 3 === 0 ? "column" : "crate"
-    }));
+    const props = ["column", "crate", "crate", "crate", "column", "crate", "crate", "crate"]
+      .map((type) => {
+        const point = claimPoint(combatRooms, 2, {
+          solid: true,
+          spacing: type === "column" ? 3 : 2,
+          optional: true
+        });
+        return point ? Object.freeze({ ...point, type }) : null;
+      })
+      .filter(Boolean);
     const skulls = Array.from({ length: 6 }, () => claimPoint(combatRooms, 1));
 
     const enemyPool = ["zombie", "zombie", "goblin", "goblin", "skeleton", "imp", "orc"];
