@@ -643,13 +643,23 @@ h2 { font-size: clamp(38px, 7vw, 68px); }
   display: block;
   image-rendering: pixelated;
 }
-.minimap-panel span {
-  display: block;
-  margin-top: 4px;
-  color: #9e8a70;
-  font: 700 9px/1 "Courier New", monospace;
-  letter-spacing: 0.22em;
+.boss-progress {
+  position: absolute;
+  z-index: 7;
+  right: max(14px, env(safe-area-inset-right));
+  top: calc(50% - 91px);
+  width: 194px;
+  box-sizing: border-box;
+  padding: 5px 8px;
+  border: 1px solid rgba(215, 154, 63, 0.42);
+  border-bottom: 0;
+  background: rgba(11, 8, 12, 0.9);
+  color: #e6c884;
+  font: 700 9px/1.2 "Courier New", monospace;
+  letter-spacing: 0.07em;
   text-align: center;
+  text-shadow: 0 1px 2px #000;
+  pointer-events: none;
 }
 
 .intro-steps {
@@ -877,11 +887,6 @@ h2 { font-size: clamp(38px, 7vw, 68px); }
   opacity: 0.9;
   filter: drop-shadow(0 1px 2px #000) drop-shadow(0 0 6px rgba(221, 197, 171, 0.16));
 }
-.minimap-panel span {
-  margin-top: 1px;
-  color: rgba(205, 186, 157, 0.68);
-  font-size: 8px;
-}
 .minimap-actions {
   position: absolute;
   z-index: 2;
@@ -957,6 +962,7 @@ h2 { font-size: clamp(38px, 7vw, 68px); }
     opacity: 0.9;
   }
   .minimap-panel canvas { width: 132px; height: 97px; }
+  .boss-progress { right: max(5px, env(safe-area-inset-right)); top: calc(48% - 72px); width: 142px; font-size: 8px; }
   .minimap-actions { top: -7px; right: 1px; }
   .minimap-actions button { min-width: 26px; height: 26px; }
   .minimap-reopen { right: max(6px, env(safe-area-inset-right)); }
@@ -965,5 +971,6 @@ h2 { font-size: clamp(38px, 7vw, 68px); }
 @media (pointer: coarse) and (orientation: landscape) {
   .minimap-panel { top: 40%; width: 136px; }
   .minimap-panel canvas { width: 126px; height: 92px; }
+  .boss-progress { top: calc(40% - 72px); width: 136px; right: max(5px, env(safe-area-inset-right)); }
   .quest-panel { top: max(91px, calc(env(safe-area-inset-top) + 80px)); }
 }

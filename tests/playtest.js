@@ -23,7 +23,9 @@ const server = require("../server.js");
 
   const townReady = await page.evaluate(() => {
     const scene = window.__DUNGEON_DEBUG__.scene;
-    return scene.area === "town" && scene.player?.active && document.querySelector("#armor-rank")?.textContent.includes("bruņas");
+    return scene.area === "town" && scene.player?.active
+      && document.querySelector("#armor-rank")?.textContent.includes("bruņas")
+      && scene.townExitMarkers?.length === 3;
   });
   if (!townReady) throw new Error("Town or armor HUD did not initialize");
   await page.keyboard.down("KeyD");
@@ -37,10 +39,61 @@ const server = require("../server.js");
   const dungeonReady = await page.evaluate(() => {
     const scene = window.__DUNGEON_DEBUG__.scene;
     return scene.enemies.countActive(true) > 10
-      && document.querySelector("#objective")?.textContent.includes("Sakauj stāva bosu")
+      && document.querySelector("#objective")?.textContent.includes("Sakauj monstrus")
+      && document.querySelector("#boss-progress")?.textContent.includes("VAJAG 80%")
+      && scene.roomDoors?.length > 0
       && !document.querySelector("#key-status")?.offsetParent;
   });
   if (!dungeonReady) throw new Error("Dungeon enemies or optional boss quest did not initialize");
+
+  const roomDoorState = await page.evaluate(() => {
+    const scene = window.__DUNGEON_DEBUG__.scene;
+    const door = scene.roomDoors[0];
+    const cell = door.cells[0];
+    const inside = {
+      x: cell.x + (door.side === "west" ? 1 : door.side === "east" ? -1 : 0),
+      y: cell.y + (door.side === "north" ? 1 : door.side === "south" ? -1 : 0)
+    };
+    const outside = {
+      x: cell.x + (door.side === "west" ? -1 : door.side === "east" ? 1 : 0),
+      y: cell.y + (door.side === "north" ? -1 : door.side === "south" ? 1 : 0)
+    };
+    scene.player.setPosition(outside.x * 16 + 8, outside.y * 16 + 8);
+    scene.updateFogOfWar(true);
+    const hiddenBefore = !scene.currentVisibleCells.has(`${inside.x},${inside.y}`);
+    const bodyBefore = door.sprite.body.enable;
+    scene.openRoomDoor(door);
+    scene.updateFogOfWar(true);
+    return {
+      count: scene.roomDoors.length,
+      hiddenBefore,
+      bodyBefore,
+      opened: door.opened,
+      bodyAfter: door.sprite.body.enable,
+      visibleAfter: scene.currentVisibleCells.has(`${inside.x},${inside.y}`),
+      textureAfter: door.sprite.texture.key
+    };
+  });
+  if (!roomDoorState.count || !roomDoorState.hiddenBefore || !roomDoorState.bodyBefore ||
+      !roomDoorState.opened || roomDoorState.bodyAfter || !roomDoorState.visibleAfter ||
+      roomDoorState.textureAfter !== "doors_leaf_open") {
+    throw new Error(`Room door or hidden room test failed: ${JSON.stringify(roomDoorState)}`);
+  }
+
+  const bossStatus = await page.evaluate(() => {
+    const scene = window.__DUNGEON_DEBUG__.scene;
+    scene.state.monsterKills = scene.state.requiredKills;
+    scene.state.bossUnlocked = true;
+    scene.updateHud();
+    return {
+      objective: document.querySelector("#objective")?.textContent,
+      progress: document.querySelector("#boss-progress")?.textContent
+    };
+  });
+  if (!bossStatus.objective?.includes("ATVĒRT BOSA DURVIS") ||
+      !bossStatus.progress?.includes("BOSA DURVIS ATVĒRTAS")) {
+    throw new Error(`Boss unlock status failed: ${JSON.stringify(bossStatus)}`);
+  }
 
   const dormantMimic = await page.evaluate(() => {
     const scene = window.__DUNGEON_DEBUG__.scene;
@@ -48,11 +101,12 @@ const server = require("../server.js");
       active: scene.mimic?.active,
       type: scene.mimic?.getData("type"),
       dormant: scene.mimic?.getData("dormant"),
+      bodyMoves: scene.mimic?.body?.moves,
       texture: scene.mimic?.texture?.key,
       healthBar: Boolean(scene.mimic?.healthBar)
     };
   });
-  if (!dormantMimic.active || dormantMimic.type !== "mimic" || !dormantMimic.dormant ||
+  if (!dormantMimic.active || dormantMimic.type !== "mimic" || !dormantMimic.dormant || dormantMimic.bodyMoves ||
       dormantMimic.texture !== "chest_mimic_open_anim_f0" || dormantMimic.healthBar) {
     throw new Error(`Mimic did not begin disguised as a chest: ${JSON.stringify(dormantMimic)}`);
   }
@@ -108,21 +162,25 @@ const server = require("../server.js");
   await page.waitForTimeout(180);
   const pickupState = await page.evaluate(() => {
     const scene = window.__DUNGEON_DEBUG__.scene;
-    const drop = scene.drops.getChildren().find((candidate) => candidate.active);
-    scene.player.setPosition(drop.x - 30, drop.y);
-    const pickupDistance = Phaser.Math.Distance.Between(scene.player.x, scene.player.y, drop.x, drop.y);
+    const chest = scene.chests[0];
+    const activeDrops = scene.drops.getChildren().filter((candidate) => candidate.active);
+    const maxScatter = Math.max(...activeDrops.map((drop) => (
+      Phaser.Math.Distance.Between(chest.x, chest.y - 7, drop.x, drop.y)
+    )));
+    scene.player.setPosition(chest.x, chest.y - 7);
     scene.updateDropPickup();
     return {
       hasKey: scene.state.hasKey,
       armorId: scene.state.armorId,
       armorText: document.querySelector("#armor-rank")?.textContent,
       keyVisible: Boolean(document.querySelector("#key-status")?.offsetParent),
-      pickupDistance,
+      pickupDistance: 0,
+      maxScatter,
       activeDrops: scene.drops.getChildren().filter((candidate) => candidate.active).length
     };
   });
   if (!pickupState.hasKey || pickupState.armorId !== "ash" || !pickupState.keyVisible ||
-      !pickupState.armorText?.includes("Pelnu bruņas") || pickupState.pickupDistance < 24 || pickupState.activeDrops !== 0) {
+      !pickupState.armorText?.includes("Pelnu bruņas") || pickupState.maxScatter < 28 || pickupState.activeDrops !== 0) {
     throw new Error(`Loot pickup failed: ${JSON.stringify(pickupState)}`);
   }
 

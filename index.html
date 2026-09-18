@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0b090d" />
     <meta name="description" content="Dungeon of Ash — spēlējama HTML5 dungeon piedzīvojumu spēle." />
     <title>Dungeon of Ash</title>
-    <link rel="stylesheet" href="style.css?v=42" />
+    <link rel="stylesheet" href="style.css?v=51" />
   </head>
   <body>
     <main id="game-shell" aria-label="Dungeon of Ash spēle">
@@ -27,9 +27,9 @@
             <button id="minimap-close" type="button" aria-label="Aizvērt karti">×</button>
           </div>
           <canvas id="minimap" width="180" height="132"></canvas>
-          <span id="minimap-label">KARTE · SIENAS</span>
         </aside>
         <button id="minimap-reopen" class="minimap-reopen is-hidden" type="button" aria-label="Parādīt karti">KARTE</button>
+        <div id="boss-progress" class="boss-progress is-hidden" aria-live="polite"></div>
 
         <aside id="quest-panel" class="quest-panel" aria-label="Stāva uzdevums">
           <span class="quest-kicker">IZVĒLES UZDEVUMS</span>
@@ -164,8 +164,8 @@
     </main>
 
     <script src="vendor/phaser.min.js"></script>
-    <script src="map-rules.js?v=50"></script>
+    <script src="map-rules.js?v=51"></script>
     <script src="progression.js?v=28"></script>
-    <script src="game.js?v=50"></script>
+    <script src="game.js?v=51"></script>
   </body>
 </html>

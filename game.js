@@ -3,9 +3,9 @@
 
   const TILE = 16;
   const HIGH_WALL_TOP_INSET = 11;
-  const DROP_PICKUP_RADIUS = 34;
-  const CHEST_DROP_MIN_DISTANCE = 22;
-  const CHEST_DROP_MAX_DISTANCE = 30;
+  const DROP_PICKUP_RADIUS = 42;
+  const CHEST_DROP_MIN_DISTANCE = 28;
+  const CHEST_DROP_MAX_DISTANCE = 38;
   const MAP_W = 64;
   const MAP_H = 48;
   const WORLD_W = MAP_W * TILE;
@@ -48,7 +48,7 @@
     minimapZoom: document.getElementById("minimap-zoom"),
     minimapClose: document.getElementById("minimap-close"),
     minimapReopen: document.getElementById("minimap-reopen"),
-    minimapLabel: document.getElementById("minimap-label"),
+    bossProgress: document.getElementById("boss-progress"),
     questKicker: document.querySelector(".quest-kicker"),
     keyStatus: document.getElementById("key-status"),
     lootToast: document.getElementById("loot-toast"),
@@ -165,6 +165,10 @@
       this.doorOpened = false;
       this.bossDead = false;
       this.kills = 0;
+      this.monsterKills = 0;
+      this.totalMonsters = 0;
+      this.requiredKills = 0;
+      this.bossUnlocked = false;
       this.totalEnemies = 0;
     }
 
@@ -398,6 +402,8 @@
       this.visitedCells = new Set();
       this.currentVisibleCells = new Set();
       this.lastFogTile = "";
+      this.roomDoors = [];
+      this.townExitMarkers = [];
     }
 
     preload() {
@@ -529,6 +535,7 @@
       }
 
       this.buildWallAutotiles();
+      this.createRoomDoors();
       const activeGate = this.mapLayout.gate;
 
       this.door = this.props.create(
@@ -621,6 +628,28 @@
       this.townStairs = this.add.image(TOWN.stairsX * TILE + 8, TOWN.stairsY * TILE + 8, "floor_ladder")
         .setDepth(-1);
       this.tweens.add({ targets: this.townStairs, alpha: 0.68, duration: 650, yoyo: true, repeat: -1 });
+      const exitX = TOWN.stairsX * TILE + 8;
+      const exitY = TOWN.stairsY * TILE - 12;
+      this.townExitMarkers = [-1, 0, 1].map((offset) => (
+        this.add.triangle(
+          exitX + offset * 12,
+          exitY,
+          0, 8,
+          8, 0,
+          16, 8,
+          0xe0a04e,
+          0.86
+        ).setOrigin(0.5, 0.5).setDepth(exitY + 2)
+      ));
+      this.tweens.add({
+        targets: this.townExitMarkers,
+        y: "-=4",
+        alpha: { from: 0.35, to: 1 },
+        duration: 720,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.easeInOut"
+      });
 
       this.add.image(27 * TILE + 8, 16 * TILE + 8, "wall_fountain_top_2").setDepth(16 * TILE + 8);
       [[27, 7, "wall_banner_blue"], [36, 7, "wall_banner_yellow"]].forEach(([x, y, key]) => {
@@ -637,6 +666,38 @@
       });
 
       this.addLavaFall(19, 17);
+    }
+
+    createRoomDoors() {
+      this.roomDoors = (this.mapLayout.roomDoors || []).map((definition) => {
+        const room = this.mapLayout.rooms.find((candidate) => candidate.label === definition.room);
+        const firstCell = definition.cells[0];
+        const isHorizontalBarrier = definition.side === "north" || definition.side === "south";
+        const x = isHorizontalBarrier
+          ? (firstCell.x + 1) * TILE
+          : (definition.side === "east" ? room.right + 1 : room.left) * TILE;
+        const y = isHorizontalBarrier
+          ? (definition.side === "south" ? room.bottom + 1 : room.top) * TILE
+          : (firstCell.y + 1) * TILE;
+        const sprite = this.props.create(x, y, "doors_leaf_closed")
+          .setOrigin(0.5, 0.5)
+          .setRotation(isHorizontalBarrier ? 0 : Math.PI / 2)
+          .setDepth(y + 1)
+          .setData({ roomDoorId: definition.id, opened: false })
+          .refreshBody();
+        sprite.body.setSize(32, 32).setOffset(0, 0);
+        return { ...definition, sprite, opened: false };
+      });
+    }
+
+    openRoomDoor(roomDoor) {
+      if (!roomDoor || roomDoor.opened || !roomDoor.sprite?.active) return;
+      roomDoor.opened = true;
+      roomDoor.sprite.setData("opened", true).setTexture("doors_leaf_open");
+      roomDoor.sprite.body.enable = false;
+      this.showLootToast("TELPAS DURVIS ATVĒRTAS");
+      this.updateFogOfWar(true);
+      this.updateHud();
     }
 
     addProceduralWallDecorations() {
@@ -862,6 +923,8 @@
       this.mimic = this.spawnEnemy(this.mapLayout.mimic.x, this.mapLayout.mimic.y, "mimic", scale);
       this.boss = this.spawnEnemy(this.mapLayout.boss.x, this.mapLayout.boss.y, "boss", scale);
       this.state.totalEnemies = this.enemies.countActive(true);
+      this.state.totalMonsters = this.mapLayout.enemies.length + 1;
+      this.state.requiredKills = Math.max(1, Math.ceil(this.state.totalMonsters * 0.8));
     }
     spawnEnemy(tileX, tileY, type, scale) {
       const definitions = {
@@ -905,6 +968,7 @@
       else if (type === "orc") enemy.body.setSize(11, 11).setOffset(2, 11);
       else enemy.body.setSize(10, 9).setOffset(3, 7);
       enemy.setCollideWorldBounds(true);
+      if (type === "mimic") enemy.body.moves = false;
       if (type !== "mimic") this.createEnemyHealthBar(enemy, type);
       return enemy;
     }
@@ -1048,6 +1112,28 @@
       this.currentVisibleCells.clear();
 
       const revealRadius = 7;
+      const closedDoorCells = new Set(
+        (this.roomDoors || [])
+          .filter((door) => !door.opened)
+          .flatMap((door) => door.cells.map(({ x, y }) => `${x},${y}`))
+      );
+      const reachable = new Set();
+      const queue = [[centerX, centerY, 0]];
+      const startKey = `${centerX},${centerY}`;
+      if (this.floorCells.has(startKey) && !closedDoorCells.has(startKey)) reachable.add(startKey);
+      for (let cursor = 0; cursor < queue.length; cursor += 1) {
+        const [x, y, distance] = queue[cursor];
+        if (distance >= revealRadius) continue;
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const nextX = x + dx;
+          const nextY = y + dy;
+          const key = `${nextX},${nextY}`;
+          if (nextX < 0 || nextY < 0 || nextX >= MAP_W || nextY >= MAP_H) continue;
+          if (!this.floorCells.has(key) || closedDoorCells.has(key) || reachable.has(key)) continue;
+          reachable.add(key);
+          queue.push([nextX, nextY, distance + 1]);
+        }
+      }
       for (let dy = -revealRadius; dy <= revealRadius; dy += 1) {
         for (let dx = -revealRadius; dx <= revealRadius; dx += 1) {
           if (dx * dx + dy * dy > revealRadius * revealRadius) continue;
@@ -1055,10 +1141,36 @@
           const y = centerY + dy;
           if (x < 0 || y < 0 || x >= MAP_W || y >= MAP_H) continue;
           const key = `${x},${y}`;
-          this.currentVisibleCells.add(key);
-          this.visitedCells.add(key);
+          if (reachable.has(key)) {
+            this.currentVisibleCells.add(key);
+            this.visitedCells.add(key);
+            continue;
+          }
+          if (!this.wallCells.has(key)) continue;
+          const nextToFloor = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+            .some(([wallDx, wallDy]) => reachable.has(`${x + wallDx},${y + wallDy}`));
+          if (nextToFloor) {
+            this.currentVisibleCells.add(key);
+            this.visitedCells.add(key);
+          }
         }
       }
+
+      // Show a closed door from the corridor side without revealing the room
+      // cells behind it.
+      (this.roomDoors || []).forEach((door) => {
+        if (door.opened) return;
+        const visible = door.cells.some(({ x, y }) => (
+          [[1, 0], [-1, 0], [0, 1], [0, -1]]
+            .some(([dx, dy]) => reachable.has(`${x + dx},${y + dy}`))
+        ));
+        if (!visible) return;
+        door.cells.forEach(({ x, y }) => {
+          const key = `${x},${y}`;
+          this.currentVisibleCells.add(key);
+          this.visitedCells.add(key);
+        });
+      });
 
       // A 32 px wall sprite crosses the neighbouring vertical tiles. Reveal
       // those tiles together so fog never cuts away the wall body and leaves
@@ -1174,7 +1286,6 @@
         dom.minimapZoom.textContent = this.minimapZoomed ? "−" : "＋";
         dom.minimapZoom.setAttribute("aria-label", this.minimapZoomed ? "Attālināt karti" : "Pietuvināt karti");
       }
-      if (dom.minimapLabel) dom.minimapLabel.textContent = this.minimapZoomed ? "KARTE · TUVUMĀ" : "KARTE · SIENAS";
       this.minimapNextAt = 0;
       this.renderMinimap(this.time.now);
     }
@@ -1311,6 +1422,14 @@
       enemy.healthBar = null;
       enemy.disableBody(true, true);
       this.state.kills += 1;
+      if (type !== "boss") {
+        this.state.monsterKills += 1;
+        if (!this.state.bossUnlocked && this.state.monsterKills >= this.state.requiredKills) {
+          this.state.bossUnlocked = true;
+          this.showLootToast("80% MONSTRU SAKAUTI · BOSA DURVIS IR ATVĒRTAS");
+          sound.blip(720, 0.24, "triangle", 0.045);
+        }
+      }
       const killHeal = progression.bonuses().healOnKill;
       if (killHeal) this.state.heal(killHeal);
       this.spawnDrop(x, y, "coin", reward);
@@ -1411,6 +1530,7 @@
         const type = enemy.getData("type");
         const distance = Phaser.Math.Distance.Between(enemy.x, enemy.y, this.player.x, this.player.y);
         if (type === "mimic" && enemy.getData("dormant")) {
+          enemy.body.moves = false;
           enemy.setVelocity(0, 0).setDepth(enemy.y);
           if (distance < 58) this.awakenMimic(enemy, time);
           return;
@@ -1443,6 +1563,7 @@
         aiState: "chase",
         staggerUntil: time + 300
       });
+      enemy.body.moves = true;
       enemy.play("mimic-awaken");
       enemy.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
         if (enemy.active) enemy.play("mimic-run");
@@ -1577,6 +1698,7 @@
 
     updateInteraction() {
       this.nearInteraction = null;
+      this.nearRoomDoor = null;
       let label = "";
       if (this.area === "town" && this.smithNpc &&
           Phaser.Math.Distance.Between(this.player.x, this.player.y, this.smithNpc.x, this.smithNpc.y) < 42) {
@@ -1586,18 +1708,33 @@
           Phaser.Math.Distance.Between(this.player.x, this.player.y, this.townNpc.x, this.townNpc.y) < 42) {
         this.nearInteraction = "townNpc";
         label = "E · RUNĀT / BONUSA KOKS";
+      } else if (this.area === "town" && this.townStairs &&
+          Phaser.Math.Distance.Between(this.player.x, this.player.y, this.townStairs.x, this.townStairs.y) < 34) {
+        this.nearInteraction = "townExit";
+        label = "E · IET UZ DUNGEONU";
       } else if (this.area === "dungeon" && this.guideNpc &&
           Phaser.Math.Distance.Between(this.player.x, this.player.y, this.guideNpc.x, this.guideNpc.y) < 42) {
         this.nearInteraction = "guideNpc";
         label = "E · ATPAKAĻ UZ PILSĒTU";
-      } else if (this.area === "dungeon" && !this.state.doorOpened &&
-          Phaser.Math.Distance.Between(this.player.x, this.player.y, this.door.x, this.door.y) < 48) {
-        this.nearInteraction = "door";
-        label = this.state.hasKey ? "E · ATSLĒGT DURVIS" : "NEPIECIEŠAMA ATSLĒGA";
-      } else if (this.area === "dungeon" && this.stairs &&
-          Phaser.Math.Distance.Between(this.player.x, this.player.y, this.stairs.x, this.stairs.y) < 34) {
-        this.nearInteraction = "stairs";
-        label = "E · NĀKAMAIS STĀVS";
+      } else if (this.area === "dungeon") {
+        const roomDoor = this.roomDoors?.find((candidate) => (
+          !candidate.opened
+          && candidate.sprite?.active
+          && Phaser.Math.Distance.Between(this.player.x, this.player.y, candidate.sprite.x, candidate.sprite.y) < 34
+        ));
+        if (roomDoor) {
+          this.nearInteraction = "roomDoor";
+          this.nearRoomDoor = roomDoor;
+          label = "E · ATVĒRT TELPAS DURVIS";
+        } else if (!this.state.doorOpened && this.door &&
+            Phaser.Math.Distance.Between(this.player.x, this.player.y, this.door.x, this.door.y) < 48) {
+          this.nearInteraction = "door";
+          label = this.state.bossUnlocked ? "E · ATVĒRT BOSA DURVIS" : `BOSA DURVIS · ${this.state.requiredKills - this.state.monsterKills} MONSTRI`;
+        } else if (this.stairs &&
+            Phaser.Math.Distance.Between(this.player.x, this.player.y, this.stairs.x, this.stairs.y) < 34) {
+          this.nearInteraction = "stairs";
+          label = "E · NĀKAMAIS STĀVS";
+        }
       }
       dom.prompt.textContent = label;
       dom.prompt.classList.toggle("is-hidden", !label);
@@ -1610,9 +1747,13 @@
         this.state.heal(this.state.maxHp);
         this.updateHud();
         this.openTalentTree();
+      } else if (this.nearInteraction === "townExit") {
+        this.enterDungeon();
       } else if (this.nearInteraction === "guideNpc") {
         this.returnToTown();
-      } else if (this.nearInteraction === "door" && this.state.hasKey) {
+      } else if (this.nearInteraction === "roomDoor") {
+        this.openRoomDoor(this.nearRoomDoor);
+      } else if (this.nearInteraction === "door" && this.state.bossUnlocked) {
         this.openDoor();
       } else if (this.nearInteraction === "door") {
         sound.blip(86, 0.12, "square", 0.03);
@@ -1652,8 +1793,8 @@
     }
 
     openDoor() {
+      if (!this.state.bossUnlocked || this.state.doorOpened) return;
       this.state.doorOpened = true;
-      this.state.hasKey = false;
       this.door.setTexture("doors_leaf_open");
       this.door.body.enable = false;
       sound.blip(112, 0.22, "triangle", 0.04);
@@ -1735,14 +1876,25 @@
       }
       dom.questKicker.textContent = "IZVĒLES UZDEVUMS";
       if (this.state.bossDead) dom.objective.textContent = "Boss sakauts · kāp uz nākamo stāvu";
+      else if (!this.state.bossUnlocked) dom.objective.textContent = `Sakauj monstrus · ${this.state.monsterKills}/${this.state.requiredKills}`;
       else if (this.state.doorOpened && this.boss?.active) dom.objective.textContent = `Sakauj stāva bosu · HP ${this.boss.getData("hp")}/${this.boss.getData("maxHp")}`;
-      else dom.objective.textContent = "Sakauj stāva bosu";
-      dom.keyStatus.classList.toggle("is-hidden", !this.state.hasKey && !this.state.doorOpened);
-      dom.keyStatus.textContent = this.state.doorOpened ? "DURVIS ATVĒRTAS" : "ATSLĒGA ATRASTA";
-      if (!this.state.doorOpened) {
-        const icon = document.createElement("i");
-        icon.setAttribute("aria-hidden", "true");
-        dom.keyStatus.prepend(icon);
+      else dom.objective.textContent = "E · ATVĒRT BOSA DURVIS";
+      dom.keyStatus.classList.toggle("is-hidden", !this.state.hasKey);
+      dom.keyStatus.textContent = "ATSLĒGA ATRASTA";
+    }
+
+    updateBossProgressUi() {
+      if (!dom.bossProgress) return;
+      const visible = this.area === "dungeon" && this.state.requiredKills > 0;
+      dom.bossProgress.classList.toggle("is-hidden", !visible);
+      if (!visible) return;
+      const percent = Math.min(100, Math.round((this.state.monsterKills / this.state.totalMonsters) * 100));
+      if (this.state.bossDead) {
+        dom.bossProgress.textContent = "BOSS SAKAUTS";
+      } else if (this.state.bossUnlocked) {
+        dom.bossProgress.textContent = `MONSTRI ${this.state.monsterKills}/${this.state.totalMonsters} · BOSA DURVIS ATVĒRTAS`;
+      } else {
+        dom.bossProgress.textContent = `MONSTRI ${this.state.monsterKills}/${this.state.totalMonsters} · ${percent}% / VAJAG 80%`;
       }
     }
 
@@ -1764,6 +1916,7 @@
       this.applyWeaponVisual();
       dom.armorRank.textContent = `${this.armorConfig().name} · ${this.armorConfig().bonus}`;
       this.updateObjective();
+      this.updateBossProgressUi();
       this.updateProgressionUi();
       if (this.smithOpen) this.updateSmithUi();
     }
@@ -1870,6 +2023,7 @@
           if (!enemy.active) return;
           enemy.setPosition(enemy.getData("originX"), enemy.getData("originY"));
           enemy.setVelocity(0, 0);
+          enemy.body.moves = !enemy.getData("dormant");
           enemy.setData({ aiState: "idle", decisionAt: this.time.now + 800 });
         });
         this.hurtReadyAt = this.time.now + 1800;

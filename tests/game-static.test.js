@@ -50,19 +50,19 @@ const game = fs.readFileSync(path.join(root, "game.js"), "utf8");
 const mapRules = require(path.join(root, "map-rules.js"));
 const { ProgressionSystem } = require(path.join(root, "progression.js"));
 
-for (const id of ["game", "hud", "mobile-controls", "joystick-base", "joystick-knob", "start-button", "result-screen", "talent-screen", "talent-button", "ability-button", "minimap", "minimap-zoom", "minimap-close", "minimap-reopen", "quest-panel", "key-status", "loot-toast", "smith-screen", "smith-upgrade", "weapon-rank", "armor-rank"]) {
+for (const id of ["game", "hud", "mobile-controls", "joystick-base", "joystick-knob", "start-button", "result-screen", "talent-screen", "talent-button", "ability-button", "minimap", "minimap-zoom", "minimap-close", "minimap-reopen", "boss-progress", "quest-panel", "key-status", "loot-toast", "smith-screen", "smith-upgrade", "weapon-rank", "armor-rank"]) {
   if (!html.includes(`id="${id}"`)) throw new Error(`HTML trūkst #${id}`);
 }
 
 for (const marker of [
   "class DungeonScene", "touchVector", "updateJoystick", "buildWallAutotiles", "buildWallPlan", "BOSS_CHAMBER",
-  "generateDungeonLayout", "mapLayout", "runSeed", "addProceduralWallDecorations",
+  "generateDungeonLayout", "mapLayout", "roomDoors", "createRoomDoors", "openRoomDoor", "runSeed", "addProceduralWallDecorations",
   "createFloorUnderlayFrames", "addWallFloorUnderlay", "rule.facing", "HIGH_WALL_TOP_INSET", "highWallFrame",
   "startFollow(this.player, false, 1, 1)", "setRoundPixels(false)", "this.moveVector.lerp(target, smoothing)",
   "createEnemyHealthBar", "triggerSpikeTrap", "column_wall",
   "gateFrameKey", "BOSS_GATE_WALL_FRAME", "columnBaseline", "doors_frame_left", "doors_frame_top", "doors_frame_right",
-  "performAttack", "openChest", "openDoor", "nextFloor",
-  "buildTown", "townStairs", "town-npc-idle", "guide-npc-idle", "updateAutoChests", "respawnAtGuide",
+  "performAttack", "openChest", "openDoor", "nextFloor", "monsterKills", "requiredKills", "bossUnlocked", "updateBossProgressUi",
+  "buildTown", "townStairs", "townExitMarkers", "town-npc-idle", "guide-npc-idle", "updateAutoChests", "respawnAtGuide",
   "updateEnemyPatrol", "updateBossPatrol", "patrolRadius", "aggroRadius", "castAshWard", "openTalentTree",
   "renderMinimap", "createFogOfWar", "updateFogOfWar", "const revealRadius = 7", "this.fogGraphics.setVisible(false)", "visitedCells", "currentVisibleCells", "isWorldTileVisible", "openSmith", "upgradeWeapon", "ensureSound", "sound.step()", "createBuffer", "updateCarriedWeapon", "createAttackFx", "addLavaFall",
   "ARMOR_SETS", "player-steel-idle", "player-scout-idle", "player-ash-idle", "player-ash-run", "Pelnu bruņas", "applyArmorVisual", "speedMultiplier", "blockChance",
@@ -95,10 +95,13 @@ if (game.includes("startFollow(this.player, true") || game.includes("setRoundPix
 }
 if (!game.includes("fixedStep: false")) throw new Error("Fizika nav piesaistīta ekrāna kadru ritmam");
 if (!game.includes("roundPixels: false")) throw new Error("Globālā pikseļu noapaļošana nav izslēgta");
-if (!html.includes('<script src="map-rules.js?v=50"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
+if (!html.includes('<script src="map-rules.js?v=51"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
 if (!html.includes('<script src="progression.js?v=28"></script>')) throw new Error("HTML neielādē progresa sistēmu");
-if (!html.includes('<script src="game.js?v=50"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
-if (!html.includes('<link rel="stylesheet" href="style.css?v=42" />')) throw new Error("HTML neielādē jaunāko HUD noformējumu");
+if (!html.includes('<script src="game.js?v=51"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
+if (html.includes('id="minimap-label"') || html.includes('KARTE · SIENAS')) {
+  throw new Error("Minikartē joprojām redzams sienu teksts");
+}
+if (!html.includes('<link rel="stylesheet" href="style.css?v=51" />')) throw new Error("HTML neielādē jaunāko HUD noformējumu");
 
 const minimapSource = game.slice(game.indexOf("    renderMinimap(time) {"), game.indexOf("    toggleMinimap(show) {"));
 for (const forbidden of ["this.enemies", "this.chests", "currentVisibleCells.has", "fillRect(0, 0, width, height)"]) {

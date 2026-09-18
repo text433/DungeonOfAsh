@@ -229,6 +229,52 @@
       floorCells.add(cellKey(x, BOSS_CHAMBER.wallY));
     }
 
+    // Every non-start room gets real doorways on the sides where corridors
+    // reach it. The two-cell barriers match the corridor width, so a closed
+    // door cannot be bypassed through a one-tile gap.
+    const roomDoorCandidates = (room) => [
+      {
+        side: "north",
+        cells: [{ x: room.centerX, y: room.top }, { x: room.centerX + 1, y: room.top }],
+        outside: [{ x: room.centerX, y: room.top - 1 }, { x: room.centerX + 1, y: room.top - 1 }]
+      },
+      {
+        side: "east",
+        cells: [{ x: room.right, y: room.centerY }, { x: room.right, y: room.centerY + 1 }],
+        outside: [{ x: room.right + 1, y: room.centerY }, { x: room.right + 1, y: room.centerY + 1 }]
+      },
+      {
+        side: "south",
+        cells: [{ x: room.centerX, y: room.bottom }, { x: room.centerX + 1, y: room.bottom }],
+        outside: [{ x: room.centerX, y: room.bottom + 1 }, { x: room.centerX + 1, y: room.bottom + 1 }]
+      },
+      {
+        side: "west",
+        cells: [{ x: room.left, y: room.centerY }, { x: room.left, y: room.centerY + 1 }],
+        outside: [{ x: room.left - 1, y: room.centerY }, { x: room.left - 1, y: room.centerY + 1 }]
+      }
+    ];
+    const roomDoorsRaw = rooms
+      .filter((room) => room.label !== "start" && room.label !== "boss" && room.label !== "antechamber")
+      .flatMap((room) => roomDoorCandidates(room)
+        .filter(({ cells, outside }) => (
+          cells.every(({ x, y }) => floorCells.has(cellKey(x, y)))
+          && outside.every(({ x, y }) => floorCells.has(cellKey(x, y)))
+        ))
+        .map((candidate) => Object.freeze({
+          id: `room-door-${room.label}-${candidate.side}`,
+          room: room.label,
+          side: candidate.side,
+          cells: Object.freeze(candidate.cells.map((cell) => Object.freeze(cell)))
+        }))
+      );
+    const reservedDoorCells = new Set();
+    const roomDoors = roomDoorsRaw.filter((door) => {
+      if (door.cells.some(({ x, y }) => reservedDoorCells.has(cellKey(x, y)))) return false;
+      door.cells.forEach(({ x, y }) => reservedDoorCells.add(cellKey(x, y)));
+      return true;
+    });
+
     const occupied = new Set();
     const reserve = (point) => {
       occupied.add(cellKey(point.x, point.y));
@@ -240,6 +286,7 @@
     const stairs = reserve({ x: BOSS_CHAMBER.right - 3, y: 11 });
     reserve({ x: BOSS_CHAMBER.gateLeft, y: BOSS_CHAMBER.wallY });
     reserve({ x: BOSS_CHAMBER.gateRight, y: BOSS_CHAMBER.wallY });
+    roomDoors.forEach(({ cells }) => cells.forEach((cell) => reserve(cell)));
 
     const combatRooms = [lowerMid, lowerRight, midRight, centerRoom, leftMid, upperLeft, upperMid, antechamber];
     const pointInRoom = (room, margin = 1) => ({
@@ -335,6 +382,7 @@
       guide,
       boss,
       stairs,
+      roomDoors: Object.freeze(roomDoors),
       chests: Object.freeze(chests),
       mimic,
       traps: Object.freeze(traps),
