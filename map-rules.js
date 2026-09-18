@@ -175,17 +175,14 @@
     const level = Math.max(1, Math.floor(Number(floor) || 1));
     const seed = mixSeed((Number(runSeed) >>> 0) ^ Math.imul(level, 0x9e3779b1));
     const random = createSeededRandom(seed);
-    const sizedRoom = (centerX, centerY, minWidth, maxWidth, minHeight, maxHeight, label) => (
-      makeRoom(
-        centerX,
-        centerY,
-        random.int(minWidth, maxWidth),
-        random.int(minHeight, maxHeight),
-        label,
-        mapWidth,
-        mapHeight
-      )
-    );
+    const sizedRoom = (centerX, centerY, minWidth, maxWidth, minHeight, maxHeight, label) => {
+      // Keep procedural rooms square. Pick one side length that fits both the
+      // requested width and height ranges instead of generating a rectangle.
+      const minSize = Math.max(minWidth, minHeight);
+      const maxSize = Math.min(maxWidth, maxHeight);
+      const size = random.int(minSize, Math.max(minSize, maxSize));
+      return makeRoom(centerX, centerY, size, size, label, mapWidth, mapHeight);
+    };
 
     // Rooms stay compact and live in separate bands. Random dimensions and
     // corridor turns make every floor different without producing overlaps
@@ -232,28 +229,13 @@
     // Every non-start room gets real doorways on the sides where corridors
     // reach it. The two-cell barriers match the corridor width, so a closed
     // door cannot be bypassed through a one-tile gap.
-    const roomDoorCandidates = (room) => [
-      {
-        side: "north",
-        cells: [{ x: room.centerX, y: room.top }, { x: room.centerX + 1, y: room.top }],
-        outside: [{ x: room.centerX, y: room.top - 1 }, { x: room.centerX + 1, y: room.top - 1 }]
-      },
-      {
-        side: "east",
-        cells: [{ x: room.right, y: room.centerY }, { x: room.right, y: room.centerY + 1 }],
-        outside: [{ x: room.right + 1, y: room.centerY }, { x: room.right + 1, y: room.centerY + 1 }]
-      },
-      {
-        side: "south",
-        cells: [{ x: room.centerX, y: room.bottom }, { x: room.centerX + 1, y: room.bottom }],
-        outside: [{ x: room.centerX, y: room.bottom + 1 }, { x: room.centerX + 1, y: room.bottom + 1 }]
-      },
-      {
-        side: "west",
-        cells: [{ x: room.left, y: room.centerY }, { x: room.left, y: room.centerY + 1 }],
-        outside: [{ x: room.left - 1, y: room.centerY }, { x: room.left - 1, y: room.centerY + 1 }]
-      }
-    ];
+    // Room doors are allowed only in the upper horizontal wall. Never place
+    // doors on corridor walls, lower walls, or vertical room walls.
+    const roomDoorCandidates = (room) => [{
+      side: "north",
+      cells: [{ x: room.centerX, y: room.top }, { x: room.centerX + 1, y: room.top }],
+      outside: [{ x: room.centerX, y: room.top - 1 }, { x: room.centerX + 1, y: room.top - 1 }]
+    }];
     const roomDoorsRaw = rooms
       .filter((room) => room.label !== "start" && room.label !== "boss" && room.label !== "antechamber")
       .flatMap((room) => roomDoorCandidates(room)
