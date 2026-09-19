@@ -233,8 +233,8 @@
     // doors on corridor walls, lower walls, or vertical room walls.
     const roomDoorCandidates = (room) => [{
       side: "north",
-      cells: [{ x: room.centerX, y: room.top }],
-      outside: [{ x: room.centerX, y: room.top - 1 }]
+      cells: [{ x: room.centerX, y: room.top }, { x: room.centerX + 1, y: room.top }],
+      outside: [{ x: room.centerX, y: room.top - 1 }, { x: room.centerX + 1, y: room.top - 1 }]
     }];
     const roomDoorsRaw = rooms
       .filter((room) => room.label !== "start" && room.label !== "boss" && room.label !== "antechamber")
