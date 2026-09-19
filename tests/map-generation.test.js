@@ -61,6 +61,13 @@ function validateLayout(layout, floor, runSeed) {
   assert(layout.chests.length >= 3 && layout.chests.length <= 5, `Nepareizs lāžu skaits stāvā ${floor}`);
   assert(layout.mimic && layout.floorCells.has(cellKey(layout.mimic.x, layout.mimic.y)), `Stāvā ${floor} trūkst mimika lādes`);
   assert(layout.roomDoors.length >= 4, `Stāvā ${floor} trūkst telpu durvju`);
+  layout.roomDoors.forEach((door) => {
+    const room = layout.rooms.find((candidate) => candidate.label === door.room);
+    assert(door.side === "north", `Stāvā ${floor} telpas durvis nav augšējā sienā`);
+    assert(door.cells.length === 2, `Stāvā ${floor} durvju aile nav divas flīzes plata`);
+    assert(door.cells.every(({ y }) => y === room.top), `Stāvā ${floor} durvis nav telpas augšējā sienā`);
+    assert(door.cells[0].x === room.centerX - 1 && door.cells[1].x === room.centerX, `Stāvā ${floor} durvis nav centrētas`);
+  });
   const doorCells = layout.roomDoors.flatMap(({ cells }) => cells);
   assert(new Set(doorCells.map(({ x, y }) => cellKey(x, y))).size === doorCells.length, `Stāvā ${floor} telpu durvis pārklājas`);
   doorCells.forEach(({ x, y }) => assert(layout.floorCells.has(cellKey(x, y)), `Stāvā ${floor} telpas durvis nav uz grīdas`));
