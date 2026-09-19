@@ -60,15 +60,27 @@ function validateLayout(layout, floor, runSeed) {
   assert(new Set(content.map(({ x, y }) => cellKey(x, y))).size === content.length, `Stāvā ${floor} objekti pārklājas`);
   assert(layout.chests.length >= 3 && layout.chests.length <= 5, `Nepareizs lāžu skaits stāvā ${floor}`);
   assert(layout.mimic && layout.floorCells.has(cellKey(layout.mimic.x, layout.mimic.y)), `Stāvā ${floor} trūkst mimika lādes`);
-  assert(layout.roomDoors.length >= 4, `Stāvā ${floor} trūkst telpu durvju`);
+  // Only existing upper-wall entrances qualify; four doors was the old all-sides rule.
+  assert(layout.roomDoors.length > 0, `Stāvā ${floor} trūkst telpu durvju`);
   layout.roomDoors.forEach((door) => {
     const room = layout.rooms.find((candidate) => candidate.label === door.room);
     assert(door.side === "north", `Stāvā ${floor} telpas durvis nav augšējā sienā`);
     assert(door.cells.length === 2, `Stāvā ${floor} durvju aile nav divas flīzes plata`);
-    assert(door.cells.every(({ y }) => y === room.top), `Stāvā ${floor} durvis nav telpas augšējā sienā`);
-    assert(door.cells[0].x === room.centerX - 1 && door.cells[1].x === room.centerX, `Stāvā ${floor} durvis nav centrētas`);
+    assert(door.cells.every(({ y }) => y === room.top - 1), `Stāvā ${floor} durvis nav telpas augšējā sienā`);
+    assert(!layout.floorCells.has(cellKey(door.cells[0].x - 1, room.top - 1))
+      && !layout.floorCells.has(cellKey(door.cells[1].x + 1, room.top - 1)), `Stāvā ${floor} durvju sānos ir šķirba`);
   });
   const doorCells = layout.roomDoors.flatMap(({ cells }) => cells);
+  const openings = new Set(doorCells.map(({ x, y }) => cellKey(x, y)));
+  const doorWallPlan = mapRules.buildWallPlan(layout.floorCells, MAP_W, MAP_H, openings);
+  assert(doorWallPlan.every(({ x, y }) => !openings.has(cellKey(x, y))), `Stāvā ${floor} sienas bloķē durvis`);
+  const doorWalls = new Map(doorWallPlan.map((wall) => [cellKey(wall.x, wall.y), wall]));
+  layout.roomDoors.forEach(({ cells }) => {
+    const left = doorWalls.get(cellKey(cells[0].x - 1, cells[0].y));
+    const right = doorWalls.get(cellKey(cells[1].x + 1, cells[1].y));
+    assert(left && right, `Stāvā ${floor} trūkst durvju sānu sienas`);
+    assert(left.mask[5] === "1" && right.mask[3] === "1", `Stāvā ${floor} siena nesavienojas ar durvju rāmi`);
+  });
   assert(new Set(doorCells.map(({ x, y }) => cellKey(x, y))).size === doorCells.length, `Stāvā ${floor} telpu durvis pārklājas`);
   doorCells.forEach(({ x, y }) => assert(layout.floorCells.has(cellKey(x, y)), `Stāvā ${floor} telpas durvis nav uz grīdas`));
   const contentKeys = new Set(content.map(({ x, y }) => cellKey(x, y)));

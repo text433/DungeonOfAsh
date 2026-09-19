@@ -226,20 +226,21 @@
       floorCells.add(cellKey(x, BOSS_CHAMBER.wallY));
     }
 
-    // Every non-start room gets real doorways on the sides where corridors
-    // reach it. The two-cell barriers match the corridor width, so a closed
-    // door cannot be bypassed through a one-tile gap.
-    // Room doors are allowed only in the upper horizontal wall. Never place
-    // doors on corridor walls, lower walls, or vertical room walls.
+    // Use a real two-cell opening in the upper room wall. A door placed
+    // on the first floor row floats below the wall and can be bypassed.
     const roomDoorCandidates = (room) => {
-      // Doors belong to rooms only and always sit in the upper horizontal
-      // wall. Keep the 32 px/two-tile doorway used by the door artwork.
-      const leftX = room.centerX - 1;
-      return [{
-        side: "north",
-        cells: [{ x: leftX, y: room.top }, { x: leftX + 1, y: room.top }],
-        outside: [{ x: leftX, y: room.top - 1 }, { x: leftX + 1, y: room.top - 1 }]
-      }];
+      const candidates = [];
+      const y = room.top - 1;
+      for (let x = room.left; x < room.right; x += 1) {
+        if (floorCells.has(cellKey(x - 1, y)) || floorCells.has(cellKey(x + 2, y))) continue;
+        candidates.push({
+          side: "north",
+          cells: [{ x, y }, { x: x + 1, y }],
+          outside: [{ x, y: y - 1 }, { x: x + 1, y: y - 1 }]
+        });
+      }
+      return candidates.sort((a, b) =>
+        Math.abs(a.cells[0].x + 1 - room.centerX) - Math.abs(b.cells[0].x + 1 - room.centerX));
     };
     const roomDoorsRaw = rooms
       .filter((room) => room.label !== "start" && room.label !== "boss" && room.label !== "antechamber")
@@ -515,8 +516,10 @@
     return plans;
   }
 
-  function buildWallPlan(floorCells, mapWidth, mapHeight) {
+  function buildWallPlan(floorCells, mapWidth, mapHeight, openings = new Set()) {
     const wallCells = buildWallCells(floorCells, mapWidth, mapHeight);
+    // Doors continue the wall visually, but never create wall colliders.
+    openings.forEach((key) => wallCells.add(key));
     const plans = [];
     for (let y = 0; y < mapHeight; y += 1) {
       for (let x = 0; x < mapWidth; x += 1) {
@@ -534,7 +537,8 @@
         });
       }
     }
-    return normalizeHorizontalWallRuns(plans, floorCells);
+    return normalizeHorizontalWallRuns(plans, floorCells)
+      .filter(({ x, y }) => !openings.has(cellKey(x, y)));
   }
 
   return Object.freeze({

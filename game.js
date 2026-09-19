@@ -676,22 +676,15 @@
 
     createRoomDoors() {
       this.roomDoors = (this.mapLayout.roomDoors || []).map((definition) => {
-        const room = this.mapLayout.rooms.find((candidate) => candidate.label === definition.room);
         const firstCell = definition.cells[0];
-        const isHorizontalBarrier = definition.side === "north" || definition.side === "south";
-        const x = isHorizontalBarrier
-          ? (firstCell.x + 1) * TILE
-          : (definition.side === "east" ? room.right + 1 : room.left) * TILE;
-        const y = isHorizontalBarrier
-          ? (definition.side === "south" ? room.bottom + 1 : room.top) * TILE
-          : (firstCell.y + 1) * TILE;
+        const x = (firstCell.x + 1) * TILE;
+        const y = (firstCell.y + 1) * TILE;
         const sprite = this.props.create(x, y, "doors_leaf_closed")
-          .setOrigin(0.5, 0.5)
-          .setRotation(isHorizontalBarrier ? 0 : Math.PI / 2)
+          .setOrigin(0.5, 1)
           .setDepth(y + 1)
           .setData({ roomDoorId: definition.id, opened: false })
           .refreshBody();
-        sprite.body.setSize(32, 32).setOffset(0, 0);
+        sprite.body.setSize(32, TILE).setOffset(0, TILE);
         return { ...definition, sprite, opened: false };
       });
     }
@@ -794,19 +787,21 @@
     }
 
     buildWallAutotiles(reservedOpenings = new Set()) {
-      this.wallPlan = mapRules.buildWallPlan(this.floorCells, MAP_W, MAP_H)
-        .filter((rule) => !reservedOpenings.has(`${rule.x},${rule.y}`));
+      this.wallPlan = mapRules.buildWallPlan(this.floorCells, MAP_W, MAP_H, reservedOpenings);
       const activeGate = this.area === "town" ? TOWN : BOSS_CHAMBER;
       this.wallPlan.forEach((rule) => {
         this.wallCells.add(`${rule.x},${rule.y}`);
         this.addWallFloorUnderlay(rule.x, rule.y);
-        const gateFrameKey = rule.y === activeGate.wallY
+        const roomGateFrameKey = reservedOpenings.has(`${rule.x + 1},${rule.y}`)
+          ? "doors_frame_left"
+          : reservedOpenings.has(`${rule.x - 1},${rule.y}`) ? "doors_frame_right" : null;
+        const gateFrameKey = roomGateFrameKey || (rule.y === activeGate.wallY
           ? rule.x === activeGate.gateLeft - 1
             ? "doors_frame_left"
             : rule.x === activeGate.gateRight + 1
               ? "doors_frame_right"
               : null
-          : null;
+          : null);
         if (gateFrameKey) {
           // Keep a full-height straight wall under the transparent arch trim.
           // The trim shapes the doorway without making these cells look thin.
