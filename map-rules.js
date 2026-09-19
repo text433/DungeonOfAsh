@@ -453,6 +453,16 @@
     if (southFloor && !northFloor) return "north";
     if (northFloor && !southFloor) return "south";
 
+    // At the bottom corners of a room/corridor, the wall cell can touch floor
+    // only diagonally. Treat those cells as the lower horizontal wall rather
+    // than a short side wall; otherwise the last brick disappears on both the
+    // left and right bottom corners.
+    const northWestFloor = floorCells.has(cellKey(x - 1, y - 1));
+    const northEastFloor = floorCells.has(cellKey(x + 1, y - 1));
+    if (!northFloor && !southFloor && !westFloor && !eastFloor && (northWestFloor || northEastFloor)) {
+      return "south";
+    }
+
     // The diagonal-only corner cells belong to the horizontal wall run.
     // Direct left/right floor contact always remains a 16x16 side wall.
     if (!westFloor && !eastFloor) {
