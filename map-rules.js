@@ -231,11 +231,16 @@
     // door cannot be bypassed through a one-tile gap.
     // Room doors are allowed only in the upper horizontal wall. Never place
     // doors on corridor walls, lower walls, or vertical room walls.
-    const roomDoorCandidates = (room) => [{
-      side: "north",
-      cells: [{ x: room.centerX, y: room.top }, { x: room.centerX + 1, y: room.top }],
-      outside: [{ x: room.centerX, y: room.top - 1 }, { x: room.centerX + 1, y: room.top - 1 }]
-    }];
+    const roomDoorCandidates = (room) => {
+      // Doors belong to rooms only and always sit in the upper horizontal
+      // wall. Keep the 32 px/two-tile doorway used by the door artwork.
+      const leftX = room.centerX - 1;
+      return [{
+        side: "north",
+        cells: [{ x: leftX, y: room.top }, { x: leftX + 1, y: room.top }],
+        outside: [{ x: leftX, y: room.top - 1 }, { x: leftX + 1, y: room.top - 1 }]
+      }];
+    };
     const roomDoorsRaw = rooms
       .filter((room) => room.label !== "start" && room.label !== "boss" && room.label !== "antechamber")
       .flatMap((room) => roomDoorCandidates(room)
