@@ -534,7 +534,13 @@
         }
       }
 
-      this.buildWallAutotiles();
+      // Reserve the procedural room doorway before drawing walls. Otherwise
+      // the autotiler draws wall pieces behind/alongside the door frame and
+      // produces visible black seams on both sides.
+      const roomDoorCells = new Set(
+        (this.mapLayout.roomDoors || []).flatMap((door) => door.cells.map(({ x, y }) => `${x},${y}`))
+      );
+      this.buildWallAutotiles(roomDoorCells);
       this.createRoomDoors();
       const activeGate = this.mapLayout.gate;
 
@@ -787,8 +793,9 @@
       return Math.floor(frame / 12) * 24 + (frame % 12);
     }
 
-    buildWallAutotiles() {
-      this.wallPlan = mapRules.buildWallPlan(this.floorCells, MAP_W, MAP_H);
+    buildWallAutotiles(reservedOpenings = new Set()) {
+      this.wallPlan = mapRules.buildWallPlan(this.floorCells, MAP_W, MAP_H)
+        .filter((rule) => !reservedOpenings.has(`${rule.x},${rule.y}`));
       const activeGate = this.area === "town" ? TOWN : BOSS_CHAMBER;
       this.wallPlan.forEach((rule) => {
         this.wallCells.add(`${rule.x},${rule.y}`);
