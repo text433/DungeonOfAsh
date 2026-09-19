@@ -674,7 +674,7 @@
         const firstCell = definition.cells[0];
         const isHorizontalBarrier = definition.side === "north" || definition.side === "south";
         const x = isHorizontalBarrier
-          ? (firstCell.x + 1) * TILE
+          ? firstCell.x * TILE + TILE / 2
           : (definition.side === "east" ? room.right + 1 : room.left) * TILE;
         const y = isHorizontalBarrier
           ? (definition.side === "south" ? room.bottom + 1 : room.top) * TILE
@@ -685,7 +685,7 @@
           .setDepth(y + 1)
           .setData({ roomDoorId: definition.id, opened: false })
           .refreshBody();
-        sprite.body.setSize(32, 32).setOffset(0, 0);
+        sprite.body.setSize(TILE, TILE).setOffset(TILE / 2, TILE / 2);
         return { ...definition, sprite, opened: false };
       });
     }
