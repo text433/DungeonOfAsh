@@ -431,7 +431,7 @@
         ...ASSETS.townNpc, ...ASSETS.guideNpc, ...ASSETS.orcIdle, ...ASSETS.orcRun,
         ...ASSETS.bossIdle, ...ASSETS.bossRun, ...ASSETS.chest, ...ASSETS.mimic, ...ASSETS.coin, ...ASSETS.items
       ];
-      [...new Set(allKeys)].forEach((key) => this.load.image(key, `${key}.png${ASSETS.door.includes(key) ? "?v=58" : ""}`));
+      [...new Set(allKeys)].forEach((key) => this.load.image(key, `${key}.png${ASSETS.door.includes(key) ? "?v=59" : ""}`));
     }
 
     create() {
