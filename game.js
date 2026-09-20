@@ -432,7 +432,7 @@
         ...ASSETS.townNpc, ...ASSETS.guideNpc, ...ASSETS.orcIdle, ...ASSETS.orcRun,
         ...ASSETS.bossIdle, ...ASSETS.bossRun, ...ASSETS.chest, ...ASSETS.mimic, ...ASSETS.coin, ...ASSETS.items
       ];
-      [...new Set(allKeys)].forEach((key) => this.load.image(key, `${key}.png${ASSETS.door.includes(key) ? "?v=60" : ""}`));
+      [...new Set(allKeys)].forEach((key) => this.load.image(key, `${key}.png${ASSETS.door.includes(key) ? "?v=61" : ""}`));
     }
 
     create() {
@@ -585,6 +585,10 @@
       });
 
       this.mapLayout.props.forEach(({ x, y, type }) => {
+        if (type === "crate") {
+          this.createCrate(x, y);
+          return;
+        }
         const propY = type === "column" ? (y + 1) * TILE : y * TILE + 8;
         const prop = this.props.create(x * TILE + 8, propY, type);
         if (type === "column") {
@@ -646,28 +650,7 @@
       this.townDirectionArrow = this.add.triangle(
         this.respawnPoint.x, this.respawnPoint.y, 0, 12, 6, 0, 12, 12, 0xffc66d, 1
       ).setOrigin(0.5).setStrokeStyle(2, 0x251a0c).setDepth(1000002);
-      const exitX = TOWN.stairsX * TILE + 8;
-      const exitY = TOWN.stairsY * TILE - 12;
-      this.townExitMarkers = [-1, 0, 1].map((offset) => (
-        this.add.triangle(
-          exitX + offset * 12,
-          exitY,
-          0, 8,
-          8, 0,
-          16, 8,
-          0xe0a04e,
-          0.86
-        ).setOrigin(0.5, 0.5).setDepth(exitY + 2)
-      ));
-      this.tweens.add({
-        targets: this.townExitMarkers,
-        y: "-=4",
-        alpha: { from: 0.35, to: 1 },
-        duration: 720,
-        yoyo: true,
-        repeat: -1,
-        ease: "Sine.easeInOut"
-      });
+
 
       this.add.image(27 * TILE + 8, 16 * TILE + 8, "wall_fountain_top_2").setDepth(16 * TILE + 8);
       [[27, 7, "wall_banner_blue"], [36, 7, "wall_banner_yellow"]].forEach(([x, y, key]) => {
@@ -680,7 +663,7 @@
         column.body.setSize(12, 10).setOffset(2, 38);
       });
       [[21, 30], [45, 35], [19, 25]].forEach(([x, y]) => {
-        this.props.create(x * TILE + 8, y * TILE + 8, "crate").setDepth(y * TILE + 8).refreshBody();
+        this.createCrate(x, y);
       });
 
       this.addLavaFall(19, 17);
@@ -766,8 +749,24 @@
       sound.blip(90, 0.14, "triangle", 0.025);
     }
 
+    createCrate(tileX, tileY) {
+      const baseline = (tileY + 1) * TILE;
+      const crate = this.props.create(tileX * TILE + 8, baseline, "crate")
+        .setOrigin(0.5, 1).setDepth(baseline).refreshBody();
+      crate.body.setSize(12, 10).setOffset(2, 14);
+      return crate;
+    }
+
     addWallTorch(tileX, tileY) {
-      if (!this.wallCells.has(`${tileX},${tileY}`)) return;
+      // Mount only on a continuous front face, away from corners and jambs.
+      const safeX = [0, -1, 1, -2, 2, -3, 3].map((dx) => tileX + dx).find((x) => (
+        [-1, 0, 1].every((dx) => this.wallCells.has(`${x + dx},${tileY}`)
+          && this.hasFloor(x + dx, tileY + 1))
+        && !this.hasFloor(x, tileY - 1)
+        && !this.wallTorches.some((torch) => torch.getData("cell") === `${x},${tileY}`)
+      ));
+      if (safeX === undefined) return;
+      tileX = safeX;
       if (this.wallTorches.some((torch) => torch.getData("cell") === `${tileX},${tileY}`)) return;
       const torch = this.add.sprite(tileX * TILE + 8, (tileY + 1) * TILE - 2, ASSETS.torch[0])
         .setDisplaySize(18, 18).setOrigin(0.5, 1).setDepth(tileY * TILE + 10)

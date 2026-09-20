@@ -974,3 +974,75 @@ h2 { font-size: clamp(38px, 7vw, 68px); }
   .boss-progress { top: calc(40% - 72px); width: 136px; right: max(5px, env(safe-area-inset-right)); }
   .quest-panel { top: max(91px, calc(env(safe-area-inset-top) + 80px)); }
 }
+
+/* v61 — one stone-and-bronze pixel-art interface. */
+:root {
+  --panel: #171719;
+  --stone: #55504a;
+  --bone: #e0d1b4;
+  --gold: #b99460;
+  --line: #766248;
+}
+body, button, .quest-panel strong, h1, h2 {
+  font-family: "Courier New", monospace;
+}
+.hud-panel, .quest-panel, .prompt, .boss-progress, .loot-toast,
+.talent-window, .smith-window, .talent-wallet, .primary-button, .ghost-button,
+.icon-button, .talent-close, .minimap-actions button, .minimap-reopen {
+  border: 6px solid transparent;
+  border-image: url("assets/ui/panel.png?v=61") 10 fill / 6px / 0 stretch;
+  background: #171719;
+  border-radius: 0;
+  box-shadow: none;
+  image-rendering: pixelated;
+  text-shadow: 1px 2px #080809;
+}
+.hud-panel { padding: 4px 7px; }
+.quest-panel { padding: 6px 8px; background: #171719e6; }
+.quest-panel strong { letter-spacing: 0; }
+.icon-button, .talent-close { padding: 0; }
+.primary-button, .ghost-button { padding: 12px 20px; }
+.primary-button { color: #ffe0a0; background: #30221b; }
+.weapon-rank, .armor-rank, .buff-chip {
+  border-radius: 0;
+  border-color: #8d7451;
+  background: #171719e6;
+  box-shadow: none;
+}
+.talent-node, .talent-branch, .smith-cost {
+  border: 2px solid #554b40;
+  background: #1d1c1d;
+  border-radius: 0;
+  box-shadow: inset 2px 2px #29282a, inset -2px -2px #0d0d10;
+}
+.talent-node .node-icon { border-radius: 0; box-shadow: none; }
+.overlay.modal { backdrop-filter: none; }
+#xp-fill { background: #c36a36; box-shadow: none; }
+#joystick-base, #joystick-knob, .action-pad .control {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background-color: transparent;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
+  image-rendering: pixelated;
+}
+#joystick-base { background-image: url("assets/ui/joystick-base.png?v=61"); overflow: visible; }
+#joystick-base::before, #joystick-base::after { display: none; }
+#joystick-knob { background-image: url("assets/ui/joystick-knob.png?v=61"); }
+.action-pad .control { font-size: 0; color: transparent; }
+.action-pad .attack { background-image: url("assets/ui/attack.png?v=61"); }
+.action-pad .interact { background-image: url("assets/ui/interact.png?v=61"); }
+.action-pad .ability, .action-pad .ability.is-active {
+  background-image: url("assets/ui/ability.png?v=61");
+  background-color: transparent;
+  box-shadow: none;
+}
+.action-pad .control.pressed, .action-pad .control:active { filter: brightness(1.3); transform: translateY(2px); }
+.action-pad .ability:not(.is-ready):not(.is-active) { filter: grayscale(1) brightness(.65); }
+.action-pad .ability.is-active { filter: brightness(1.3); }
+button:focus-visible { outline: 2px solid #f0d39b; outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

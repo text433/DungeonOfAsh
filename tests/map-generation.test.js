@@ -94,7 +94,7 @@ function validateLayout(layout, floor, runSeed) {
         Math.abs(solidObjects[i].x - solidObjects[j].x),
         Math.abs(solidObjects[i].y - solidObjects[j].y)
       );
-      assert(distance >= 2, `Stāvā ${floor} divi cietie objekti aizsprosto eju`);
+      assert(distance >= 3, `Stāvā ${floor} divi cietie objekti aizsprosto eju`);
     }
   }
   const chestLikeObjects = [...layout.chests, layout.mimic];

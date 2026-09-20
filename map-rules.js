@@ -342,7 +342,7 @@
       .map((type) => {
         const point = claimPoint(combatRooms, 2, {
           solid: true,
-          spacing: type === "column" ? 3 : 2,
+          spacing: 3,
           optional: true
         });
         return point ? Object.freeze({ ...point, type }) : null;
