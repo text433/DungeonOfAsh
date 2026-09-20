@@ -432,7 +432,7 @@
         ...ASSETS.townNpc, ...ASSETS.guideNpc, ...ASSETS.orcIdle, ...ASSETS.orcRun,
         ...ASSETS.bossIdle, ...ASSETS.bossRun, ...ASSETS.chest, ...ASSETS.mimic, ...ASSETS.coin, ...ASSETS.items
       ];
-      [...new Set(allKeys)].forEach((key) => this.load.image(key, `${key}.png${ASSETS.door.includes(key) ? "?v=61" : ""}`));
+      [...new Set(allKeys)].forEach((key) => this.load.image(key, `${key}.png${ASSETS.door.includes(key) ? "?v=62" : ""}`));
     }
 
     create() {
@@ -1179,6 +1179,16 @@
         }
         return;
       }
+      // A shared Canvas-compatible mask limits raised door copies to fogged
+      // pixels. Visible actors retain their normal depth inside an open aisle.
+      this.doorFogMaskGraphics = this.make.graphics({ x: 0, y: 0, add: false });
+      const doorMask = this.doorFogMaskGraphics.createGeometryMask();
+      this.doorFogCaps.forEach(({ cap }) => cap.setMask(doorMask));
+      this.events.once("shutdown", () => {
+        doorMask.destroy();
+        this.doorFogMaskGraphics.destroy();
+        this.doorFogMaskGraphics = null;
+      });
       this.updateFogOfWar(true);
     }
 
@@ -1287,11 +1297,15 @@
       });
 
       this.fogGraphics.clear();
+      this.doorFogMaskGraphics?.clear().fillStyle(0xffffff, 1);
       this.fogGraphics.fillStyle(0x020105, 0.97);
       for (let y = 0; y < MAP_H; y += 1) {
         for (let x = 0; x < MAP_W; x += 1) {
           const key = `${x},${y}`;
-          if (!this.visitedCells.has(key)) this.fogGraphics.fillRect(x * TILE, y * TILE, TILE, TILE);
+          if (!this.visitedCells.has(key)) {
+            this.fogGraphics.fillRect(x * TILE, y * TILE, TILE, TILE);
+            this.doorFogMaskGraphics?.fillRect(x * TILE, y * TILE, TILE, TILE);
+          }
         }
       }
       this.fogGraphics.fillStyle(0x08060b, 0.48);
@@ -1299,6 +1313,7 @@
         if (this.currentVisibleCells.has(key)) return;
         const [x, y] = key.split(",").map(Number);
         this.fogGraphics.fillRect(x * TILE, y * TILE, TILE, TILE);
+        this.doorFogMaskGraphics?.fillRect(x * TILE, y * TILE, TILE, TILE);
       });
     }
 

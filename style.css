@@ -990,7 +990,7 @@ body, button, .quest-panel strong, h1, h2 {
 .talent-window, .smith-window, .talent-wallet, .primary-button, .ghost-button,
 .icon-button, .talent-close, .minimap-actions button, .minimap-reopen {
   border: 6px solid transparent;
-  border-image: url("assets/ui/panel.png?v=61") 10 fill / 6px / 0 stretch;
+  border-image: url("assets/ui/panel.png?v=61") 10 / 6px / 0 round;
   background: #171719;
   border-radius: 0;
   box-shadow: none;
@@ -1045,4 +1045,12 @@ body, button, .quest-panel strong, h1, h2 {
 button:focus-visible { outline: 2px solid #f0d39b; outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* Keep map controls above the progress panel, not on top of it. */
+.minimap-actions { top: -52px; right: 4px; gap: 8px; }
+.minimap-actions button { min-width: 32px; height: 32px; }
+.minimap-reopen { top: calc(48% - 22px); }
+@media (max-width: 760px) {
+  .minimap-actions { top: -64px; right: 1px; }
 }

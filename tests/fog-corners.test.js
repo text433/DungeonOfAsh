@@ -68,3 +68,17 @@ assert.equal(overlay.visible,false);
 doorSprite.texture.key='ash_door_f5';updateFrame();
 assert.equal(overlay.texture,'ash_door_f5','Overlay must follow each animation frame');
 console.log('Door fog cap passed: synchronized frames, hidden room, normal player-depth row.');
+
+const maskCells = new Set();
+scene.doorFogMaskGraphics = {
+ clear(){maskCells.clear();return this;}, fillStyle(){return this;},
+ fillRect(x,y){maskCells.add(`${x/16},${y/16}`);return this;}
+};
+scene.floorCells = rules.buildFloorCells([[10,8,2,14]]);
+scene.wallCells = rules.buildWallCells(scene.floorCells,64,48);
+scene.player.x=10*16+8;scene.player.y=17*16+8;
+scene.visitedCells.clear();scene.updateFogOfWar(true);
+assert(maskCells.has('10,13'),'Raised door must still override fog behind the closed doorway');
+assert(!maskCells.has('10,16'),'Door overlay must not paint over the visible approach/player');
+for (const key of scene.currentVisibleCells) assert(!maskCells.has(key),'Visible tiles must retain natural sprite depth');
+console.log('Door overlay mask passed: fog-only override, no overlay on revealed player tiles.');
