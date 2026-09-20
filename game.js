@@ -64,6 +64,8 @@
   const asset = (name) => `assets/frames/${name}.png`;
 
   const ASSETS = {
+    door: Array.from({ length: 8 }, (_, i) => `ash_door_f${i}`),
+    torch: Array.from({ length: 4 }, (_, i) => `ash_torch_f${i}`),
     floor: ["floor_1", "floor_2", "floor_3", "floor_4", "floor_5", "floor_6", "floor_7", "floor_8"],
     walls: [
       "wall_banner_red", "wall_banner_blue", "wall_banner_green", "wall_banner_yellow", "wall_hole_1", "wall_hole_2",
@@ -403,6 +405,8 @@
       this.currentVisibleCells = new Set();
       this.lastFogTile = "";
       this.roomDoors = [];
+      this.wallTorches = [];
+      this.gateAnimating = false;
       this.townExitMarkers = [];
     }
 
@@ -417,7 +421,7 @@
         frameHeight: TILE * 2
       });
       const allKeys = [
-        ...ASSETS.floor, ...ASSETS.walls, ...ASSETS.playerIdle, ...ASSETS.playerRun,
+        ...ASSETS.floor, ...ASSETS.walls, ...ASSETS.door, ...ASSETS.torch, ...ASSETS.playerIdle, ...ASSETS.playerRun,
         ...ASSETS.playerHit, ...ASSETS.scoutIdle, ...ASSETS.scoutRun, ...ASSETS.scoutHit,
         ...ASSETS.ashIdle, ...ASSETS.ashRun, ...ASSETS.ashHit,
         ...ASSETS.smithNpc, ...ASSETS.lavaMid, ...ASSETS.lavaBasin, ...ASSETS.weapons,
@@ -491,6 +495,9 @@
       create("boss-idle", ASSETS.bossIdle, 5);
       create("boss-run", ASSETS.bossRun, 7);
       create("coin-spin", ASSETS.coin, 9);
+      create("ash-door-open", ASSETS.door, 14, 0);
+      create("ash-door-close", [...ASSETS.door].reverse(), 14, 0);
+      create("ash-torch-burn", ASSETS.torch, 8);
       create("spikes", ["floor_spikes_anim_f0", "floor_spikes_anim_f1", "floor_spikes_anim_f2", "floor_spikes_anim_f3"], 5);
       create("chest-open", ASSETS.chest, 8, 0);
       create("mimic-awaken", ASSETS.mimic, 9, 0);
@@ -544,20 +551,16 @@
       this.createRoomDoors();
       const activeGate = this.mapLayout.gate;
 
+      const gateWidth = (activeGate.gateRight - activeGate.gateLeft + 1) * TILE;
       this.door = this.props.create(
-        activeGate.entranceX * TILE,
+        activeGate.gateLeft * TILE + gateWidth / 2,
         (activeGate.wallY + 1) * TILE,
-        "doors_leaf_closed"
-      );
+        ASSETS.door[0]
+      ).setDisplaySize(gateWidth, 32);
       this.door.setOrigin(0.5, 1).setDepth(this.door.y).refreshBody();
-      // The gate is three tiles wide. Keep the closed door collision across
-      // the whole opening so it cannot be bypassed around the visible leaf.
-      this.door.body.setSize(48, 11).setOffset(0, 21);
-      this.doorArch = this.add.image(
-        activeGate.entranceX * TILE,
-        (activeGate.wallY - 1) * TILE,
-        "doors_frame_top"
-      ).setOrigin(0.5, 1).setDepth(this.door.y - 1);
+      this.door.body.setSize(gateWidth, TILE).setOffset(0, TILE);
+      this.addWallTorch(activeGate.gateLeft - 2, activeGate.wallY);
+      this.addWallTorch(activeGate.gateRight + 2, activeGate.wallY);
 
       this.chests = this.mapLayout.chests.map(({ x, y, keyChance }) => this.createChest(x, y, keyChance));
 
@@ -620,10 +623,10 @@
       this.buildWallAutotiles();
 
       const gateBaseline = (TOWN.wallY + 1) * TILE;
-      this.add.image(TOWN.entranceX * TILE, gateBaseline, "doors_leaf_open")
+      this.add.image(TOWN.entranceX * TILE, gateBaseline, ASSETS.door[7])
         .setOrigin(0.5, 1).setDepth(gateBaseline);
-      this.add.image(TOWN.entranceX * TILE, (TOWN.wallY - 1) * TILE, "doors_frame_top")
-        .setOrigin(0.5, 1).setDepth(gateBaseline - 1);
+      this.addWallTorch(TOWN.gateLeft - 2, TOWN.wallY);
+      this.addWallTorch(TOWN.gateRight + 2, TOWN.wallY);
 
       this.townNpc = this.add.sprite(TOWN.npcX * TILE + 8, TOWN.npcY * TILE + 8, ASSETS.townNpc[0])
         .setOrigin(0.5, 1).setDepth(TOWN.npcY * TILE + 8).play("town-npc-idle");
@@ -679,24 +682,76 @@
         const firstCell = definition.cells[0];
         const x = (firstCell.x + 1) * TILE;
         const y = (firstCell.y + 1) * TILE;
-        const sprite = this.props.create(x, y, "doors_leaf_closed")
+        const sprite = this.props.create(x, y, ASSETS.door[0])
           .setOrigin(0.5, 1)
           .setDepth(y + 1)
           .setData({ roomDoorId: definition.id, opened: false })
           .refreshBody();
         sprite.body.setSize(32, TILE).setOffset(0, TILE);
-        return { ...definition, sprite, opened: false };
+        this.addWallTorch(firstCell.x - 1, firstCell.y);
+        this.addWallTorch(firstCell.x + 2, firstCell.y);
+        return { ...definition, sprite, opened: false, animating: false };
+      });
+    }
+
+    doorwayOccupied(sprite) {
+      const body = sprite.body;
+      return [this.player, ...(this.enemies?.getChildren() || [])].some((actor) => {
+        const other = actor?.body;
+        return actor?.active && other?.enable
+          && other.right > body.x - 2 && other.x < body.right + 2
+          && other.bottom > body.y - 2 && other.y < body.bottom + 2;
       });
     }
 
     openRoomDoor(roomDoor) {
-      if (!roomDoor || roomDoor.opened || !roomDoor.sprite?.active) return;
-      roomDoor.opened = true;
-      roomDoor.sprite.setData("opened", true).setTexture("doors_leaf_open");
-      roomDoor.sprite.body.enable = false;
-      this.showLootToast("TELPAS DURVIS ATVĒRTAS");
-      this.updateFogOfWar(true);
-      this.updateHud();
+      if (!roomDoor || roomDoor.opened || roomDoor.animating || !roomDoor.sprite?.active) return;
+      roomDoor.animating = true;
+      roomDoor.sprite.once("animationcomplete", () => {
+        roomDoor.opened = true;
+        roomDoor.animating = false;
+        roomDoor.sprite.setData("opened", true);
+        roomDoor.sprite.body.enable = false;
+        this.updateFogOfWar(true);
+        this.updateHud();
+      });
+      roomDoor.sprite.play("ash-door-open");
+      sound.blip(112, 0.16, "triangle", 0.025);
+    }
+
+    closeRoomDoor(roomDoor) {
+      if (!roomDoor?.opened || roomDoor.animating || !roomDoor.sprite?.active) return;
+      if (this.doorwayOccupied(roomDoor.sprite)) {
+        this.showLootToast("DURVJU AILE IR AIZŅEMTA");
+        return;
+      }
+      roomDoor.animating = true;
+      roomDoor.sprite.once("animationcomplete", () => {
+        // An actor may have stepped into the opening during the animation.
+        if (this.doorwayOccupied(roomDoor.sprite)) {
+          roomDoor.sprite.once("animationcomplete", () => { roomDoor.animating = false; });
+          roomDoor.sprite.play("ash-door-open");
+          return;
+        }
+        roomDoor.opened = false;
+        roomDoor.animating = false;
+        roomDoor.sprite.setData("opened", false);
+        roomDoor.sprite.body.enable = true;
+        this.updateFogOfWar(true);
+        this.updateHud();
+      });
+      roomDoor.sprite.play("ash-door-close");
+      sound.blip(90, 0.14, "triangle", 0.025);
+    }
+
+    addWallTorch(tileX, tileY) {
+      if (!this.wallCells.has(`${tileX},${tileY}`)) return;
+      if (this.wallTorches.some((torch) => torch.getData("cell") === `${tileX},${tileY}`)) return;
+      const torch = this.add.sprite(tileX * TILE + 8, (tileY + 1) * TILE - 2, ASSETS.torch[0])
+        .setOrigin(0.5, 1).setDepth(tileY * TILE + 10)
+        .setData("cell", `${tileX},${tileY}`);
+      torch.play({ key: "ash-torch-burn", startFrame: (tileX + tileY) % 4 });
+      this.wallTorches.push(torch);
     }
 
     addProceduralWallDecorations() {
@@ -713,7 +768,10 @@
           this.hash(a.x, a.y, this.mapLayout.seed + 911)
           - this.hash(b.x, b.y, this.mapLayout.seed + 911)
         ));
-      const used = [];
+      const used = this.wallTorches.map((torch) => {
+        const [x, y] = torch.getData("cell").split(",").map(Number);
+        return { x, y };
+      });
       const takeSpaced = (count, spacing) => {
         const picked = [];
         for (const candidate of candidates) {
@@ -725,6 +783,7 @@
         return picked;
       };
 
+      takeSpaced(6, 6).forEach(({ x, y }) => this.addWallTorch(x, y));
       const lavaCount = 2 + (this.mapLayout.seed % 3);
       takeSpaced(lavaCount, 7).forEach(({ x, y }) => this.addLavaFall(x, y));
       const wallArt = [
@@ -1720,15 +1779,15 @@
         label = "E · ATPAKAĻ UZ PILSĒTU";
       } else if (this.area === "dungeon") {
         const roomDoor = this.roomDoors?.find((candidate) => (
-          !candidate.opened
+          !candidate.animating
           && candidate.sprite?.active
           && Phaser.Math.Distance.Between(this.player.x, this.player.y, candidate.sprite.x, candidate.sprite.y) < 34
         ));
         if (roomDoor) {
           this.nearInteraction = "roomDoor";
           this.nearRoomDoor = roomDoor;
-          label = "E · ATVĒRT TELPAS DURVIS";
-        } else if (!this.state.doorOpened && this.door &&
+          label = roomDoor.opened ? "E · AIZVĒRT TELPAS DURVIS" : "E · ATVĒRT TELPAS DURVIS";
+        } else if (!this.state.doorOpened && !this.gateAnimating && this.door &&
             Phaser.Math.Distance.Between(this.player.x, this.player.y, this.door.x, this.door.y) < 48) {
           this.nearInteraction = "door";
           label = this.state.bossUnlocked ? "E · ATVĒRT BOSA DURVIS" : `BOSA DURVIS · ${this.state.requiredKills - this.state.monsterKills} MONSTRI`;
@@ -1754,7 +1813,8 @@
       } else if (this.nearInteraction === "guideNpc") {
         this.returnToTown();
       } else if (this.nearInteraction === "roomDoor") {
-        this.openRoomDoor(this.nearRoomDoor);
+        if (this.nearRoomDoor?.opened) this.closeRoomDoor(this.nearRoomDoor);
+        else this.openRoomDoor(this.nearRoomDoor);
       } else if (this.nearInteraction === "door" && this.state.bossUnlocked) {
         this.openDoor();
       } else if (this.nearInteraction === "door") {
@@ -1795,12 +1855,16 @@
     }
 
     openDoor() {
-      if (!this.state.bossUnlocked || this.state.doorOpened) return;
-      this.state.doorOpened = true;
-      this.door.setTexture("doors_leaf_open");
-      this.door.body.enable = false;
+      if (!this.state.bossUnlocked || this.state.doorOpened || this.gateAnimating) return;
+      this.gateAnimating = true;
+      this.door.once("animationcomplete", () => {
+        this.state.doorOpened = true;
+        this.gateAnimating = false;
+        this.door.body.enable = false;
+        this.updateObjective();
+      });
+      this.door.play("ash-door-open");
       sound.blip(112, 0.22, "triangle", 0.04);
-      this.updateObjective();
     }
 
 

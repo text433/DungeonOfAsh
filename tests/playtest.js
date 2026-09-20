@@ -46,7 +46,7 @@ const server = require("../server.js");
   });
   if (!dungeonReady) throw new Error("Dungeon enemies or optional boss quest did not initialize");
 
-  const roomDoorState = await page.evaluate(() => {
+  const roomDoorState = await page.evaluate(async () => {
     const scene = window.__DUNGEON_DEBUG__.scene;
     const door = scene.roomDoors[0];
     const cell = door.cells[0];
@@ -62,7 +62,9 @@ const server = require("../server.js");
     scene.updateFogOfWar(true);
     const hiddenBefore = !scene.currentVisibleCells.has(`${inside.x},${inside.y}`);
     const bodyBefore = door.sprite.body.enable;
+    const finished = new Promise((resolve) => door.sprite.once("animationcomplete", resolve));
     scene.openRoomDoor(door);
+    await finished;
     scene.updateFogOfWar(true);
     return {
       count: scene.roomDoors.length,
@@ -76,7 +78,7 @@ const server = require("../server.js");
   });
   if (!roomDoorState.count || !roomDoorState.hiddenBefore || !roomDoorState.bodyBefore ||
       !roomDoorState.opened || roomDoorState.bodyAfter || !roomDoorState.visibleAfter ||
-      roomDoorState.textureAfter !== "doors_leaf_open") {
+      roomDoorState.textureAfter !== "ash_door_f7") {
     throw new Error(`Room door or hidden room test failed: ${JSON.stringify(roomDoorState)}`);
   }
 

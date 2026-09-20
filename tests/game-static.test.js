@@ -95,9 +95,9 @@ if (game.includes("startFollow(this.player, true") || game.includes("setRoundPix
 }
 if (!game.includes("fixedStep: false")) throw new Error("Fizika nav piesaistīta ekrāna kadru ritmam");
 if (!game.includes("roundPixels: false")) throw new Error("Globālā pikseļu noapaļošana nav izslēgta");
-if (!html.includes('<script src="map-rules.js?v=52"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
+if (!html.includes('<script src="map-rules.js?v=53"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
 if (!html.includes('<script src="progression.js?v=28"></script>')) throw new Error("HTML neielādē progresa sistēmu");
-if (!html.includes('<script src="game.js?v=52"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
+if (!html.includes('<script src="game.js?v=53"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
 if (html.includes('id="minimap-label"') || html.includes('KARTE · SIENAS')) {
   throw new Error("Minikartē joprojām redzams sienu teksts");
 }
@@ -156,7 +156,7 @@ for (let x = bossRoom.left; x <= bossRoom.right; x += 1) {
     if (!wall || wall.facing !== "north") throw new Error(`Boss telpas siena nav pilnā augstumā pie ${key}`);
   }
 }
-if (!game.includes("activeGate.entranceX * TILE") || !game.includes("activeGate.wallY + 1")) {
+if (!game.includes("activeGate.gateLeft * TILE + gateWidth / 2") || !game.includes("activeGate.wallY + 1")) {
   throw new Error("Boss durvis nav piesaistītas sienas ailei");
 }
 if (!game.includes("activeGate.gateLeft - 1") || !game.includes("activeGate.gateRight + 1")) {
@@ -168,8 +168,8 @@ if (!game.includes("this.highWallFrame(BOSS_GATE_WALL_FRAME)")) {
 if (!game.includes("const columnBaseline = (y + 2) * TILE")) {
   throw new Error("Boss telpas kolonnas pamatne nav izlīdzināta ar sienas apakšmalu");
 }
-if (!game.includes("(activeGate.wallY - 1) * TILE")) {
-  throw new Error("Virs durvīm trūkst augšējās arkas daļas");
+if (!game.includes("ASSETS.door[0]") || !game.includes("ash-door-open")) {
+  throw new Error("Durvīm trūkst animētā spraita ar iebūvētu arku");
 }
 for (const rule of wallPlan) {
   if (!Number.isInteger(rule.frame) || rule.frame < 0 || rule.frame > 47 || rule.frame === 22 || !rule.body) {
