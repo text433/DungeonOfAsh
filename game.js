@@ -3,6 +3,7 @@
 
   const TILE = 16;
   const HIGH_WALL_TOP_INSET = 11;
+  const DOOR_TINT = 0xb0a599;
   const DROP_PICKUP_RADIUS = 42;
   const CHEST_DROP_MIN_DISTANCE = 28;
   const CHEST_DROP_MAX_DISTANCE = 38;
@@ -556,7 +557,7 @@
         activeGate.gateLeft * TILE + gateWidth / 2,
         (activeGate.wallY + 1) * TILE,
         ASSETS.door[0]
-      ).setDisplaySize(gateWidth, 40);
+      ).setDisplaySize(gateWidth, 40).setTint(DOOR_TINT);
       this.door.setOrigin(0.5, 1).setDepth(this.door.y).refreshBody();
       this.door.body.setSize(gateWidth, TILE).setOffset(0, 24);
       this.addWallTorch(activeGate.gateLeft - 2, activeGate.wallY);
@@ -624,7 +625,7 @@
 
       const gateBaseline = (TOWN.wallY + 1) * TILE;
       this.add.image(TOWN.entranceX * TILE, gateBaseline, ASSETS.door[7])
-        .setDisplaySize(40, 40).setOrigin(0.5, 1).setDepth(gateBaseline);
+        .setDisplaySize(40, 40).setTint(DOOR_TINT).setOrigin(0.5, 1).setDepth(gateBaseline);
       this.addWallTorch(TOWN.gateLeft - 2, TOWN.wallY);
       this.addWallTorch(TOWN.gateRight + 2, TOWN.wallY);
 
@@ -683,7 +684,7 @@
         const x = (firstCell.x + 1) * TILE;
         const y = (firstCell.y + 1) * TILE;
         const sprite = this.props.create(x, y, ASSETS.door[0])
-          .setDisplaySize(40, 40).setOrigin(0.5, 1)
+          .setDisplaySize(40, 40).setTint(DOOR_TINT).setOrigin(0.5, 1)
           .setDepth(y + 1)
           .setData({ roomDoorId: definition.id, opened: false })
           .refreshBody();
@@ -1213,6 +1214,21 @@
           }
         }
       }
+
+      // Include diagonally touching boundary walls BEFORE expanding their
+      // sprite bounds. Otherwise a corner is only discovered by padding a
+      // neighbouring wall, and its own upper/lower brick pixels stay fogged.
+      reachable.forEach((key) => {
+        const [floorX, floorY] = key.split(",").map(Number);
+        for (let dy = -1; dy <= 1; dy += 1) {
+          for (let dx = -1; dx <= 1; dx += 1) {
+            const wallKey = `${floorX + dx},${floorY + dy}`;
+            if (!this.wallCells.has(wallKey)) continue;
+            this.currentVisibleCells.add(wallKey);
+            this.visitedCells.add(wallKey);
+          }
+        }
+      });
 
       // Show a closed door from the corridor side without revealing the room
       // cells behind it.
