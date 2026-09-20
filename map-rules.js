@@ -537,8 +537,13 @@
         });
       }
     }
+    // The atlas has ceiling-only inner-corner caps. When a corridor joins a
+    // room, row normalization can make these caps front-facing; their black
+    // lower half must then be replaced by the corresponding brick face.
+    const solidFaces = { 8: 37, 9: 38, 10: 38, 11: 39, 16: 37, 17: 38, 18: 38, 19: 39, 21: 39, 23: 37 };
     return normalizeHorizontalWallRuns(plans, floorCells)
-      .filter(({ x, y }) => !openings.has(cellKey(x, y)));
+      .filter(({ x, y }) => !openings.has(cellKey(x, y)))
+      .map((plan) => ({ ...plan, faceFrame: plan.facing === "side" ? plan.frame : (solidFaces[plan.frame] ?? plan.frame) }));
   }
 
   return Object.freeze({

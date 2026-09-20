@@ -556,9 +556,9 @@
         activeGate.gateLeft * TILE + gateWidth / 2,
         (activeGate.wallY + 1) * TILE,
         ASSETS.door[0]
-      ).setDisplaySize(gateWidth, 32);
+      ).setDisplaySize(gateWidth, 40);
       this.door.setOrigin(0.5, 1).setDepth(this.door.y).refreshBody();
-      this.door.body.setSize(gateWidth, TILE).setOffset(0, TILE);
+      this.door.body.setSize(gateWidth, TILE).setOffset(0, 24);
       this.addWallTorch(activeGate.gateLeft - 2, activeGate.wallY);
       this.addWallTorch(activeGate.gateRight + 2, activeGate.wallY);
 
@@ -624,7 +624,7 @@
 
       const gateBaseline = (TOWN.wallY + 1) * TILE;
       this.add.image(TOWN.entranceX * TILE, gateBaseline, ASSETS.door[7])
-        .setOrigin(0.5, 1).setDepth(gateBaseline);
+        .setDisplaySize(40, 40).setOrigin(0.5, 1).setDepth(gateBaseline);
       this.addWallTorch(TOWN.gateLeft - 2, TOWN.wallY);
       this.addWallTorch(TOWN.gateRight + 2, TOWN.wallY);
 
@@ -683,11 +683,11 @@
         const x = (firstCell.x + 1) * TILE;
         const y = (firstCell.y + 1) * TILE;
         const sprite = this.props.create(x, y, ASSETS.door[0])
-          .setOrigin(0.5, 1)
+          .setDisplaySize(40, 40).setOrigin(0.5, 1)
           .setDepth(y + 1)
           .setData({ roomDoorId: definition.id, opened: false })
           .refreshBody();
-        sprite.body.setSize(32, TILE).setOffset(0, TILE);
+        sprite.body.setSize(32, TILE).setOffset(4, 24);
         this.addWallTorch(firstCell.x - 1, firstCell.y);
         this.addWallTorch(firstCell.x + 2, firstCell.y);
         return { ...definition, sprite, opened: false, animating: false };
@@ -748,7 +748,7 @@
       if (!this.wallCells.has(`${tileX},${tileY}`)) return;
       if (this.wallTorches.some((torch) => torch.getData("cell") === `${tileX},${tileY}`)) return;
       const torch = this.add.sprite(tileX * TILE + 8, (tileY + 1) * TILE - 2, ASSETS.torch[0])
-        .setOrigin(0.5, 1).setDepth(tileY * TILE + 10)
+        .setDisplaySize(24, 24).setOrigin(0.5, 1).setDepth(tileY * TILE + 10)
         .setData("cell", `${tileX},${tileY}`);
       torch.play({ key: "ash-torch-burn", startFrame: (tileX + tileY) % 4 });
       this.wallTorches.push(torch);
@@ -881,7 +881,7 @@
         }
         const isTall = rule.facing !== "side";
         const key = isTall ? "wall_atlas_high" : "wall_atlas_low";
-        const frame = isTall ? this.highWallFrame(rule.frame) : rule.frame;
+        const frame = isTall ? this.highWallFrame(rule.faceFrame ?? rule.frame) : rule.frame;
         const body = isTall
           ? { width: TILE, height: TILE, offsetX: 0, offsetY: rule.facing === "north" ? TILE : HIGH_WALL_TOP_INSET }
           : rule.body;

@@ -95,9 +95,9 @@ if (game.includes("startFollow(this.player, true") || game.includes("setRoundPix
 }
 if (!game.includes("fixedStep: false")) throw new Error("Fizika nav piesaistīta ekrāna kadru ritmam");
 if (!game.includes("roundPixels: false")) throw new Error("Globālā pikseļu noapaļošana nav izslēgta");
-if (!html.includes('<script src="map-rules.js?v=53"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
+if (!html.includes('<script src="map-rules.js?v=54"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
 if (!html.includes('<script src="progression.js?v=28"></script>')) throw new Error("HTML neielādē progresa sistēmu");
-if (!html.includes('<script src="game.js?v=53"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
+if (!html.includes('<script src="game.js?v=54"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
 if (html.includes('id="minimap-label"') || html.includes('KARTE · SIENAS')) {
   throw new Error("Minikartē joprojām redzams sienu teksts");
 }

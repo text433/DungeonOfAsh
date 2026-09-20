@@ -160,3 +160,13 @@ assert(signature(first) === signature(repeat), "Viena sēkla nedod atkārtojamu 
 assert(signature(first) !== signature(otherRun), "Dažādas spēles sēklas dod vienādu karti");
 
 console.log("Procedural map test passed: 80 unique connected floors, compact rooms, valid walls and placements.");
+
+// Regression: seed 1 / floor 1 has ceiling-only caps at a room/corridor turn.
+const cornerLayout = mapRules.generateDungeonLayout(1, 1, MAP_W, MAP_H);
+const cornerPlan = mapRules.buildWallPlan(cornerLayout.floorCells, MAP_W, MAP_H);
+for (const [x, y, face] of [[21, 23, 38], [22, 23, 39]]) {
+  const wall = cornerPlan.find((tile) => tile.x === x && tile.y === y);
+  assert(wall && wall.faceFrame === face, `Stūrī ${x},${y} zem malas trūkst ķieģeļu`);
+  assert(!cornerLayout.floorCells.has(cellKey(x, y)), 'Vizuālais labojums aizsedz eju');
+}
+console.log('Corner brick-face regression passed.');
