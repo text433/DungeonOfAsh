@@ -405,6 +405,7 @@
       this.currentVisibleCells = new Set();
       this.lastFogTile = "";
       this.roomDoors = [];
+      this.doorFogCaps = [];
       this.wallTorches = [];
       this.gateAnimating = false;
       this.townExitMarkers = [];
@@ -430,7 +431,7 @@
         ...ASSETS.townNpc, ...ASSETS.guideNpc, ...ASSETS.orcIdle, ...ASSETS.orcRun,
         ...ASSETS.bossIdle, ...ASSETS.bossRun, ...ASSETS.chest, ...ASSETS.mimic, ...ASSETS.coin, ...ASSETS.items
       ];
-      [...new Set(allKeys)].forEach((key) => this.load.image(key, `${key}.png${ASSETS.door.includes(key) ? "?v=57" : ""}`));
+      [...new Set(allKeys)].forEach((key) => this.load.image(key, `${key}.png${ASSETS.door.includes(key) ? "?v=58" : ""}`));
     }
 
     create() {
@@ -559,6 +560,10 @@
       ).setDisplaySize(gateWidth, 40);
       this.door.setOrigin(0.5, 1).setDepth(this.door.y).refreshBody();
       this.door.body.setSize(gateWidth, TILE).setOffset(0, 24);
+      this.createDoorFogCap(this.door, Array.from(
+        { length: activeGate.gateRight - activeGate.gateLeft + 1 },
+        (_, i) => ({ x: activeGate.gateLeft + i, y: activeGate.wallY })
+      ));
       this.addWallTorch(activeGate.gateLeft - 2, activeGate.wallY);
       this.addWallTorch(activeGate.gateRight + 2, activeGate.wallY);
 
@@ -688,10 +693,23 @@
           .setData({ roomDoorId: definition.id, opened: false })
           .refreshBody();
         sprite.body.setSize(32, TILE).setOffset(4, 24);
+        this.createDoorFogCap(sprite, definition.cells);
         this.addWallTorch(firstCell.x - 1, firstCell.y);
         this.addWallTorch(firstCell.x + 2, firstCell.y);
         return { ...definition, sprite, opened: false, animating: false };
       });
+    }
+
+    createDoorFogCap(sprite, cells) {
+      // Only the raised part of the door crosses fogged floor tiles. Draw
+      // its opaque pixels above fog; transparent gaps still hide the room.
+      // Keep the lower collision row in normal depth order for the player.
+      const cap = this.add.image(sprite.x, sprite.y, sprite.texture.key)
+        .setOrigin(0.5, 1).setDisplaySize(sprite.displayWidth, sprite.displayHeight)
+        .setCrop(0, 0, sprite.width, Math.ceil(sprite.height * (1 - TILE / sprite.displayHeight)))
+        .setDepth(1000001).setVisible(false);
+      sprite.on("animationupdate", () => cap.setTexture(sprite.texture.key));
+      this.doorFogCaps.push({ cap, cells });
     }
 
     doorwayOccupied(sprite) {
@@ -1258,6 +1276,10 @@
           this.currentVisibleCells.add(paddedKey);
           this.visitedCells.add(paddedKey);
         }
+      });
+
+      (this.doorFogCaps || []).forEach(({ cap, cells }) => {
+        cap.setVisible(cells.some(({ x, y }) => this.currentVisibleCells.has(`${x},${y}`)));
       });
 
       this.fogGraphics.clear();
