@@ -748,7 +748,7 @@
       if (!this.wallCells.has(`${tileX},${tileY}`)) return;
       if (this.wallTorches.some((torch) => torch.getData("cell") === `${tileX},${tileY}`)) return;
       const torch = this.add.sprite(tileX * TILE + 8, (tileY + 1) * TILE - 2, ASSETS.torch[0])
-        .setDisplaySize(24, 24).setOrigin(0.5, 1).setDepth(tileY * TILE + 10)
+        .setDisplaySize(18, 18).setOrigin(0.5, 1).setDepth(tileY * TILE + 10)
         .setData("cell", `${tileX},${tileY}`);
       torch.play({ key: "ash-torch-burn", startFrame: (tileX + tileY) % 4 });
       this.wallTorches.push(torch);
@@ -872,11 +872,8 @@
             this.highWallFrame(BOSS_GATE_WALL_FRAME),
             "north"
           );
-          this.add.image(
-            rule.x * TILE + 8,
-            (rule.y + 1) * TILE,
-            gateFrameKey
-          ).setOrigin(0.5, 1).setDepth(rule.y * TILE + 8);
+          // The new rectangular sprite contains its own straight stone jambs.
+          // Keep adjacent brickwork flush; do not overlay the old curved arch.
           return;
         }
         const isTall = rule.facing !== "side";
