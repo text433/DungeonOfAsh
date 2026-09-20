@@ -409,6 +409,7 @@
       this.wallTorches = [];
       this.gateAnimating = false;
       this.townExitMarkers = [];
+      this.townDirectionArrow = null;
     }
 
     preload() {
@@ -431,7 +432,7 @@
         ...ASSETS.townNpc, ...ASSETS.guideNpc, ...ASSETS.orcIdle, ...ASSETS.orcRun,
         ...ASSETS.bossIdle, ...ASSETS.bossRun, ...ASSETS.chest, ...ASSETS.mimic, ...ASSETS.coin, ...ASSETS.items
       ];
-      [...new Set(allKeys)].forEach((key) => this.load.image(key, `${key}.png${ASSETS.door.includes(key) ? "?v=59" : ""}`));
+      [...new Set(allKeys)].forEach((key) => this.load.image(key, `${key}.png${ASSETS.door.includes(key) ? "?v=60" : ""}`));
     }
 
     create() {
@@ -642,6 +643,9 @@
       this.townStairs = this.add.image(TOWN.stairsX * TILE + 8, TOWN.stairsY * TILE + 8, "floor_ladder")
         .setDepth(-1);
       this.tweens.add({ targets: this.townStairs, alpha: 0.68, duration: 650, yoyo: true, repeat: -1 });
+      this.townDirectionArrow = this.add.triangle(
+        this.respawnPoint.x, this.respawnPoint.y, 0, 12, 6, 0, 12, 12, 0xffc66d, 1
+      ).setOrigin(0.5).setStrokeStyle(2, 0x251a0c).setDepth(1000002);
       const exitX = TOWN.stairsX * TILE + 8;
       const exitY = TOWN.stairsY * TILE - 12;
       this.townExitMarkers = [-1, 0, 1].map((offset) => (
@@ -1149,6 +1153,7 @@
       if (this.area === "dungeon") {
         this.updateEnemies(time);
         this.updateAutoChests();
+        this.updateAutoDoors();
         this.updateDropPickup();
         this.updateSpikeTrap(time);
       } else {
@@ -1521,7 +1526,7 @@
         this.state.monsterKills += 1;
         if (!this.state.bossUnlocked && this.state.monsterKills >= this.state.requiredKills) {
           this.state.bossUnlocked = true;
-          this.showLootToast("80% MONSTRU SAKAUTI · BOSA DURVIS IR ATVĒRTAS");
+          this.showLootToast("80% MONSTRU SAKAUTI · CEĻŠ PIE BOSA ATSLĒGTS");
           sound.blip(720, 0.24, "triangle", 0.045);
         }
       }
@@ -1812,19 +1817,9 @@
         this.nearInteraction = "guideNpc";
         label = "E · ATPAKAĻ UZ PILSĒTU";
       } else if (this.area === "dungeon") {
-        const roomDoor = this.roomDoors?.find((candidate) => (
-          !candidate.animating
-          && candidate.sprite?.active
-          && Phaser.Math.Distance.Between(this.player.x, this.player.y, candidate.sprite.x, candidate.sprite.y) < 34
-        ));
-        if (roomDoor) {
-          this.nearInteraction = "roomDoor";
-          this.nearRoomDoor = roomDoor;
-          label = roomDoor.opened ? "E · AIZVĒRT TELPAS DURVIS" : "E · ATVĒRT TELPAS DURVIS";
-        } else if (!this.state.doorOpened && !this.gateAnimating && this.door &&
+        if (!this.state.doorOpened && !this.gateAnimating && this.door && !this.state.bossUnlocked &&
             Phaser.Math.Distance.Between(this.player.x, this.player.y, this.door.x, this.door.y) < 48) {
-          this.nearInteraction = "door";
-          label = this.state.bossUnlocked ? "E · ATVĒRT BOSA DURVIS" : `BOSA DURVIS · ${this.state.requiredKills - this.state.monsterKills} MONSTRI`;
+          label = `BOSA DURVIS · ${Math.max(0, this.state.requiredKills - this.state.monsterKills)} MONSTRI`;
         } else if (this.stairs &&
             Phaser.Math.Distance.Between(this.player.x, this.player.y, this.stairs.x, this.stairs.y) < 34) {
           this.nearInteraction = "stairs";
@@ -1846,17 +1841,21 @@
         this.enterDungeon();
       } else if (this.nearInteraction === "guideNpc") {
         this.returnToTown();
-      } else if (this.nearInteraction === "roomDoor") {
-        if (this.nearRoomDoor?.opened) this.closeRoomDoor(this.nearRoomDoor);
-        else this.openRoomDoor(this.nearRoomDoor);
-      } else if (this.nearInteraction === "door" && this.state.bossUnlocked) {
-        this.openDoor();
-      } else if (this.nearInteraction === "door") {
-        sound.blip(86, 0.12, "square", 0.03);
       } else if (this.nearInteraction === "stairs") {
         this.nextFloor();
       }
     }
+    updateAutoDoors() {
+      (this.roomDoors || []).forEach((door) => {
+        if (!door.sprite?.active || door.animating) return;
+        const distance = Math.hypot(this.player.x - door.sprite.x, this.player.y - (door.sprite.y - TILE / 2));
+        if (!door.opened && distance < 36) this.openRoomDoor(door);
+        else if (door.opened && distance > 64 && !this.doorwayOccupied(door.sprite)) this.closeRoomDoor(door);
+      });
+      if (this.state.bossUnlocked && !this.state.doorOpened && !this.gateAnimating && this.door?.active
+          && Math.hypot(this.player.x - this.door.x, this.player.y - this.door.y) < 48) this.openDoor();
+    }
+
     updateAutoChests() {
       this.chests.forEach((chest) => {
         if (!chest.active || chest.getData("opened")) return;
@@ -1929,6 +1928,16 @@
 
     updateTownEntrance() {
       if (!this.townStairs || this.transitioning) return;
+      if (this.townDirectionArrow) {
+        const insideHouse = this.player.y < (TOWN.wallY + 1) * TILE;
+        const targetX = insideHouse ? TOWN.entranceX * TILE : this.townStairs.x;
+        const targetY = insideHouse ? (TOWN.wallY + 2) * TILE : this.townStairs.y;
+        const angle = Math.atan2(targetY - this.player.y, targetX - this.player.x);
+        this.townDirectionArrow
+          .setPosition(this.player.x + Math.cos(angle) * 30, this.player.y + Math.sin(angle) * 30)
+          .setRotation(angle + Math.PI / 2)
+          .setVisible(Math.hypot(this.townStairs.x - this.player.x, this.townStairs.y - this.player.y) > 24);
+      }
       if (Phaser.Math.Distance.Between(this.player.x, this.player.y, this.townStairs.x, this.townStairs.y) < 16) {
         this.enterDungeon();
       }
@@ -1978,7 +1987,7 @@
       if (this.state.bossDead) dom.objective.textContent = "Boss sakauts · kāp uz nākamo stāvu";
       else if (!this.state.bossUnlocked) dom.objective.textContent = `Sakauj monstrus · ${this.state.monsterKills}/${this.state.requiredKills}`;
       else if (this.state.doorOpened && this.boss?.active) dom.objective.textContent = `Sakauj stāva bosu · HP ${this.boss.getData("hp")}/${this.boss.getData("maxHp")}`;
-      else dom.objective.textContent = "E · ATVĒRT BOSA DURVIS";
+      else dom.objective.textContent = "PIEEJ PIE BOSA DURVĪM";
       dom.keyStatus.classList.toggle("is-hidden", !this.state.hasKey);
       dom.keyStatus.textContent = "ATSLĒGA ATRASTA";
     }
@@ -1992,7 +2001,7 @@
       if (this.state.bossDead) {
         dom.bossProgress.textContent = "BOSS SAKAUTS";
       } else if (this.state.bossUnlocked) {
-        dom.bossProgress.textContent = `MONSTRI ${this.state.monsterKills}/${this.state.totalMonsters} · BOSA DURVIS ATVĒRTAS`;
+        dom.bossProgress.textContent = `MONSTRI ${this.state.monsterKills}/${this.state.totalMonsters} · CEĻŠ PIE BOSA ATSLĒGTS`;
       } else {
         dom.bossProgress.textContent = `MONSTRI ${this.state.monsterKills}/${this.state.totalMonsters} · ${percent}% / VAJAG 80%`;
       }
