@@ -31,7 +31,7 @@ scene.updateBossProgressUi();assert.equal(track.attrs['aria-valuenow'],16);asser
 scene.state.monsterKills=17;scene.state.bossUnlocked=true;
 scene.updateBossProgressUi();assert.equal(track.style['--progress'],'100%');
 scene.stairs={x:100,y:120};scene.state.doorOpened=true;scene.updateInteraction();
-assert.equal(dom.prompt.disabled,false);assert.equal(scene.nearInteraction,'stairs');
+assert.equal(dom.prompt.disabled,true);assert.equal(scene.nearInteraction,null);
 assert(!html.includes('data-action="interact"'));
 assert(!html.includes('key-status'));
 assert(!/hasKey|loot-key|keyChance/.test(source));

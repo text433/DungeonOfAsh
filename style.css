@@ -1153,3 +1153,8 @@ button:focus-visible { outline: 2px solid #f0d39b; outline-offset: 3px; }
   content: ""; display: block; width: 23px; height: 23px; margin: auto; background: #deb253;
   clip-path: polygon(43% 0,57% 0,57% 22%,65% 22%,65% 35%,100% 35%,100% 48%,78% 48%,78% 61%,70% 61%,70% 87%,57% 87%,57% 78%,43% 78%,43% 87%,30% 87%,30% 61%,22% 61%,22% 48%,0 48%,0 35%,35% 35%,35% 22%,43% 22%);
 }
+
+/* v73: short arrival title, no panel and no input interception. */
+.floor-title { position: absolute; z-index: 9; top: 32%; left: 0; width: 100%; text-align: center; pointer-events: none; color: #eee0bd; font: bold clamp(32px, 8vw, 68px)/1.2 "Courier New", monospace; letter-spacing: .06em; text-shadow: 3px 3px #141217, -2px -2px #141217; animation: floor-arrival 1.8s ease-out both; }
+@keyframes floor-arrival { 0% { opacity: 0; transform: translateY(8px); } 15%, 70% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .floor-title { animation: none; } }

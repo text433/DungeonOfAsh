@@ -5,12 +5,12 @@ const names=new Set(),classes={add(n){names.add(n)},toggle(n,v){if(v)names.add(n
 const dom={buff:{classList:classes},abilityTime:{},ability:{classList:classes,setAttribute(k,v){this[k]=v}}};
 let unlocked=true,heals=0;
 const Scene=vm.runInNewContext(`(class {${method('castAshWard','performAttack')}${method('updateWardAura','createDirectionTextures')}})`,{dom,progression:{bonuses:()=>({unlockWard:unlocked,wardHeal:2})},sound:{blip(){}}});
-const s=new Scene();s.wardEndsAt=0;s.time={now:100};s.player={active:true,x:100,y:120};s.state={};s.healPlayer=()=>heals++;s.updateHud=()=>s.updateWardHud(s.time.now);
+const s=new Scene();s.createWardMask=()=>{};s.updateWardMask=()=>{};s.wardEndsAt=0;s.time={now:100};s.player={active:true,x:100,y:120};s.state={};s.healPlayer=()=>heals++;s.updateHud=()=>s.updateWardHud(s.time.now);
 let count=0;s.add={image(){count++;return {setPosition(x,y){this.x=x;this.y=y;return this},setDepth(v){this.depth=v;return this},setTexture(v){this.texture=v;return this},setAlpha(v){this.alpha=v;return this},setVisible(v){this.visible=v;return this}}}};
 unlocked=false;s.castAshWard(100);assert.equal(count,0);
 unlocked=true;s.castAshWard(100);assert.equal(count,1);assert.equal(dom.abilityTime.textContent,'6');assert.equal(dom.ability['aria-pressed'],'true');
 s.castAshWard(200);assert.equal(heals,1,'Holding or tapping cannot repeatedly heal');
-s.time.now=550;s.player.x=140;s.player.y=180;s.updateWardAura();assert.equal(s.wardAura.x,140);assert.equal(s.wardAura.y,178);assert.equal(s.wardAura.depth,179);assert.equal(s.wardAura.texture,'ward-aura-4');
+s.time.now=550;s.player.x=140;s.player.y=180;s.updateWardAura();assert.equal(s.wardAura.x,140);assert.equal(s.wardAura.y,178);assert.equal(s.wardAura.depth,-20);assert.equal(s.wardAura.texture,'ward-aura-6');
 s.time.now=6100;s.updateWardAura();s.updateWardHud(6100);assert.equal(s.wardAura.visible,false);assert.equal(dom.abilityTime.textContent,'');assert(names.has('is-ready'));
 s.castAshWard(6100);assert.equal(count,1,'Reuse effect when skill is activated again');assert.equal(s.wardAura.visible,true);
 console.log('Ward effect passed: unlock, duration, movement, animation, expiry and repeated activation.');

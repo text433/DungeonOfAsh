@@ -394,6 +394,7 @@
       this.hurtReadyAt = 0;
       this.wardEndsAt = 0;
       this.wardAura = null;
+      this.wardMaskGraphics = null;
       this.transitioning = false;
       this.respawning = false;
       this.talentOpen = false;
@@ -460,6 +461,7 @@
       this.createFogOfWar();
       this.updateHud();
 
+      this.showFloorTitle();
       this.ready = true;
       window.__DUNGEON_DEBUG__ = { scene: this, state: this.state };
 
@@ -511,17 +513,24 @@
 
     createWardTextures() {
       if (this.textures.exists("ward-aura-0")) return;
-      for (let frame = 0; frame < 8; frame++) {
+      for (let frame = 0; frame < 16; frame++) {
         const g = this.make.graphics({ x: 0, y: 0, add: false });
         // Small, integer-aligned pixel clusters; elliptical ring lies on the floor.
         for (let y = 5; y <= 19; y++) {
           for (let x = 2; x <= 38; x++) {
-            const radius = ((x - 20) / 17) ** 2 + ((y - 12) / 6) ** 2;
+            const pulse = Math.sin(frame * Math.PI / 8);
+            const radius = ((x - 20) / (16 + pulse)) ** 2 + ((y - 12) / (5.5 + pulse * 0.5)) ** 2;
             if (radius > 1.12 || radius < 0.68) continue;
             const bright = (Math.floor((Math.atan2(y - 12, x - 20) + Math.PI) * 4 / Math.PI) + frame) % 4 === 0;
             g.fillStyle(bright ? 0xb6e6c8 : 0x4f9c99, bright ? 0.95 : 0.6);
             g.fillRect(x, y, 1, 1);
           }
+        }
+        // Four orbiting sparks add motion around the pulsing floor ring.
+        for (let spark = 0; spark < 4; spark++) {
+          const angle = frame * Math.PI / 8 + spark * Math.PI / 2;
+          g.fillStyle(0xb6e6c8, 0.9);
+          g.fillRect(Math.round(20 + Math.cos(angle) * 16), Math.round(12 + Math.sin(angle) * 6), 2, 1);
         }
         for (let mote = 0; mote < 4; mote++) {
           const phase = (frame + mote * 2) % 8;
@@ -540,9 +549,45 @@
       if (remaining <= 0) return;
       const elapsed = 6000 - remaining;
       this.wardAura.setPosition(Math.round(this.player.x), Math.round(this.player.y - 2))
-        .setDepth(this.player.y - 1)
-        .setTexture(`ward-aura-${Math.floor(elapsed / 100) % 8}`)
+        .setDepth(-20)
+        .setTexture(`ward-aura-${Math.floor(elapsed / 75) % 16}`)
         .setAlpha(Math.min(1, remaining / 400, (elapsed + 40) / 160));
+      this.updateWardMask();
+    }
+
+    createWardMask() {
+      this.wardMaskGraphics = this.make.graphics({ x: 0, y: 0, add: false });
+      const mask = this.wardMaskGraphics.createGeometryMask();
+      this.wardAura.setMask(mask);
+      this.events.once("shutdown", () => {
+        mask.destroy();
+        this.wardMaskGraphics?.destroy();
+        this.wardMaskGraphics = null;
+      });
+    }
+
+    updateWardMask() {
+      if (!this.wardMaskGraphics) return;
+      const mask = this.wardMaskGraphics;
+      mask.clear().fillStyle(0xffffff, 1);
+      const cx = Math.floor(this.player.x / TILE), cy = Math.floor(this.player.y / TILE);
+      for (let y = cy - 2; y <= cy + 2; y++) {
+        for (let x = cx - 2; x <= cx + 2; x++) {
+          if (this.hasFloor(x, y)) mask.fillRect(x * TILE, y * TILE, TILE, TILE);
+        }
+      }
+    }
+
+    showFloorTitle() {
+      const title = document.getElementById("floor-title");
+      title.classList.add("is-hidden");
+      if (this.area !== "dungeon") return;
+      title.textContent = `${this.state.floor}. STĀVS`;
+      void title.offsetWidth;
+      title.classList.remove("is-hidden");
+      this.cameras.main.fadeIn(350, 8, 6, 10);
+      this.time.delayedCall(1800, () => title.classList.add("is-hidden"));
+      this.events.once("shutdown", () => title.classList.add("is-hidden"));
     }
 
     createDirectionTextures() {
@@ -1212,7 +1257,7 @@
 
 
     update(time, delta) {
-      if (!this.running || this.ended || this.respawning) return;
+      if (!this.running || this.ended || this.respawning || this.transitioning) return;
       const movement = this.inputSystem.movement(delta);
       const speed = 76 * progression.bonuses().speedMultiplier * this.armorConfig().speedMultiplier;
       this.player.setVelocity(movement.x * speed, movement.y * speed);
@@ -1233,6 +1278,8 @@
       if (this.inputSystem.attackPressed() && time >= this.attackReadyAt) this.performAttack(time);
       if (this.inputSystem.abilityPressed()) this.castAshWard(time);
       if (this.area === "dungeon") {
+        this.updateAutoStairs();
+        if (this.transitioning) return;
         this.updateEnemies(time);
         this.updateAutoChests();
         this.updateAutoDoors();
@@ -1491,7 +1538,10 @@
       if (!bonuses.unlockWard || time < this.wardEndsAt) return;
       this.wardEndsAt = time + 6000;
       this.healPlayer(bonuses.wardHeal);
-      if (!this.wardAura) this.wardAura = this.add.image(this.player.x, this.player.y - 2, "ward-aura-0");
+      if (!this.wardAura) {
+        this.wardAura = this.add.image(this.player.x, this.player.y - 2, "ward-aura-0");
+        this.createWardMask();
+      }
       this.updateWardAura();
       sound.blip(560, 0.24, "sine", 0.04);
       this.updateHud();
@@ -1946,10 +1996,6 @@
         if (!this.state.doorOpened && !this.gateAnimating && this.door && !this.state.bossUnlocked &&
             Phaser.Math.Distance.Between(this.player.x, this.player.y, this.door.x, this.door.y) < 48) {
           label = `VĒL PAR MAZ · ${Math.floor(this.state.monsterKills / this.state.totalMonsters * 100)}% / 80% · SAKAUJ VĒL ${Math.max(0, this.state.requiredKills - this.state.monsterKills)} MONSTRUS KARTĒ`;
-        } else if (this.stairs &&
-            Phaser.Math.Distance.Between(this.player.x, this.player.y, this.stairs.x, this.stairs.y) < 34) {
-          this.nearInteraction = "stairs";
-          label = "NĀKAMAIS STĀVS";
         }
       }
       dom.prompt.disabled = !this.nearInteraction;
@@ -1968,8 +2014,7 @@
         this.enterDungeon();
       } else if (this.nearInteraction === "guideNpc") {
         this.returnToTown();
-      } else if (this.nearInteraction === "stairs") {
-        this.nextFloor();
+
       }
     }
     updateAutoDoors() {
@@ -2030,9 +2075,16 @@
       this.stairs = this.add.image(stairs.x * TILE + 8, stairs.y * TILE + 8, "floor_stairs").setDepth(-1).setAlpha(0);
       this.tweens.add({ targets: this.stairs, alpha: 1, duration: 500 });
     }
+    updateAutoStairs() {
+      if (this.transitioning || !this.state.bossDead || !this.stairs?.active || this.stairs.alpha < 0.95) return;
+      if (Math.hypot(this.player.x - this.stairs.x, this.player.y - this.stairs.y) < 20) this.nextFloor();
+    }
+
     nextFloor() {
       if (this.transitioning) return;
       this.transitioning = true;
+      this.player.setVelocity(0, 0);
+      dom.prompt.classList.add("is-hidden");
       const next = this.state.floor + 1;
       progression.awardFloorPoint();
       this.state.saveBestFloor();

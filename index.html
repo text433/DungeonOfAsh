@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0b090d" />
     <meta name="description" content="Dungeon of Ash — spēlējama HTML5 dungeon piedzīvojumu spēle." />
     <title>Dungeon of Ash</title>
-    <link rel="stylesheet" href="style.css?v=72" />
+    <link rel="stylesheet" href="style.css?v=73" />
   </head>
   <body>
     <main id="game-shell" aria-label="Dungeon of Ash spēle">
@@ -54,6 +54,7 @@
       </section>
 
       <button id="prompt" class="prompt is-hidden" type="button" disabled></button>
+      <div id="floor-title" class="floor-title is-hidden" role="status" aria-live="polite"></div>
       <div id="loot-toast" class="loot-toast is-hidden" role="status" aria-live="polite"></div>
 
       <section id="mobile-controls" class="is-hidden" aria-label="Skārienvadība">
@@ -167,6 +168,6 @@
     <script src="vendor/phaser.min.js"></script>
     <script src="map-rules.js?v=68"></script>
     <script src="progression.js?v=28"></script>
-    <script src="game.js?v=71"></script>
+    <script src="game.js?v=73"></script>
   </body>
 </html>

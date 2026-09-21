@@ -1,0 +1,14 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const src=fs.readFileSync(require.resolve('../game.js'),'utf8');
+const method=(a,b)=>src.slice(src.indexOf(`    ${a}(`),src.indexOf(`    ${b}(`));
+const Scene=vm.runInNewContext(`(class {${method('updateAutoStairs','nextFloor')}${method('updateWardMask','showFloorTitle')}})`,{TILE:16});
+const s=new Scene();s.state={bossDead:false};s.player={x:80,y:80};s.stairs={active:true,alpha:1,x:80,y:80};let transitions=0;
+s.nextFloor=()=>{transitions++;s.transitioning=true};s.updateAutoStairs();assert.equal(transitions,0);
+s.state.bossDead=true;s.stairs.alpha=.5;s.updateAutoStairs();assert.equal(transitions,0);
+s.stairs.alpha=1;s.player.x=110;s.updateAutoStairs();assert.equal(transitions,0);
+s.player.x=90;s.updateAutoStairs();s.updateAutoStairs();assert.equal(transitions,1,'Only one transition on approach');
+const cells=new Set(['5,5','5,6','6,5']),rects=[];s.player={x:80,y:80};s.hasFloor=(x,y)=>cells.has(`${x},${y}`);
+s.wardMaskGraphics={clear(){rects.length=0;return this},fillStyle(){return this},fillRect(x,y,w,h){rects.push([x,y,w,h])}};
+s.updateWardMask();assert.equal(rects.length,3);rects.forEach(([x,y,w,h])=>{assert(cells.has(`${x/16},${y/16}`));assert.equal(w,16);assert.equal(h,16)});
+assert(!src.includes('label = "NĀKAMAIS STĀVS"'));
+console.log('Automatic stairs and floor-only aura clipping passed.');
