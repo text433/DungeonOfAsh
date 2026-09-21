@@ -49,6 +49,7 @@
     minimapClose: document.getElementById("minimap-close"),
     minimapReopen: document.getElementById("minimap-reopen"),
     bossProgress: document.getElementById("boss-progress"),
+    questPanel: document.getElementById("quest-panel"),
     questKicker: document.querySelector(".quest-kicker"),
     lootToast: document.getElementById("loot-toast"),
     smith: document.getElementById("smith-screen"),
@@ -650,7 +651,7 @@
       this.tweens.add({ targets: this.townStairs, alpha: 0.68, duration: 650, yoyo: true, repeat: -1 });
       this.townDirectionArrow = this.add.image(
         this.respawnPoint.x, this.respawnPoint.y, "exit-arrow-0"
-      ).setOrigin(0.5).setDepth(1000002);
+      ).setDisplaySize(12, 12).setOrigin(0.5).setDepth(1000002);
 
 
       this.add.image(27 * TILE + 8, 16 * TILE + 8, "wall_fountain_top_2").setDepth(16 * TILE + 8);
@@ -2019,11 +2020,8 @@
     }
 
     updateObjective() {
-      if (this.area === "town") {
-        dom.questKicker.textContent = "NĀKAMAIS SOLIS";
-        dom.objective.textContent = "Ieej dungeonā pa trepēm";
-        return;
-      }
+      dom.questPanel.classList.toggle("is-hidden", this.area === "town");
+      if (this.area === "town") return;
       dom.questKicker.textContent = "IZVĒLES UZDEVUMS";
       if (this.state.bossDead) dom.objective.textContent = "Boss sakauts · kāp uz nākamo stāvu";
       else if (!this.state.bossUnlocked) dom.objective.textContent = `Sakauj monstrus · ${this.state.monsterKills}/${this.state.requiredKills}`;
@@ -2053,9 +2051,12 @@
 
     updateHud() {
       dom.hearts.innerHTML = "";
-      for (let i = 0; i < Math.ceil(this.state.maxHp / 2); i += 1) {
-        const value = this.state.hp - i * 2;
-        const key = value >= 2 ? "ui_heart_full" : value === 1 ? "ui_heart_half" : "ui_heart_empty";
+      // Three hearts represent the whole health pool, including talent bonuses.
+      const heartUnits = Math.max(0, Math.min(6, this.state.hp / this.state.maxHp * 6));
+      dom.hearts.setAttribute("aria-label", `Dzīvība: ${this.state.hp} / ${this.state.maxHp}`);
+      for (let i = 0; i < 3; i += 1) {
+        const value = heartUnits - i * 2;
+        const key = value >= 2 ? "ui_heart_full" : value > 0 ? "ui_heart_half" : "ui_heart_empty";
         const image = document.createElement("img");
         image.src = asset(key);
         image.alt = "";

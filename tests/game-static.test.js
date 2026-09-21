@@ -97,11 +97,11 @@ if (!game.includes("fixedStep: false")) throw new Error("Fizika nav piesaistīta
 if (!game.includes("roundPixels: false")) throw new Error("Globālā pikseļu noapaļošana nav izslēgta");
 if (!html.includes('<script src="map-rules.js?v=64"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
 if (!html.includes('<script src="progression.js?v=28"></script>')) throw new Error("HTML neielādē progresa sistēmu");
-if (!html.includes('<script src="game.js?v=64"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
+if (!html.includes('<script src="game.js?v=66"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
 if (html.includes('id="minimap-label"') || html.includes('KARTE · SIENAS')) {
   throw new Error("Minikartē joprojām redzams sienu teksts");
 }
-if (!html.includes('<link rel="stylesheet" href="style.css?v=65" />')) throw new Error("HTML neielādē jaunāko HUD noformējumu");
+if (!html.includes('<link rel="stylesheet" href="style.css?v=66" />')) throw new Error("HTML neielādē jaunāko HUD noformējumu");
 
 const minimapSource = game.slice(game.indexOf("    renderMinimap(time) {"), game.indexOf("    toggleMinimap(show) {"));
 for (const forbidden of ["this.enemies", "this.chests", "currentVisibleCells.has", "fillRect(0, 0, width, height)"]) {

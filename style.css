@@ -1070,3 +1070,9 @@ button:focus-visible { outline: 2px solid #f0d39b; outline-offset: 3px; }
 .prompt { width: max-content; max-width: min(330px, 80vw); line-height: 1.5; text-align: center; }
 .prompt:not(:disabled) { pointer-events: auto; cursor: pointer; }
 .prompt:disabled { opacity: 1; cursor: default; }
+
+/* v66: unobstructed three-heart health display. */
+.hud-panel.player-panel { border: 0; border-image: none; background: transparent; box-shadow: none; padding: 0; min-height: 0; }
+.player-panel .xp-track, .player-panel .weapon-rank, .player-panel .armor-rank { display: none; }
+#hearts { gap: 4px; min-width: 0; }
+#hearts img { width: 32px; height: 30px; }
