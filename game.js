@@ -563,15 +563,22 @@
     findWardScale(x, y) {
       // Wall artwork can extend above its collision tile. Test visible bounds,
       // not only tile occupancy, so the floor effect is never sliced by a cap.
-      const nearbyWalls = this.walls.getChildren()
-        .filter((wall) => wall.active && Math.abs(wall.x - x) < 48 && Math.abs(wall.y - y) < 64)
-        .map((wall) => wall.getBounds());
+      const obstacles = [
+        ...this.walls.getChildren(),
+        ...(this.props?.getChildren() || []).filter((prop) => prop.body?.enable !== false),
+        ...(this.enemies?.getChildren() || []).filter((enemy) =>
+          enemy.getData("type") === "mimic" && enemy.getData("dormant"))
+      ];
+      const nearbyObstacles = obstacles
+        .filter((object) => object.active && object.visible !== false
+          && Math.abs(object.x - x) < 48 && Math.abs(object.y - y) < 80)
+        .map((object) => object.getBounds());
       for (let step = 20; step >= 4; step--) {
         const scale = step / 20;
         const left = x - 20 * scale, right = x + 20 * scale;
         const top = y - 12 * scale, bottom = y + 12 * scale;
-        if (nearbyWalls.some((wall) => left < wall.right + 1 && right > wall.left - 1
-          && top < wall.bottom + 1 && bottom > wall.top - 1)) continue;
+        if (nearbyObstacles.some((bounds) => left < bounds.right + 1 && right > bounds.left - 1
+          && top < bounds.bottom + 1 && bottom > bounds.top - 1)) continue;
         let fits = true;
         for (let ty = Math.floor(top / TILE); ty <= Math.floor((bottom - 0.01) / TILE); ty++) {
           for (let tx = Math.floor(left / TILE); tx <= Math.floor((right - 0.01) / TILE); tx++) {
