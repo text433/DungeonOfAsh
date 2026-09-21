@@ -647,7 +647,8 @@ h2 { font-size: clamp(38px, 7vw, 68px); }
   position: absolute;
   z-index: 7;
   right: max(14px, env(safe-area-inset-right));
-  top: calc(50% - 91px);
+  top: calc(50% - 125px);
+  transform: translateY(-100%);
   width: 194px;
   box-sizing: border-box;
   padding: 5px 8px;
@@ -962,7 +963,7 @@ h2 { font-size: clamp(38px, 7vw, 68px); }
     opacity: 0.9;
   }
   .minimap-panel canvas { width: 132px; height: 97px; }
-  .boss-progress { right: max(5px, env(safe-area-inset-right)); top: calc(48% - 72px); width: 142px; font-size: 8px; }
+  .boss-progress { right: max(5px, env(safe-area-inset-right)); top: calc(48% - 100px); width: 142px; font-size: 8px; }
   .minimap-actions { top: -7px; right: 1px; }
   .minimap-actions button { min-width: 26px; height: 26px; }
   .minimap-reopen { right: max(6px, env(safe-area-inset-right)); }
@@ -971,7 +972,7 @@ h2 { font-size: clamp(38px, 7vw, 68px); }
 @media (pointer: coarse) and (orientation: landscape) {
   .minimap-panel { top: 40%; width: 136px; }
   .minimap-panel canvas { width: 126px; height: 92px; }
-  .boss-progress { top: calc(40% - 72px); width: 136px; right: max(5px, env(safe-area-inset-right)); }
+  .boss-progress { top: calc(40% - 97px); width: 136px; right: max(5px, env(safe-area-inset-right)); }
   .quest-panel { top: max(91px, calc(env(safe-area-inset-top) + 80px)); }
 }
 
@@ -1054,12 +1055,12 @@ button:focus-visible { outline: 2px solid #f0d39b; outline-offset: 3px; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 
-/* Keep map controls above the progress panel, not on top of it. */
-.minimap-actions { top: -52px; right: 4px; gap: 8px; }
+/* Progress ends above the controls; controls sit just above the map. */
+.minimap-actions { top: -38px; right: 4px; gap: 8px; }
 .minimap-actions button { min-width: 32px; height: 32px; }
 .minimap-reopen { top: calc(48% - 22px); }
 @media (max-width: 760px) {
-  .minimap-actions { top: -64px; right: 1px; }
+  .minimap-actions { top: -38px; right: 1px; }
 }
 
 /* v64: progress fills to the kill requirement; context actions replace E. */
