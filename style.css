@@ -1080,14 +1080,14 @@ button:focus-visible { outline: 2px solid #f0d39b; outline-offset: 3px; }
 /* v67: monster progress is shown beside the map. */
 #quest-panel { display: none; }
 
-/* v69: native-scale pixel controls, identical geometry in every skill state. */
-#joystick-base { background-image: url("assets/ui/joystick-base-v69.png"); }
-#joystick-knob { background-image: url("assets/ui/joystick-knob-v69.png"); }
-.action-pad .attack { background-image: url("assets/ui/attack-v69.png"); }
+/* v70: original artwork rendered on a slightly coarser pixel grid. */
+#joystick-base { background-image: var(--pixel-joystick-base, url("assets/ui/joystick-base.png?v=61")); }
+#joystick-knob { background-image: var(--pixel-joystick-knob, url("assets/ui/joystick-knob.png?v=61")); }
+.action-pad .attack { background-image: var(--pixel-attack, url("assets/ui/attack.png?v=61")); }
 #ability-button, #ability-button.is-ready, #ability-button.is-active,
 #ability-button.pressed, #ability-button:active {
   right: 82px; top: 44px; width: 56px; height: 56px;
-  background: transparent url("assets/ui/ability-v69.png") center / 100% 100% no-repeat;
+  background: transparent var(--pixel-ability, url("assets/ui/ability.png?v=61")) center / 100% 100% no-repeat;
   border: 0; border-image: none; box-shadow: none; border-radius: 0;
   transform: none; padding: 0;
 }
