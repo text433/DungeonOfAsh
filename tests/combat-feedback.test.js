@@ -1,0 +1,16 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const src=fs.readFileSync(require.resolve('../game.js'),'utf8');
+const method=(a,b)=>src.slice(src.indexOf(`    ${a}(`),src.indexOf(`    ${b}(`));
+let block=0;
+const Scene=vm.runInNewContext(`(class {${method('healPlayer','showCombatNumber')}${method('applyPlayerDamage','handleEnemyContact')}})`,{progression:{bonuses:()=>({blockChance:block})},sound:{blip(){}}});
+const s=new Scene();s.player={active:true};s.time={now:100};s.wardEndsAt=0;s.armorConfig=()=>({blockChance:0});
+s.state={hp:5,maxHp:6,heal(n){const old=this.hp;this.hp=Math.min(this.maxHp,this.hp+n);return this.hp-old},damage(n){this.hp=Math.max(0,this.hp-n)}};
+const shown=[];s.showCombatNumber=(actor,value,color)=>shown.push({value,color});
+assert.equal(s.healPlayer(2),1);assert.equal(shown.at(-1).value,'+1');
+const count=shown.length;s.healPlayer(2);assert.equal(shown.length,count,'No false healing at full HP');
+s.applyPlayerDamage(2);assert.equal(shown.at(-1).value,'-2');assert.equal(s.state.hp,4);
+s.wardEndsAt=1000;s.applyPlayerDamage(3);assert.equal(shown.at(-1).value,'-2');
+s.wardEndsAt=0;s.applyPlayerDamage(5);assert.equal(shown.at(-1).value,'-2');assert.equal(s.state.hp,0);
+assert(!src.includes('DZĪVĪBAS PUDELE · +2 HP'));
+assert(src.includes('this.showCombatNumber(enemy, Math.min(damage, enemy.getData("hp"))'));
+console.log('Combat feedback passed: actual healing, full health, damage, ward reduction and lethal damage.');

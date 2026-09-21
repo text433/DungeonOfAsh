@@ -1490,7 +1490,7 @@
       const bonuses = progression.bonuses();
       if (!bonuses.unlockWard || time < this.wardEndsAt) return;
       this.wardEndsAt = time + 6000;
-      this.state.heal(bonuses.wardHeal);
+      this.healPlayer(bonuses.wardHeal);
       if (!this.wardAura) this.wardAura = this.add.image(this.player.x, this.player.y - 2, "ward-aura-0");
       this.updateWardAura();
       sound.blip(560, 0.24, "sine", 0.04);
@@ -1586,6 +1586,7 @@
     hitEnemy(enemy, damage, direction, time) {
       if (enemy.getData("type") === "mimic" && enemy.getData("dormant")) this.awakenMimic(enemy, time);
       const hp = enemy.getData("hp") - damage;
+      this.showCombatNumber(enemy, Math.min(damage, enemy.getData("hp")), 0xf1d69c);
       enemy.setData("hp", hp);
       enemy.setData("staggerUntil", time + 130);
       enemy.setVelocity(direction.x * 95, direction.y * 95);
@@ -1629,7 +1630,7 @@
         }
       }
       const killHeal = progression.bonuses().healOnKill;
-      if (killHeal) this.state.heal(killHeal);
+      if (killHeal) this.healPlayer(killHeal);
       this.spawnDrop(x, y, "coin", reward);
       if (type !== "boss" && Math.random() < 0.22) this.spawnDrop(x + 7, y, "potion", 2);
       if (type === "boss") {
@@ -1682,9 +1683,8 @@
         this.state.addGold(drop.getData("value"));
         sound.blip(620, 0.07, "square", 0.025);
       } else if (type === "potion") {
-        this.state.heal(drop.getData("value"));
+        this.healPlayer(drop.getData("value"));
         sound.blip(410, 0.11, "sine", 0.035);
-        this.showLootToast("DZĪVĪBAS PUDELE · +2 HP");
       } else if (type === "armor") {
         const armorId = ARMOR_SETS[drop.getData("value")] ? drop.getData("value") : "scout";
         this.state.armorId = armorId;
@@ -1704,6 +1704,40 @@
           this.collectDrop(this.player, drop);
         }
       });
+    }
+
+    healPlayer(amount) {
+      const restored = this.state.heal(amount);
+      if (restored > 0) this.showCombatNumber(this.player, `+${restored}`, 0x8cce70);
+      return restored;
+    }
+
+    showCombatNumber(actor, value, color) {
+      if (!actor?.active) return;
+      const glyphs = {
+        "0": ["111","101","101","101","111"], "1": ["010","110","010","010","111"],
+        "2": ["111","001","111","100","111"], "3": ["111","001","111","001","111"],
+        "4": ["101","101","111","001","001"], "5": ["111","100","111","001","111"],
+        "6": ["111","100","111","101","111"], "7": ["111","001","010","010","010"],
+        "8": ["111","101","111","101","111"], "9": ["111","101","111","001","111"],
+        "+": ["000","010","111","010","000"], "-": ["000","000","111","000","000"]
+      };
+      const text = String(value);
+      const pixels = [];
+      [...text].forEach((char, index) => (glyphs[char] || glyphs["0"]).forEach((row, y) => {
+        [...row].forEach((bit, x) => { if (bit === "1") pixels.push([index * 4 + x, y]); });
+      }));
+      this.combatTextSerial = (this.combatTextSerial || 0) + 1;
+      const x = Math.round(actor.x - (text.length * 4 - 1) / 2 + (this.combatTextSerial % 3 - 1) * 4);
+      const y = Math.round(actor.y - (actor.displayHeight || 24) - 3);
+      const number = this.add.graphics({ x, y }).setDepth(999999);
+      // One native pixel per stroke: sharp at the same camera scale as sprites.
+      number.fillStyle(0x15131a, 0.95);
+      pixels.forEach(([px, py]) => number.fillRect(px - 1, py - 1, 3, 3));
+      number.fillStyle(color, 1);
+      pixels.forEach(([px, py]) => number.fillRect(px, py, 1, 1));
+      this.tweens.add({ targets: number, y: y - 14, alpha: 0, duration: 850,
+        ease: "Cubic.easeOut", onComplete: () => number.destroy() });
     }
 
     showLootToast(message, type = "") {
@@ -1829,11 +1863,13 @@
       const blockChance = Math.min(0.75, bonuses.blockChance + this.armorConfig().blockChance);
       if (blockChance && Math.random() < blockChance) {
         sound.blip(710, 0.08, "square", 0.025);
-        this.showLootToast("BRUŅAS BLOĶĒJA SITIENU", "armor");
+        this.showCombatNumber(this.player, "0", 0xa8bcc0);
         return 0;
       }
       const reduced = this.time.now < this.wardEndsAt ? Math.max(1, Math.ceil(amount * 0.5)) : amount;
+      const lost = Math.min(this.state.hp, reduced);
       this.state.damage(reduced);
+      if (lost > 0) this.showCombatNumber(this.player, `-${lost}`, 0xee756f);
       return reduced;
     }
 
@@ -1925,7 +1961,7 @@
       if (this.nearInteraction === "smithNpc") {
         this.openSmith();
       } else if (this.nearInteraction === "townNpc") {
-        this.state.heal(this.state.maxHp);
+        this.healPlayer(this.state.maxHp);
         this.updateHud();
         this.openTalentTree();
       } else if (this.nearInteraction === "townExit") {
@@ -2139,7 +2175,7 @@
     applyProgressionBonuses() {
       const before = this.state.maxHp;
       this.state.maxHp = MAX_HP + progression.bonuses().maxHp;
-      if (this.state.maxHp > before) this.state.heal(this.state.maxHp - before);
+      if (this.state.maxHp > before) this.healPlayer(this.state.maxHp - before);
       this.updateHud();
     }
 
