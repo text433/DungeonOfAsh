@@ -548,11 +548,39 @@
       this.wardAura.setVisible(remaining > 0);
       if (remaining <= 0) return;
       const elapsed = 6000 - remaining;
-      this.wardAura.setPosition(Math.round(this.player.x), Math.round(this.player.y - 2))
+      const x = Math.round(this.player.x), y = Math.round(this.player.y - 2);
+      const safeScale = this.findWardScale(x, y);
+      if (safeScale === 0) { this.wardAura.setVisible(false); return; }
+      // Shrink before touching masonry; expand gently when stepping away.
+      const scale = Math.min(safeScale, (this.wardAura.scaleX || safeScale) + 0.04);
+      this.wardAura.setPosition(x, y).setScale(scale)
         .setDepth(-20)
         .setTexture(`ward-aura-${Math.floor(elapsed / 75) % 16}`)
         .setAlpha(Math.min(1, remaining / 400, (elapsed + 40) / 160));
       this.updateWardMask();
+    }
+
+    findWardScale(x, y) {
+      // Wall artwork can extend above its collision tile. Test visible bounds,
+      // not only tile occupancy, so the floor effect is never sliced by a cap.
+      const nearbyWalls = this.walls.getChildren()
+        .filter((wall) => wall.active && Math.abs(wall.x - x) < 48 && Math.abs(wall.y - y) < 64)
+        .map((wall) => wall.getBounds());
+      for (let step = 20; step >= 4; step--) {
+        const scale = step / 20;
+        const left = x - 20 * scale, right = x + 20 * scale;
+        const top = y - 12 * scale, bottom = y + 12 * scale;
+        if (nearbyWalls.some((wall) => left < wall.right + 1 && right > wall.left - 1
+          && top < wall.bottom + 1 && bottom > wall.top - 1)) continue;
+        let fits = true;
+        for (let ty = Math.floor(top / TILE); ty <= Math.floor((bottom - 0.01) / TILE); ty++) {
+          for (let tx = Math.floor(left / TILE); tx <= Math.floor((right - 0.01) / TILE); tx++) {
+            if (!this.hasFloor(tx, ty)) fits = false;
+          }
+        }
+        if (fits) return scale;
+      }
+      return 0;
     }
 
     createWardMask() {

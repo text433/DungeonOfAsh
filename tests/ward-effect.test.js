@@ -5,8 +5,8 @@ const names=new Set(),classes={add(n){names.add(n)},toggle(n,v){if(v)names.add(n
 const dom={buff:{classList:classes},abilityTime:{},ability:{classList:classes,setAttribute(k,v){this[k]=v}}};
 let unlocked=true,heals=0;
 const Scene=vm.runInNewContext(`(class {${method('castAshWard','performAttack')}${method('updateWardAura','createDirectionTextures')}})`,{dom,progression:{bonuses:()=>({unlockWard:unlocked,wardHeal:2})},sound:{blip(){}}});
-const s=new Scene();s.createWardMask=()=>{};s.updateWardMask=()=>{};s.wardEndsAt=0;s.time={now:100};s.player={active:true,x:100,y:120};s.state={};s.healPlayer=()=>heals++;s.updateHud=()=>s.updateWardHud(s.time.now);
-let count=0;s.add={image(){count++;return {setPosition(x,y){this.x=x;this.y=y;return this},setDepth(v){this.depth=v;return this},setTexture(v){this.texture=v;return this},setAlpha(v){this.alpha=v;return this},setVisible(v){this.visible=v;return this}}}};
+const s=new Scene();s.findWardScale=()=>1;s.createWardMask=()=>{};s.updateWardMask=()=>{};s.wardEndsAt=0;s.time={now:100};s.player={active:true,x:100,y:120};s.state={};s.healPlayer=()=>heals++;s.updateHud=()=>s.updateWardHud(s.time.now);
+let count=0;s.add={image(){count++;return {setScale(v){this.scaleX=v;return this},setPosition(x,y){this.x=x;this.y=y;return this},setDepth(v){this.depth=v;return this},setTexture(v){this.texture=v;return this},setAlpha(v){this.alpha=v;return this},setVisible(v){this.visible=v;return this}}}};
 unlocked=false;s.castAshWard(100);assert.equal(count,0);
 unlocked=true;s.castAshWard(100);assert.equal(count,1);assert.equal(dom.abilityTime.textContent,'6');assert.equal(dom.ability['aria-pressed'],'true');
 s.castAshWard(200);assert.equal(heals,1,'Holding or tapping cannot repeatedly heal');
