@@ -1093,3 +1093,63 @@ button:focus-visible { outline: 2px solid #f0d39b; outline-offset: 3px; }
 }
 #ability-time { position: absolute; bottom: 7px; left: 0; right: 0; color: #e8f5da; font: bold 12px/1 "Courier New", monospace; text-shadow: 1px 1px #142d32, -1px -1px #142d32; pointer-events: none; }
 #buff-chip { display: none; }
+
+/* v72: approved compact stone-pixel HUD. */
+.hud-panel.run-panel {
+  min-height: 28px; padding: 3px 2px 6px; gap: 7px;
+  border: 0; border-image: none; border-bottom: 2px solid #756f60;
+  background: #11111480; box-shadow: none; color: #ded6bd;
+}
+.run-panel strong { color: #f1dfad; }
+.run-panel .divider { background: #706c60; height: 17px; }
+.gold-dot {
+  width: 12px; height: 14px; border: 0; transform: none;
+  background: #d7a53c; box-shadow: inset 3px 0 #f0cf68, inset -3px -2px #a8702b;
+  clip-path: polygon(25% 0,75% 0,75% 14%,100% 14%,100% 86%,75% 86%,75% 100%,25% 100%,25% 86%,0 86%,0 14%,25% 14%);
+}
+.icon-button, .minimap-actions button, .minimap-reopen,
+.prompt, .talent-close, .primary-button, .ghost-button,
+.talent-window, .smith-window, .talent-wallet {
+  border: 2px solid #777163; border-image: none; border-radius: 0;
+  background: #202021e6; color: #ded6bd;
+  box-shadow: inset 2px 2px #47443d, inset -2px -2px #121216;
+}
+.icon-button:hover, .minimap-actions button:hover, .minimap-reopen:hover {
+  border-color: #b6ab8e; background-color: #2c2b29;
+}
+.point-badge {
+  border: 0; border-radius: 0; background: #19191b; color: #e5c573;
+  box-shadow: none; top: auto; bottom: -2px; right: -2px;
+  min-width: 13px; height: 14px; padding: 0 2px; font: bold 11px/14px "Courier New", monospace;
+}
+.boss-progress {
+  border: 0; border-image: none; padding: 3px 0; background: transparent;
+  box-shadow: none; text-align: left; color: #e4d9b9;
+  text-shadow: 1px 1px #09090b, -1px -1px #09090b;
+}
+.boss-progress-track { border: 2px solid #736e61; padding: 1px; height: 5px; background: #141416c9; }
+.boss-progress-track > span { background: #8aae6a; box-shadow: inset 0 1px #bbd691; }
+.boss-progress.is-ready .boss-progress-track > span { background: #a2c47e; }
+.minimap-panel { background: transparent; }
+.minimap-actions button { padding: 0; font: bold 23px/1 "Courier New", monospace; }
+.loot-toast { border: 0; border-image: none; background: #121215b3; padding: 5px 9px; box-shadow: none; }
+.loot-toast.armor, .loot-toast.key { box-shadow: none; }
+#pause-button { font-size: 0; }
+#pause-button::before { content: ""; display: block; width: 5px; height: 17px; margin-left: 10px; background: #e2d8b9; box-shadow: 10px 0 #e2d8b9; }
+#fullscreen-button { font-size: 0; }
+#fullscreen-button::before {
+  content: ""; display: block; width: 18px; height: 18px; margin: auto;
+  background: linear-gradient(#e2d8b9,#e2d8b9) left top/7px 2px no-repeat,
+    linear-gradient(#e2d8b9,#e2d8b9) left top/2px 7px no-repeat,
+    linear-gradient(#e2d8b9,#e2d8b9) right top/7px 2px no-repeat,
+    linear-gradient(#e2d8b9,#e2d8b9) right top/2px 7px no-repeat,
+    linear-gradient(#e2d8b9,#e2d8b9) left bottom/7px 2px no-repeat,
+    linear-gradient(#e2d8b9,#e2d8b9) left bottom/2px 7px no-repeat,
+    linear-gradient(#e2d8b9,#e2d8b9) right bottom/7px 2px no-repeat,
+    linear-gradient(#e2d8b9,#e2d8b9) right bottom/2px 7px no-repeat;
+}
+#talent-button { font-size: 0; }
+#talent-button::before {
+  content: ""; display: block; width: 23px; height: 23px; margin: auto; background: #deb253;
+  clip-path: polygon(43% 0,57% 0,57% 22%,65% 22%,65% 35%,100% 35%,100% 48%,78% 48%,78% 61%,70% 61%,70% 87%,57% 87%,57% 78%,43% 78%,43% 87%,30% 87%,30% 61%,22% 61%,22% 48%,0 48%,0 35%,35% 35%,35% 22%,43% 22%);
+}

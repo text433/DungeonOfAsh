@@ -101,7 +101,7 @@ if (!html.includes('<script src="game.js?v=71"></script>')) throw new Error("HTM
 if (html.includes('id="minimap-label"') || html.includes('KARTE · SIENAS')) {
   throw new Error("Minikartē joprojām redzams sienu teksts");
 }
-if (!html.includes('<link rel="stylesheet" href="style.css?v=70" />')) throw new Error("HTML neielādē jaunāko HUD noformējumu");
+if (!html.includes('<link rel="stylesheet" href="style.css?v=72" />')) throw new Error("HTML neielādē jaunāko HUD noformējumu");
 
 const minimapSource = game.slice(game.indexOf("    renderMinimap(time) {"), game.indexOf("    toggleMinimap(show) {"));
 for (const forbidden of ["this.enemies", "this.chests", "currentVisibleCells.has", "fillRect(0, 0, width, height)"]) {
