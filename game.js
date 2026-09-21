@@ -43,6 +43,7 @@
     talentHudPoints: document.getElementById("talent-hud-points"),
     buff: document.getElementById("buff-chip"),
     ability: document.getElementById("ability-button"),
+    abilityTime: document.getElementById("ability-time"),
     minimap: document.getElementById("minimap"),
     minimapPanel: document.getElementById("minimap-panel"),
     minimapZoom: document.getElementById("minimap-zoom"),
@@ -392,6 +393,7 @@
       this.attackReadyAt = 0;
       this.hurtReadyAt = 0;
       this.wardEndsAt = 0;
+      this.wardAura = null;
       this.transitioning = false;
       this.respawning = false;
       this.talentOpen = false;
@@ -437,6 +439,7 @@
     create() {
       this.createAnimations();
       this.createDirectionTextures();
+      this.createWardTextures();
       this.inputSystem = new InputSystem(this);
       this.walls = this.physics.add.staticGroup();
       this.props = this.physics.add.staticGroup();
@@ -449,6 +452,7 @@
       this.createFloorUnderlayFrames();
       this.buildDungeon();
       this.createPlayer();
+      this.events.on(Phaser.Scenes.Events.POST_UPDATE, this.updateWardAura, this);
       if (this.area === "dungeon") this.spawnEncounters();
       else this.state.totalEnemies = 0;
       this.createCollisions();
@@ -503,6 +507,42 @@
       create("chest-open", ASSETS.chest, 8, 0);
       create("mimic-awaken", ASSETS.mimic, 9, 0);
       create("mimic-run", [ASSETS.mimic[1], ASSETS.mimic[2]], 7);
+    }
+
+    createWardTextures() {
+      if (this.textures.exists("ward-aura-0")) return;
+      for (let frame = 0; frame < 8; frame++) {
+        const g = this.make.graphics({ x: 0, y: 0, add: false });
+        // Small, integer-aligned pixel clusters; elliptical ring lies on the floor.
+        for (let y = 5; y <= 19; y++) {
+          for (let x = 2; x <= 38; x++) {
+            const radius = ((x - 20) / 17) ** 2 + ((y - 12) / 6) ** 2;
+            if (radius > 1.12 || radius < 0.68) continue;
+            const bright = (Math.floor((Math.atan2(y - 12, x - 20) + Math.PI) * 4 / Math.PI) + frame) % 4 === 0;
+            g.fillStyle(bright ? 0xb6e6c8 : 0x4f9c99, bright ? 0.95 : 0.6);
+            g.fillRect(x, y, 1, 1);
+          }
+        }
+        for (let mote = 0; mote < 4; mote++) {
+          const phase = (frame + mote * 2) % 8;
+          g.fillStyle(phase < 4 ? 0xb6e6c8 : 0x4f9c99, 1 - phase / 10);
+          g.fillRect(7 + mote * 8, 9 - phase, 1, 2);
+        }
+        g.generateTexture(`ward-aura-${frame}`, 40, 24);
+        g.destroy();
+      }
+    }
+
+    updateWardAura() {
+      if (!this.wardAura || !this.player?.active) return;
+      const remaining = Math.max(0, this.wardEndsAt - this.time.now);
+      this.wardAura.setVisible(remaining > 0);
+      if (remaining <= 0) return;
+      const elapsed = 6000 - remaining;
+      this.wardAura.setPosition(Math.round(this.player.x), Math.round(this.player.y - 2))
+        .setDepth(this.player.y - 1)
+        .setTexture(`ward-aura-${Math.floor(elapsed / 100) % 8}`)
+        .setAlpha(Math.min(1, remaining / 400, (elapsed + 40) / 160));
     }
 
     createDirectionTextures() {
@@ -1451,17 +1491,18 @@
       if (!bonuses.unlockWard || time < this.wardEndsAt) return;
       this.wardEndsAt = time + 6000;
       this.state.heal(bonuses.wardHeal);
-      this.player.setTint(0x75ddff);
-      this.time.delayedCall(180, () => this.player.active && this.player.clearTint());
-      this.cameras.main.flash(100, 65, 145, 190, false);
+      if (!this.wardAura) this.wardAura = this.add.image(this.player.x, this.player.y - 2, "ward-aura-0");
+      this.updateWardAura();
       sound.blip(560, 0.24, "sine", 0.04);
       this.updateHud();
     }
 
     updateWardHud(time) {
       const remaining = Math.max(0, this.wardEndsAt - time);
-      dom.buff.classList.toggle("is-hidden", remaining <= 0);
-      dom.buff.textContent = remaining > 0 ? `PELNU VAIROGS · ${Math.ceil(remaining / 1000)}s` : "";
+      dom.buff.classList.add("is-hidden");
+      dom.abilityTime.textContent = remaining > 0 ? String(Math.ceil(remaining / 1000)) : "";
+      dom.ability.setAttribute("aria-pressed", String(remaining > 0));
+      dom.ability.setAttribute("aria-label", remaining > 0 ? `Pelnu vairogs: ${Math.ceil(remaining / 1000)} sekundes` : "Aktivizēt Pelnu vairogu");
       dom.ability.classList.toggle("is-ready", progression.bonuses().unlockWard && remaining <= 0);
       dom.ability.classList.toggle("is-active", remaining > 0);
     }

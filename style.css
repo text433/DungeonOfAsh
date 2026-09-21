@@ -1079,3 +1079,17 @@ button:focus-visible { outline: 2px solid #f0d39b; outline-offset: 3px; }
 
 /* v67: monster progress is shown beside the map. */
 #quest-panel { display: none; }
+
+/* v69: native-scale pixel controls, identical geometry in every skill state. */
+#joystick-base { background-image: url("assets/ui/joystick-base-v69.png"); }
+#joystick-knob { background-image: url("assets/ui/joystick-knob-v69.png"); }
+.action-pad .attack { background-image: url("assets/ui/attack-v69.png"); }
+#ability-button, #ability-button.is-ready, #ability-button.is-active,
+#ability-button.pressed, #ability-button:active {
+  right: 82px; top: 44px; width: 56px; height: 56px;
+  background: transparent url("assets/ui/ability-v69.png") center / 100% 100% no-repeat;
+  border: 0; border-image: none; box-shadow: none; border-radius: 0;
+  transform: none; padding: 0;
+}
+#ability-time { position: absolute; bottom: 7px; left: 0; right: 0; color: #e8f5da; font: bold 12px/1 "Courier New", monospace; text-shadow: 1px 1px #142d32, -1px -1px #142d32; pointer-events: none; }
+#buff-chip { display: none; }
