@@ -432,12 +432,13 @@
         ...ASSETS.townNpc, ...ASSETS.guideNpc, ...ASSETS.orcIdle, ...ASSETS.orcRun,
         ...ASSETS.bossIdle, ...ASSETS.bossRun, ...ASSETS.chest, ...ASSETS.mimic, ...ASSETS.coin, ...ASSETS.items
       ];
-      [...new Set(allKeys)].forEach((key) => this.load.image(key, `${key}.png${ASSETS.door.includes(key) ? "?v=62" : ""}`));
+      [...new Set(allKeys)].forEach((key) => this.load.image(key, `${key}.png${ASSETS.door.includes(key) ? "?v=63" : ""}`));
     }
 
     create() {
       this.createAnimations();
       this.createLootTextures();
+      this.createDirectionTextures();
       this.inputSystem = new InputSystem(this);
       this.walls = this.physics.add.staticGroup();
       this.props = this.physics.add.staticGroup();
@@ -504,6 +505,24 @@
       create("chest-open", ASSETS.chest, 8, 0);
       create("mimic-awaken", ASSETS.mimic, 9, 0);
       create("mimic-run", [ASSETS.mimic[1], ASSETS.mimic[2]], 7);
+    }
+
+    createDirectionTextures() {
+      if (this.textures.exists("exit-arrow-0")) return;
+      const pixels = [[4,1],[3,2],[4,2],[5,2],[2,3],[3,3],[4,3],[5,3],[6,3],
+        [1,4],[2,4],[3,4],[4,4],[5,4],[6,4],[7,4],[3,5],[4,5],[5,5],[3,6],[4,6],[5,6]];
+      for (let direction = 0; direction < 8; direction += 1) {
+        const graphics = this.make.graphics({ x: 0, y: 0, add: false });
+        const angle = direction * Math.PI / 4;
+        pixels.forEach(([x,y]) => {
+          const px = Math.round(4 + (x-4)*Math.cos(angle) - (y-4)*Math.sin(angle));
+          const py = Math.round(4 + (x-4)*Math.sin(angle) + (y-4)*Math.cos(angle));
+          graphics.fillStyle(y < 3 ? 0xe7c17a : 0xb98c43, 1);
+          graphics.fillRect(px, py, 1, 1);
+        });
+        graphics.generateTexture(`exit-arrow-${direction}`, 9, 9);
+        graphics.destroy();
+      }
     }
 
     createLootTextures() {
@@ -647,9 +666,9 @@
       this.townStairs = this.add.image(TOWN.stairsX * TILE + 8, TOWN.stairsY * TILE + 8, "floor_ladder")
         .setDepth(-1);
       this.tweens.add({ targets: this.townStairs, alpha: 0.68, duration: 650, yoyo: true, repeat: -1 });
-      this.townDirectionArrow = this.add.triangle(
-        this.respawnPoint.x, this.respawnPoint.y, 0, 12, 6, 0, 12, 12, 0xffc66d, 1
-      ).setOrigin(0.5).setStrokeStyle(2, 0x251a0c).setDepth(1000002);
+      this.townDirectionArrow = this.add.image(
+        this.respawnPoint.x, this.respawnPoint.y, "exit-arrow-0"
+      ).setOrigin(0.5).setDepth(1000002);
 
 
       this.add.image(27 * TILE + 8, 16 * TILE + 8, "wall_fountain_top_2").setDepth(16 * TILE + 8);
@@ -1948,8 +1967,8 @@
         const targetY = insideHouse ? (TOWN.wallY + 2) * TILE : this.townStairs.y;
         const angle = Math.atan2(targetY - this.player.y, targetX - this.player.x);
         this.townDirectionArrow
-          .setPosition(this.player.x + Math.cos(angle) * 30, this.player.y + Math.sin(angle) * 30)
-          .setRotation(angle + Math.PI / 2)
+          .setPosition(Math.round(this.player.x + Math.cos(angle) * 20), Math.round(this.player.y + Math.sin(angle) * 20))
+          .setTexture(`exit-arrow-${((Math.round((angle + Math.PI / 2) / (Math.PI / 4)) % 8) + 8) % 8}`)
           .setVisible(Math.hypot(this.townStairs.x - this.player.x, this.townStairs.y - this.player.y) > 24);
       }
       if (Phaser.Math.Distance.Between(this.player.x, this.player.y, this.townStairs.x, this.townStairs.y) < 16) {

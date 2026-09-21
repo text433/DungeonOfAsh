@@ -1033,7 +1033,14 @@ body, button, .quest-panel strong, h1, h2 {
 #joystick-knob { background-image: url("assets/ui/joystick-knob.png?v=61"); }
 .action-pad .control { font-size: 0; color: transparent; }
 .action-pad .attack { background-image: url("assets/ui/attack.png?v=61"); }
-.action-pad .interact { background-image: url("assets/ui/interact.png?v=61"); }
+ .action-pad .interact {
+  background-image: none;
+  background-color: #171719;
+  border: 6px solid transparent;
+  border-image: url("assets/ui/panel.png?v=61") 10 / 6px / 0 round;
+  color: var(--bone);
+  font: bold 20px/1 "Courier New", monospace;
+}
 .action-pad .ability, .action-pad .ability.is-active {
   background-image: url("assets/ui/ability.png?v=61");
   background-color: transparent;
