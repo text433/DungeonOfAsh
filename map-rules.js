@@ -330,11 +330,10 @@
 
     const chestCount = Math.min(5, 3 + Math.floor((level - 1) / 3));
     const chests = Array.from({ length: chestCount }, () => Object.freeze({
-      ...claimPoint(combatRooms, 2, { solid: true, spacing: 3 }),
-      keyChance: Math.min(0.55, 0.39 + level * 0.01)
+      ...claimPoint(combatRooms, 2, { solid: true, spacing: 3 })
     }));
     // One extra chest is a mimic. It gets its own reserved floor cell so it
-    // never replaces a real loot chest or reduces the chance of finding the key.
+    // never replaces a real loot chest.
     const mimic = claimPoint(combatRooms, 2, { solid: true, spacing: 3 });
     const trapCount = Math.min(7, 4 + Math.floor(level / 2));
     const traps = Array.from({ length: trapCount }, () => claimPoint(combatRooms, 1));

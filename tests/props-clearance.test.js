@@ -22,6 +22,7 @@ assert(bTop-aBottom>=16,'Even old two-tile crate spacing must leave a full tile 
 assert.equal(aBottom,11*16);
 scene.wallCells=new Set(['10,10','11,10','12,10','13,10']);
 scene.hasFloor=(x,y)=>x>=10&&x<=13&&y===11;
+scene.addTorchGlow=()=>{};
 scene.wallTorches=[];scene.addWallTorch(10,10);
 assert.equal(scene.wallTorches[0].getData('cell'),'11,10','Corner torch must move inward');
 scene.wallCells=new Set(['20,10']);scene.addWallTorch(20,10);

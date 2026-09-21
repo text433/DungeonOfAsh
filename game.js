@@ -50,7 +50,6 @@
     minimapReopen: document.getElementById("minimap-reopen"),
     bossProgress: document.getElementById("boss-progress"),
     questKicker: document.querySelector(".quest-kicker"),
-    keyStatus: document.getElementById("key-status"),
     lootToast: document.getElementById("loot-toast"),
     smith: document.getElementById("smith-screen"),
     smithClose: document.getElementById("smith-close"),
@@ -161,7 +160,6 @@
       this.gold = data.gold || 0;
       const savedArmor = data.armorId || localStorage.getItem("dungeonOfAshArmor") || "steel";
       this.armorId = ARMOR_SETS[savedArmor] ? savedArmor : "steel";
-      this.hasKey = false;
       this.chestOpened = false;
       this.armorDropSeen = false;
       this.doorOpened = false;
@@ -437,7 +435,6 @@
 
     create() {
       this.createAnimations();
-      this.createLootTextures();
       this.createDirectionTextures();
       this.inputSystem = new InputSystem(this);
       this.walls = this.physics.add.staticGroup();
@@ -525,23 +522,6 @@
       }
     }
 
-    createLootTextures() {
-      if (this.textures.exists("loot-key")) return;
-      const graphics = this.make.graphics({ x: 0, y: 0, add: false });
-      graphics.fillStyle(0x3b2514, 1);
-      graphics.fillRect(2, 3, 8, 8);
-      graphics.fillRect(8, 6, 7, 4);
-      graphics.fillRect(12, 9, 3, 4);
-      graphics.fillStyle(0xffd36d, 1);
-      graphics.fillRect(2, 2, 7, 7);
-      graphics.fillRect(8, 5, 7, 3);
-      graphics.fillRect(12, 8, 3, 4);
-      graphics.fillStyle(0x6d3a1d, 1);
-      graphics.fillRect(4, 4, 3, 3);
-      graphics.generateTexture("loot-key", 16, 14);
-      graphics.destroy();
-    }
-
     buildDungeon() {
       this.physics.world.setBounds(0, 0, WORLD_W, WORLD_H);
       if (this.area === "town") {
@@ -573,6 +553,7 @@
       const activeGate = this.mapLayout.gate;
 
       const gateWidth = (activeGate.gateRight - activeGate.gateLeft + 1) * TILE;
+      this.addGateWallReturns(activeGate, gateWidth);
       this.door = this.props.create(
         activeGate.gateLeft * TILE + gateWidth / 2,
         (activeGate.wallY + 1) * TILE,
@@ -587,7 +568,7 @@
       this.addWallTorch(activeGate.gateLeft - 2, activeGate.wallY);
       this.addWallTorch(activeGate.gateRight + 2, activeGate.wallY);
 
-      this.chests = this.mapLayout.chests.map(({ x, y, keyChance }) => this.createChest(x, y, keyChance));
+      this.chests = this.mapLayout.chests.map(({ x, y }) => this.createChest(x, y));
 
       const guide = this.mapLayout.guide;
       this.guideNpc = this.add.sprite(guide.x * TILE + 8, guide.y * TILE + 8, ASSETS.guideNpc[0])
@@ -597,8 +578,9 @@
 
       this.addProceduralWallDecorations();
 
-      [[44, activeGate.wallY], [52, activeGate.wallY]].forEach(([x, y]) => {
-        const columnBaseline = (y + 2) * TILE;
+      [[activeGate.gateLeft - 4, activeGate.wallY], [activeGate.gateRight + 4, activeGate.wallY]].forEach(([x, y]) => {
+        if (!this.isFlatWallFace(x, y)) return;
+        const columnBaseline = (y + 1) * TILE;
         this.add.image(x * TILE + 8, columnBaseline, "column_wall")
           .setOrigin(0.5, 1).setDepth(columnBaseline - 1);
       });
@@ -768,6 +750,41 @@
       sound.blip(90, 0.14, "triangle", 0.025);
     }
 
+    addGateWallReturns(gate, gateWidth) {
+      const baseline = (gate.wallY + 1) * TILE;
+      // The 64px sprite has six transparent pixels on each side.
+      // Overlap the stone jamb by one world pixel to avoid fractional seams.
+      const inset = Math.ceil(gateWidth * 6 / 64) + 1;
+      [[gate.gateLeft * TILE, 0], [(gate.gateRight + 1) * TILE - TILE, TILE - inset]]
+        .forEach(([x, cropX]) => {
+          this.add.image(x + TILE / 2, baseline, "wall_atlas_high", this.highWallFrame(BOSS_GATE_WALL_FRAME))
+            .setOrigin(0.5, 1).setCrop(cropX, 0, inset, 32).setDepth(gate.wallY * TILE + 7);
+        });
+    }
+
+    isFlatWallFace(x, y) {
+      return [-1, 0, 1].every((dx) => this.wallCells.has(`${x + dx},${y}`)
+        && this.hasFloor(x + dx, y + 1) && !this.hasFloor(x + dx, y - 1));
+    }
+
+    addTorchGlow(x, y, depth) {
+      if (!this.textures.exists("torch-warm-glow")) {
+        const texture = this.textures.createCanvas("torch-warm-glow", 64, 64);
+        const ctx = texture.context;
+        const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+        gradient.addColorStop(0, "rgba(255,184,65,0.65)");
+        gradient.addColorStop(0.28, "rgba(255,132,28,0.3)");
+        gradient.addColorStop(0.65, "rgba(231,89,15,0.09)");
+        gradient.addColorStop(1, "rgba(231,89,15,0)");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 64, 64);
+        texture.refresh();
+      }
+      const glow = this.add.image(x, y, "torch-warm-glow").setDepth(depth)
+        .setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.65);
+      this.tweens.add({ targets: glow, alpha: 0.85, duration: 780, yoyo: true, repeat: -1 });
+    }
+
     createCrate(tileX, tileY) {
       const baseline = (tileY + 1) * TILE;
       const crate = this.props.create(tileX * TILE + 8, baseline, "crate")
@@ -791,6 +808,7 @@
         .setDisplaySize(18, 18).setOrigin(0.5, 1).setDepth(tileY * TILE + 10)
         .setData("cell", `${tileX},${tileY}`);
       torch.play({ key: "ash-torch-burn", startFrame: (tileX + tileY) % 4 });
+      this.addTorchGlow(torch.x, torch.y - 12, tileY * TILE + 9);
       this.wallTorches.push(torch);
     }
 
@@ -799,7 +817,7 @@
       const candidates = this.wallPlan
         .filter((rule) => (
           rule.facing === "north"
-          && this.hasFloor(rule.x, rule.y + 1)
+          && this.isFlatWallFace(rule.x, rule.y)
           && rule.y !== gate.wallY
           && rule.x > 2 && rule.x < MAP_W - 3
           && rule.y > 2 && rule.y < MAP_H - 3
@@ -837,6 +855,7 @@
     }
 
     addLavaFall(tileX, wallY) {
+      if (!this.isFlatWallFace(tileX, wallY)) return;
       const x = tileX * TILE + 8;
       const topY = (wallY + 1) * TILE;
       this.add.image(x, topY - 16, "wall_fountain_top_2").setOrigin(0.5, 1).setDepth(topY - 3);
@@ -847,9 +866,9 @@
       this.tweens.add({ targets: glow, alpha: { from: 0.09, to: 0.24 }, scale: { from: 0.88, to: 1.15 }, duration: 850, yoyo: true, repeat: -1 });
     }
 
-    createChest(tileX, tileY, keyChance = 0.42) {
+    createChest(tileX, tileY) {
       const chest = this.props.create(tileX * TILE + 8, tileY * TILE + 8, ASSETS.chest[0]);
-      chest.setDepth(chest.y).setData({ opened: false, keyChance }).refreshBody();
+      chest.setDepth(chest.y).setData({ opened: false }).refreshBody();
       chest.body.setSize(15, 11).setOffset(0, 5);
       return chest;
     }
@@ -1583,9 +1602,7 @@
         ? ASSETS.coin[0]
         : type === "potion"
           ? "flask_big_red"
-          : type === "key"
-            ? "loot-key"
-            : armor.idle[0];
+          : armor.idle[0];
       const fromChest = Boolean(options.fromChest);
       const minDistance = fromChest ? CHEST_DROP_MIN_DISTANCE : 8;
       const maxDistance = fromChest ? CHEST_DROP_MAX_DISTANCE : 14;
@@ -1597,7 +1614,6 @@
         .setDepth(targetY + 2)
         .setData({ type, value, collectAt: this.time.now + 430 });
       if (type === "armor") drop.setScale(0.86);
-      if (type === "key") drop.setScale(0.9);
       drop.body.setCircle(type === "coin" ? 4 : 5);
       if (type === "coin") drop.play("coin-spin");
       this.tweens.add({
@@ -1623,11 +1639,6 @@
         this.state.heal(drop.getData("value"));
         sound.blip(410, 0.11, "sine", 0.035);
         this.showLootToast("DZĪVĪBAS PUDELE · +2 HP");
-      } else if (type === "key") {
-        this.state.hasKey = true;
-        this.state.chestOpened = true;
-        sound.blip(810, 0.2, "triangle", 0.045);
-        this.showLootToast("ATRASTA DĒMONA ATSLĒGA", "key");
       } else if (type === "armor") {
         const armorId = ARMOR_SETS[drop.getData("value")] ? drop.getData("value") : "scout";
         this.state.armorId = armorId;
@@ -1836,29 +1847,30 @@
       if (this.area === "town" && this.smithNpc &&
           Phaser.Math.Distance.Between(this.player.x, this.player.y, this.smithNpc.x, this.smithNpc.y) < 42) {
         this.nearInteraction = "smithNpc";
-        label = "E · UZLABOT IEROCI";
+        label = "UZLABOT IEROCI";
       } else if (this.area === "town" && this.townNpc &&
           Phaser.Math.Distance.Between(this.player.x, this.player.y, this.townNpc.x, this.townNpc.y) < 42) {
         this.nearInteraction = "townNpc";
-        label = "E · RUNĀT / BONUSA KOKS";
+        label = "RUNĀT / BONUSA KOKS";
       } else if (this.area === "town" && this.townStairs &&
           Phaser.Math.Distance.Between(this.player.x, this.player.y, this.townStairs.x, this.townStairs.y) < 34) {
         this.nearInteraction = "townExit";
-        label = "E · IET UZ DUNGEONU";
+        label = "IET UZ DUNGEONU";
       } else if (this.area === "dungeon" && this.guideNpc &&
           Phaser.Math.Distance.Between(this.player.x, this.player.y, this.guideNpc.x, this.guideNpc.y) < 42) {
         this.nearInteraction = "guideNpc";
-        label = "E · ATPAKAĻ UZ PILSĒTU";
+        label = "ATPAKAĻ UZ PILSĒTU";
       } else if (this.area === "dungeon") {
         if (!this.state.doorOpened && !this.gateAnimating && this.door && !this.state.bossUnlocked &&
             Phaser.Math.Distance.Between(this.player.x, this.player.y, this.door.x, this.door.y) < 48) {
-          label = `BOSA DURVIS · ${Math.max(0, this.state.requiredKills - this.state.monsterKills)} MONSTRI`;
+          label = `VĒL PAR MAZ · ${Math.floor(this.state.monsterKills / this.state.totalMonsters * 100)}% / 80% · SAKAUJ VĒL ${Math.max(0, this.state.requiredKills - this.state.monsterKills)} MONSTRUS KARTĒ`;
         } else if (this.stairs &&
             Phaser.Math.Distance.Between(this.player.x, this.player.y, this.stairs.x, this.stairs.y) < 34) {
           this.nearInteraction = "stairs";
-          label = "E · NĀKAMAIS STĀVS";
+          label = "NĀKAMAIS STĀVS";
         }
       }
+      dom.prompt.disabled = !this.nearInteraction;
       dom.prompt.textContent = label;
       dom.prompt.classList.toggle("is-hidden", !label);
     }
@@ -1904,9 +1916,6 @@
       this.spawnDrop(chest.x, chest.y - 7, "coin", Phaser.Math.Between(3, 8), { fromChest: true });
       if (Math.random() < 0.34) this.spawnDrop(chest.x, chest.y - 7, "coin", Phaser.Math.Between(2, 5), { fromChest: true });
       if (Math.random() < 0.58) this.spawnDrop(chest.x, chest.y - 7, "potion", 2, { fromChest: true });
-      if (!this.state.hasKey && !this.state.doorOpened && Math.random() < chest.getData("keyChance")) {
-        this.spawnDrop(chest.x, chest.y - 7, "key", 1, { fromChest: true });
-      }
       const unopenedChests = this.chests.filter((candidate) => !candidate.getData("opened")).length;
       if (Math.random() < 0.36 || (!this.state.armorDropSeen && unopenedChests === 0)) {
         const armorId = this.state.armorId === "ash"
@@ -2013,7 +2022,6 @@
       if (this.area === "town") {
         dom.questKicker.textContent = "NĀKAMAIS SOLIS";
         dom.objective.textContent = "Ieej dungeonā pa trepēm";
-        dom.keyStatus.classList.add("is-hidden");
         return;
       }
       dom.questKicker.textContent = "IZVĒLES UZDEVUMS";
@@ -2021,8 +2029,6 @@
       else if (!this.state.bossUnlocked) dom.objective.textContent = `Sakauj monstrus · ${this.state.monsterKills}/${this.state.requiredKills}`;
       else if (this.state.doorOpened && this.boss?.active) dom.objective.textContent = `Sakauj stāva bosu · HP ${this.boss.getData("hp")}/${this.boss.getData("maxHp")}`;
       else dom.objective.textContent = "PIEEJ PIE BOSA DURVĪM";
-      dom.keyStatus.classList.toggle("is-hidden", !this.state.hasKey);
-      dom.keyStatus.textContent = "ATSLĒGA ATRASTA";
     }
 
     updateBossProgressUi() {
@@ -2030,14 +2036,18 @@
       const visible = this.area === "dungeon" && this.state.requiredKills > 0;
       dom.bossProgress.classList.toggle("is-hidden", !visible);
       if (!visible) return;
-      const percent = Math.min(100, Math.round((this.state.monsterKills / this.state.totalMonsters) * 100));
-      if (this.state.bossDead) {
-        dom.bossProgress.textContent = "BOSS SAKAUTS";
-      } else if (this.state.bossUnlocked) {
-        dom.bossProgress.textContent = `MONSTRI ${this.state.monsterKills}/${this.state.totalMonsters} · CEĻŠ PIE BOSA ATSLĒGTS`;
-      } else {
-        dom.bossProgress.textContent = `MONSTRI ${this.state.monsterKills}/${this.state.totalMonsters} · ${percent}% / VAJAG 80%`;
-      }
+      const percent = Math.min(100, Math.floor((this.state.monsterKills / this.state.totalMonsters) * 100));
+      const completed = Math.min(this.state.requiredKills, this.state.monsterKills);
+      const label = this.state.bossDead ? "BOSS SAKAUTS"
+        : this.state.bossUnlocked ? "DURVIS GATAVAS · PIEEJ KLĀT"
+        : `MONSTRI · ${percent}% / 80%`;
+      dom.bossProgress.querySelector(".boss-progress-label").textContent = label;
+      const track = dom.bossProgress.querySelector(".boss-progress-track");
+      track.setAttribute("aria-valuemax", this.state.requiredKills);
+      track.setAttribute("aria-valuenow", completed);
+      track.setAttribute("aria-valuetext", `${this.state.monsterKills} no ${this.state.requiredKills} monstriem`);
+      track.style.setProperty("--progress", `${completed / this.state.requiredKills * 100}%`);
+      dom.bossProgress.classList.toggle("is-ready", this.state.bossUnlocked);
     }
 
 
@@ -2250,6 +2260,10 @@
   }
 
   document.getElementById("start-button").addEventListener("click", () => currentScene().beginRun());
+  dom.prompt.addEventListener("click", () => {
+    const scene = currentScene();
+    if (scene?.running && !scene.ended && !scene.pausedByUser && !scene.talentOpen && !scene.smithOpen && scene.nearInteraction) scene.performInteraction();
+  });
   dom.talentButton.addEventListener("click", () => currentScene()?.openTalentTree());
   dom.talentClose.addEventListener("click", () => currentScene()?.closeTalentTree());
   dom.smithClose.addEventListener("click", () => currentScene()?.closeSmith());

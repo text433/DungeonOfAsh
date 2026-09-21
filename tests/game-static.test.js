@@ -50,7 +50,7 @@ const game = fs.readFileSync(path.join(root, "game.js"), "utf8");
 const mapRules = require(path.join(root, "map-rules.js"));
 const { ProgressionSystem } = require(path.join(root, "progression.js"));
 
-for (const id of ["game", "hud", "mobile-controls", "joystick-base", "joystick-knob", "start-button", "result-screen", "talent-screen", "talent-button", "ability-button", "minimap", "minimap-zoom", "minimap-close", "minimap-reopen", "boss-progress", "quest-panel", "key-status", "loot-toast", "smith-screen", "smith-upgrade", "weapon-rank", "armor-rank"]) {
+for (const id of ["game", "hud", "mobile-controls", "joystick-base", "joystick-knob", "start-button", "result-screen", "talent-screen", "talent-button", "ability-button", "minimap", "minimap-zoom", "minimap-close", "minimap-reopen", "boss-progress", "quest-panel", "loot-toast", "smith-screen", "smith-upgrade", "weapon-rank", "armor-rank"]) {
   if (!html.includes(`id="${id}"`)) throw new Error(`HTML trūkst #${id}`);
 }
 
@@ -66,7 +66,7 @@ for (const marker of [
   "updateEnemyPatrol", "updateBossPatrol", "patrolRadius", "aggroRadius", "castAshWard", "openTalentTree",
   "renderMinimap", "createFogOfWar", "updateFogOfWar", "const revealRadius = 7", "this.fogGraphics.setVisible(false)", "visitedCells", "currentVisibleCells", "isWorldTileVisible", "openSmith", "upgradeWeapon", "ensureSound", "sound.step()", "createBuffer", "updateCarriedWeapon", "createAttackFx", "addLavaFall",
   "ARMOR_SETS", "player-steel-idle", "player-scout-idle", "player-ash-idle", "player-ash-run", "Pelnu bruņas", "applyArmorVisual", "speedMultiplier", "blockChance",
-  "createLootTextures", "loot-key", "collectAt", "toggleMinimapZoom", "toggleMinimap(false)", "Sakauj stāva bosu",
+  "collectAt", "toggleMinimapZoom", "toggleMinimap(false)", "Sakauj stāva bosu",
   "DROP_PICKUP_RADIUS", "CHEST_DROP_MIN_DISTANCE", "fromChest", "updateDropPickup", "mimic-awaken", "mimic-run", "awakenMimic", "MIMIKS! LĀDE UZBRŪK",
   "Phaser.Scenes.Events.POST_UPDATE", "runHandPoses", "idleHandPoses",
   "setOrigin(0.5, 0.95).setScale(0.74)", "facingLeft ? pose.angle : 360 - pose.angle",
@@ -95,13 +95,13 @@ if (game.includes("startFollow(this.player, true") || game.includes("setRoundPix
 }
 if (!game.includes("fixedStep: false")) throw new Error("Fizika nav piesaistīta ekrāna kadru ritmam");
 if (!game.includes("roundPixels: false")) throw new Error("Globālā pikseļu noapaļošana nav izslēgta");
-if (!html.includes('<script src="map-rules.js?v=63"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
+if (!html.includes('<script src="map-rules.js?v=64"></script>')) throw new Error("HTML neielādē jaunākos kartes noteikumus");
 if (!html.includes('<script src="progression.js?v=28"></script>')) throw new Error("HTML neielādē progresa sistēmu");
-if (!html.includes('<script src="game.js?v=63"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
+if (!html.includes('<script src="game.js?v=64"></script>')) throw new Error("HTML neielādē jaunāko spēles kodu");
 if (html.includes('id="minimap-label"') || html.includes('KARTE · SIENAS')) {
   throw new Error("Minikartē joprojām redzams sienu teksts");
 }
-if (!html.includes('<link rel="stylesheet" href="style.css?v=63" />')) throw new Error("HTML neielādē jaunāko HUD noformējumu");
+if (!html.includes('<link rel="stylesheet" href="style.css?v=64" />')) throw new Error("HTML neielādē jaunāko HUD noformējumu");
 
 const minimapSource = game.slice(game.indexOf("    renderMinimap(time) {"), game.indexOf("    toggleMinimap(show) {"));
 for (const forbidden of ["this.enemies", "this.chests", "currentVisibleCells.has", "fillRect(0, 0, width, height)"]) {
@@ -165,7 +165,7 @@ if (!game.includes("activeGate.gateLeft - 1") || !game.includes("activeGate.gate
 if (!game.includes("this.highWallFrame(BOSS_GATE_WALL_FRAME)")) {
   throw new Error("Pie durvju arkas nav saglabāta pilna biezuma ķieģeļu siena");
 }
-if (!game.includes("const columnBaseline = (y + 2) * TILE")) {
+if (!game.includes("const columnBaseline = (y + 1) * TILE")) {
   throw new Error("Boss telpas kolonnas pamatne nav izlīdzināta ar sienas apakšmalu");
 }
 if (!game.includes("ASSETS.door[0]") || !game.includes("ash-door-open")) {

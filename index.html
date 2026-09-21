@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0b090d" />
     <meta name="description" content="Dungeon of Ash — spēlējama HTML5 dungeon piedzīvojumu spēle." />
     <title>Dungeon of Ash</title>
-    <link rel="stylesheet" href="style.css?v=63" />
+    <link rel="stylesheet" href="style.css?v=64" />
   </head>
   <body>
     <main id="game-shell" aria-label="Dungeon of Ash spēle">
@@ -29,12 +29,14 @@
           <canvas id="minimap" width="180" height="132"></canvas>
         </aside>
         <button id="minimap-reopen" class="minimap-reopen is-hidden" type="button" aria-label="Parādīt karti">KARTE</button>
-        <div id="boss-progress" class="boss-progress is-hidden" aria-live="polite"></div>
+        <div id="boss-progress" class="boss-progress is-hidden">
+          <span class="boss-progress-label" aria-live="polite"></span>
+          <div class="boss-progress-track" role="progressbar" aria-label="Ceļš pie bosa" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>
+        </div>
 
         <aside id="quest-panel" class="quest-panel" aria-label="Stāva uzdevums">
           <span class="quest-kicker">IZVĒLES UZDEVUMS</span>
           <strong id="objective">Sakauj stāva bosu</strong>
-          <span id="key-status" class="key-status is-hidden"><i aria-hidden="true"></i> ATSLĒGA ATRASTA</span>
         </aside>
 
         <div class="hud-panel run-panel">
@@ -51,7 +53,7 @@
         <div id="buff-chip" class="buff-chip is-hidden"></div>
       </section>
 
-      <div id="prompt" class="prompt is-hidden">Nospied E</div>
+      <button id="prompt" class="prompt is-hidden" type="button" disabled></button>
       <div id="loot-toast" class="loot-toast is-hidden" role="status" aria-live="polite"></div>
 
       <section id="mobile-controls" class="is-hidden" aria-label="Skārienvadība">
@@ -62,7 +64,6 @@
         </div>
         <div class="action-pad">
           <button id="ability-button" class="control ability is-hidden" data-action="ability" type="button" aria-label="Pelnu vairogs">✦</button>
-          <button class="control interact" data-action="interact" type="button" aria-label="Mijiedarboties">E</button>
           <button class="control attack" data-action="attack" type="button" aria-label="Uzbrukt">⚔</button>
         </div>
       </section>
@@ -164,8 +165,8 @@
     </main>
 
     <script src="vendor/phaser.min.js"></script>
-    <script src="map-rules.js?v=63"></script>
+    <script src="map-rules.js?v=64"></script>
     <script src="progression.js?v=28"></script>
-    <script src="game.js?v=63"></script>
+    <script src="game.js?v=64"></script>
   </body>
 </html>

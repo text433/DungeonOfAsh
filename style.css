@@ -1061,3 +1061,11 @@ button:focus-visible { outline: 2px solid #f0d39b; outline-offset: 3px; }
 @media (max-width: 760px) {
   .minimap-actions { top: -64px; right: 1px; }
 }
+
+/* v64: progress fills to the kill requirement; context actions replace E. */
+.boss-progress-track { height: 6px; margin-top: 5px; border: 1px solid #786449; background: #131315; padding: 1px; }
+.boss-progress-track > span { display: block; height: 100%; width: var(--progress, 0%); background: #c3974f; box-shadow: inset 0 1px #e3c17e; transition: width 180ms linear; }
+.boss-progress.is-ready .boss-progress-track > span { background: #82965b; box-shadow: inset 0 1px #b3c581; }
+.prompt { width: max-content; max-width: min(330px, 80vw); line-height: 1.5; text-align: center; }
+.prompt:not(:disabled) { pointer-events: auto; cursor: pointer; }
+.prompt:disabled { opacity: 1; cursor: default; }
