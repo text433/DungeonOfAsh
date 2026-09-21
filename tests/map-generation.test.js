@@ -118,7 +118,16 @@ function validateLayout(layout, floor, runSeed) {
       assert(distance >= 3, `Stāvā ${floor} kolonna vai lāde atrodas pārāk tuvu citam šķērslim`);
     });
   });
-  const blocked = new Set(solidObjects.map(({ x, y }) => cellKey(x, y)));
+  const blocked = new Set(solidObjects.flatMap(({ x, y, type }) =>
+    Array.from({ length: type === "column" ? 3 : 1 }, (_, dy) => cellKey(x, y - dy))));
+  layout.props.filter(({ type }) => type === "column").forEach((column) => {
+    for (let dy = 0; dy < 3; dy++) {
+      const key = cellKey(column.x, column.y - dy);
+      assert(layout.floorCells.has(key), 'Every column tile must be on the floor');
+      const others = [...layout.chests, layout.mimic, ...layout.traps, ...layout.skulls, ...layout.enemies, ...layout.props.filter(p => p !== column)];
+      assert(!others.some(p => cellKey(p.x, p.y) === key), 'No object or enemy may spawn inside a column');
+    }
+  });
   assert(
     connectedWalkableCount(layout, blocked) === layout.floorCells.size - blocked.size,
     `Stāvā ${floor} kastes vai dekorācijas sadala karti nepieejamās daļās`

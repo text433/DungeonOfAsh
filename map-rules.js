@@ -283,9 +283,9 @@
     });
     const solidCells = new Set();
     const solidPoints = [];
-    const floorStaysConnected = (candidateKey) => {
+    const floorStaysConnected = (candidateKeys) => {
       const blocked = new Set(solidCells);
-      blocked.add(candidateKey);
+      candidateKeys.forEach((key) => blocked.add(key));
       const startKey = cellKey(spawn.x, spawn.y);
       if (blocked.has(startKey)) return false;
       const visited = new Set([startKey]);
@@ -309,18 +309,19 @@
       const maxAttempts = solid ? 1200 : 160;
       for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
         const point = pointInRoom(random.pick(pool), margin);
-        const key = cellKey(point.x, point.y);
-        if (!floorCells.has(key) || occupied.has(key)) continue;
+        const footprint = Array.from({ length: options.height || 1 }, (_, dy) => ({ x: point.x, y: point.y - dy }));
+        const footprintKeys = footprint.map(({ x, y }) => cellKey(x, y));
+        if (footprintKeys.some((key) => !floorCells.has(key) || occupied.has(key))) continue;
         if (Math.abs(point.x - spawn.x) + Math.abs(point.y - spawn.y) < 4) continue;
         if (solid && solidPoints.some((other) => {
           const requiredSpacing = Math.max(spacing, other.spacing);
-          return Math.max(Math.abs(point.x - other.x), Math.abs(point.y - other.y)) < requiredSpacing;
+          return footprint.some((cell) => Math.max(Math.abs(cell.x - other.x), Math.abs(cell.y - other.y)) < requiredSpacing);
         })) continue;
-        if (solid && !floorStaysConnected(key)) continue;
-        occupied.add(key);
+        if (solid && !floorStaysConnected(footprintKeys)) continue;
+        footprintKeys.forEach((key) => occupied.add(key));
         if (solid) {
-          solidCells.add(key);
-          solidPoints.push({ ...point, spacing });
+          footprintKeys.forEach((key) => solidCells.add(key));
+          footprint.forEach((cell) => solidPoints.push({ ...cell, spacing }));
         }
         return Object.freeze(point);
       }
@@ -342,6 +343,7 @@
         const point = claimPoint(combatRooms, 2, {
           solid: true,
           spacing: 3,
+          height: type === "column" ? 3 : 1,
           optional: true
         });
         return point ? Object.freeze({ ...point, type }) : null;

@@ -591,14 +591,12 @@
           this.createCrate(x, y);
           return;
         }
-        const propY = type === "column" ? (y + 1) * TILE : y * TILE + 8;
-        const prop = this.props.create(x * TILE + 8, propY, type);
         if (type === "column") {
-          prop.setOrigin(0.5, 1).setDepth(propY + 1).refreshBody();
-          prop.body.setSize(12, 10).setOffset(2, 38);
-        } else {
-          prop.setDepth(propY).refreshBody();
+          this.createColumn(x, y);
+          return;
         }
+        const propY = y * TILE + 8;
+        this.props.create(x * TILE + 8, propY, type).setDepth(propY).refreshBody();
       });
 
       this.mapLayout.skulls.forEach(({ x, y }) => {
@@ -659,10 +657,7 @@
         this.add.image(x * TILE + 8, y * TILE + 8, key).setDepth(y * TILE + 8);
       });
       [[16, 21], [47, 21], [16, 36], [47, 36]].forEach(([x, y]) => {
-        const baseline = (y + 1) * TILE;
-        const column = this.props.create(x * TILE + 8, baseline, "column");
-        column.setOrigin(0.5, 1).setDepth(baseline + 1).refreshBody();
-        column.body.setSize(12, 10).setOffset(2, 38);
+        this.createColumn(x, y);
       });
       [[21, 30], [45, 35], [19, 25]].forEach(([x, y]) => {
         this.createCrate(x, y);
@@ -784,6 +779,15 @@
       const glow = this.add.image(x, y, "torch-warm-glow").setDepth(depth)
         .setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.65);
       this.tweens.add({ targets: glow, alpha: 0.85, duration: 780, yoyo: true, repeat: -1 });
+    }
+
+    createColumn(tileX, tileY) {
+      const baseline = (tileY + 1) * TILE;
+      const column = this.props.create(tileX * TILE + 8, baseline, "column")
+        .setOrigin(0.5, 1).setDepth(baseline + 1).refreshBody();
+      // Block all three tiles covered by the column, not only its foot.
+      column.body.setSize(TILE, TILE * 3).setOffset(0, 0);
+      return column;
     }
 
     createCrate(tileX, tileY) {
