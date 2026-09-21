@@ -1076,3 +1076,6 @@ button:focus-visible { outline: 2px solid #f0d39b; outline-offset: 3px; }
 .player-panel .xp-track, .player-panel .weapon-rank, .player-panel .armor-rank { display: none; }
 #hearts { gap: 4px; min-width: 0; }
 #hearts img { width: 32px; height: 30px; }
+
+/* v67: monster progress is shown beside the map. */
+#quest-panel { display: none; }
