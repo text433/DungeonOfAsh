@@ -1634,7 +1634,7 @@
       this.minimapZoomed = !this.minimapZoomed;
       dom.minimapPanel?.classList.toggle("is-zoomed", this.minimapZoomed);
       if (dom.minimapZoom) {
-        dom.minimapZoom.textContent = this.minimapZoomed ? "−" : "＋";
+        dom.minimapZoom.setAttribute("aria-pressed", String(this.minimapZoomed));
         dom.minimapZoom.setAttribute("aria-label", this.minimapZoomed ? "Attālināt karti" : "Pietuvināt karti");
       }
       this.minimapNextAt = 0;
@@ -2472,30 +2472,6 @@
     render: { pixelArt: true, antialias: false, roundPixels: false, powerPreference: "high-performance" },
     scene: [DungeonScene]
   };
-
-  // Keep the original UI art. A 48px render target gives its 64px details
-  // slightly larger pixels without redrawing the shapes or changing palettes.
-  function renderPixelControls() {
-    ["joystick-base", "joystick-knob", "attack", "ability"].forEach((name) => {
-      const source = new Image();
-      source.onload = () => {
-        const canvas = document.createElement("canvas");
-        canvas.width = 48;
-        canvas.height = 48;
-        const context = canvas.getContext("2d");
-        if (!context) return;
-        context.imageSmoothingEnabled = false;
-        context.drawImage(source, 0, 0, 48, 48);
-        try {
-          document.documentElement.style.setProperty(`--pixel-${name}`, `url("${canvas.toDataURL()}")`);
-        } catch (_) {
-          // Direct file:// launches can disallow canvas export; keep original art.
-        }
-      };
-      source.src = `assets/ui/${name}.png?v=61`;
-    });
-  }
-  renderPixelControls();
 
   const game = new Phaser.Game(config);
 

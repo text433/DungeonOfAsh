@@ -1158,3 +1158,57 @@ button:focus-visible { outline: 2px solid #f0d39b; outline-offset: 3px; }
 .floor-title { position: absolute; z-index: 9; top: 32%; left: 0; width: 100%; text-align: center; pointer-events: none; color: #eee0bd; font: bold clamp(32px, 8vw, 68px)/1.2 "Courier New", monospace; letter-spacing: .06em; text-shadow: 3px 3px #141217, -2px -2px #141217; animation: floor-arrival 1.8s ease-out both; }
 @keyframes floor-arrival { 0% { opacity: 0; transform: translateY(8px); } 15%, 70% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .floor-title { animation: none; } }
+
+/* v77: redrawn bronze/stone sprite controls, shared palette and touch spacing. */
+:root { --ui-ink: #17171d; --ui-stone: #38363a; --ui-bronze: #92704a; --ui-light: #e6d5b1; --ui-magic: #71c9ce; }
+#joystick-base { background-image: url("assets/ui/v77/joystick-base.png"); width: 128px; height: 128px; }
+#joystick-knob { background-image: url("assets/ui/v77/joystick-knob.png"); width: 58px; height: 58px; margin-left: -29px; margin-top: -29px; }
+.action-pad { width: 164px; height: 140px; right: max(14px, env(safe-area-inset-right)); }
+.action-pad .attack { width: 82px; height: 82px; background-image: url("assets/ui/v77/attack.png"); }
+#ability-button, #ability-button.is-ready, #ability-button.is-active,
+#ability-button.pressed, #ability-button:active {
+  right: 92px; top: 58px; width: 62px; height: 62px;
+  background: transparent url("assets/ui/v77/ability.png") center/100% 100% no-repeat;
+}
+#ability-time { bottom: 2px; left: auto; right: 0; min-width: 15px; background: var(--ui-ink); border: 1px solid var(--ui-bronze); line-height: 15px; }
+#ability-time:empty { display: none; }
+#talent-button, #pause-button, #fullscreen-button,
+#minimap-zoom, #minimap-close {
+  width: 44px; height: 44px; min-width: 44px; padding: 0;
+  background: transparent center/100% 100% no-repeat;
+  border: 0; border-image: none; box-shadow: none; color: transparent; font-size: 0;
+  image-rendering: pixelated; touch-action: manipulation;
+}
+#talent-button::before, #pause-button::before, #fullscreen-button::before { display: none; }
+#talent-button { background-image: url("assets/ui/v77/talent.png"); right: calc(max(8px, env(safe-area-inset-right)) + 104px); }
+#fullscreen-button { background-image: url("assets/ui/v77/fullscreen.png"); right: calc(max(8px, env(safe-area-inset-right)) + 52px); }
+#pause-button { background-image: url("assets/ui/v77/pause.png"); right: max(8px, env(safe-area-inset-right)); }
+#minimap-zoom { background-image: url("assets/ui/v77/zoom.png"); position: relative; }
+#minimap-close { background-image: url("assets/ui/v77/close.png"); }
+#minimap-zoom[aria-pressed="true"]::after { content: "−"; position: absolute; right: 0; bottom: 0; padding: 0 2px; background: var(--ui-ink); color: var(--ui-light); border: 1px solid var(--ui-bronze); font: bold 14px/12px monospace; }
+#talent-button:hover, #pause-button:hover, #fullscreen-button:hover,
+#minimap-zoom:hover, #minimap-close:hover { background-color: transparent; filter: brightness(1.15); }
+#talent-button:active, #pause-button:active, #fullscreen-button:active,
+#minimap-zoom:active, #minimap-close:active { filter: brightness(1.25); transform: translateY(1px); }
+.point-badge { right: 0; bottom: 0; color: var(--ui-light); border: 1px solid var(--ui-bronze); background: var(--ui-ink); }
+.hud-panel.run-panel { border-color: var(--ui-bronze); color: var(--ui-light); background: #17171d99; padding: 4px 6px 6px; }
+.run-panel strong { color: var(--ui-light); }
+.boss-progress { color: var(--ui-light); letter-spacing: 0; top: calc(50% - 133px); }
+.boss-progress-track { border-color: var(--ui-bronze); height: 5px; background: var(--ui-ink); }
+.boss-progress-track > span { background: #8da46a; box-shadow: inset 0 1px #c1d49b; }
+.minimap-actions { top: -46px; right: 0; gap: 6px; }
+.prompt, .minimap-reopen, .talent-close, .primary-button, .ghost-button,
+.talent-window, .smith-window, .talent-wallet {
+  border-color: var(--ui-bronze); color: var(--ui-light); background-color: #1b1a20f2;
+  box-shadow: inset 0 1px #4c443b, inset 0 -1px #101014;
+}
+.talent-node { border-color: #655442; background: #242229; }
+.talent-node.available { border-color: #b28c59; }
+.talent-node.unlocked { border-color: #6d9d94; }
+.loot-toast { color: var(--ui-light); border-bottom: 1px solid var(--ui-bronze); }
+@media (max-width: 760px) { .boss-progress { top: calc(48% - 108px); } }
+@media (pointer: coarse) and (orientation: landscape) { .boss-progress { top: calc(40% - 105px); } }
+@media (max-width: 620px) {
+  .icon-button { top: max(54px, calc(env(safe-area-inset-top) + 46px)); }
+  .joystick-zone { left: max(12px, env(safe-area-inset-left)); }
+}
