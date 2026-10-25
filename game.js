@@ -211,7 +211,36 @@
       this.moveVector = new Phaser.Math.Vector2(0, 0);
       this.cursors = scene.input.keyboard.createCursorKeys();
       this.keys = scene.input.keyboard.addKeys("W,A,S,D,SPACE,E,Q");
+      this.listeners = [];
       this.bindTouch();
+      scene.events.on("pause", this.reset, this);
+      scene.events.once("shutdown", () => this.destroy());
+    }
+
+    listen(target, event, callback) {
+      target.addEventListener(event, callback);
+      this.listeners.push(() => target.removeEventListener(event, callback));
+    }
+
+    canAcceptInput() {
+      return this.scene.running && !this.scene.ended && !this.scene.transitioning
+        && !this.scene.pausedByUser && !this.scene.talentOpen && !this.scene.smithOpen;
+    }
+
+    reset() {
+      this.pulses.clear();
+      this.touchVector.set(0, 0);
+      this.moveVector.set(0, 0);
+      this.resetTouch?.();
+      this.scene.input.keyboard.resetKeys?.();
+      if (this.scene.player?.active && this.scene.player.body) this.scene.player.setVelocity(0, 0);
+    }
+
+    destroy() {
+      this.reset();
+      this.listeners.forEach((remove) => remove());
+      this.listeners.length = 0;
+      this.scene.events.off("pause", this.reset, this);
     }
 
     bindTouch() {
@@ -219,6 +248,7 @@
         const action = button.dataset.action;
         const down = (event) => {
           event.preventDefault();
+          if (!this.canAcceptInput()) return;
           button.setPointerCapture?.(event.pointerId);
           button.classList.add("pressed");
           this.pulses.add(action);
@@ -227,10 +257,11 @@
           event.preventDefault();
           button.classList.remove("pressed");
         };
-        button.addEventListener("pointerdown", down);
-        button.addEventListener("pointerup", up);
-        button.addEventListener("pointercancel", up);
-        button.addEventListener("pointerleave", up);
+        this.listen(button, "pointerdown", down);
+        this.listen(button, "pointerup", up);
+        this.listen(button, "pointercancel", up);
+        this.listen(button, "pointerleave", up);
+        this.listen(button, "lostpointercapture", up);
       });
 
       const zone = document.getElementById("joystick-zone");
@@ -259,6 +290,7 @@
 
       const startJoystick = (event) => {
         event.preventDefault();
+        if (!this.canAcceptInput() || activePointer !== null) return;
         activePointer = event.pointerId;
         zone.setPointerCapture?.(event.pointerId);
         zone.classList.add("active");
@@ -279,11 +311,20 @@
         knob.style.transform = "translate3d(0, 0, 0)";
       };
 
-      zone.addEventListener("pointerdown", startJoystick);
-      zone.addEventListener("pointermove", moveJoystick);
-      zone.addEventListener("pointerup", stopJoystick);
-      zone.addEventListener("pointercancel", stopJoystick);
-      zone.addEventListener("lostpointercapture", stopJoystick);
+      this.listen(zone, "pointerdown", startJoystick);
+      this.listen(zone, "pointermove", moveJoystick);
+      this.listen(zone, "pointerup", stopJoystick);
+      this.listen(zone, "pointercancel", stopJoystick);
+      this.listen(zone, "lostpointercapture", stopJoystick);
+      this.resetTouch = () => {
+        const pointer = activePointer;
+        activePointer = null;
+        if (pointer !== null && zone.hasPointerCapture?.(pointer)) zone.releasePointerCapture(pointer);
+        zone.classList.remove("active");
+        knob.style.transform = "translate3d(0, 0, 0)";
+        document.querySelectorAll("[data-action]").forEach((button) => button.classList.remove("pressed"));
+      };
+      this.listen(window, "blur", () => this.reset());
     }
 
     movement(delta = 16.667) {
@@ -452,8 +493,13 @@
 
       this.createFloorUnderlayFrames();
       this.buildDungeon();
+      this.buildWardWallIndex();
       this.createPlayer();
       this.events.on(Phaser.Scenes.Events.POST_UPDATE, this.updateWardAura, this);
+      this.events.once("shutdown", () => {
+        this.events.off(Phaser.Scenes.Events.POST_UPDATE, this.updateWardAura, this);
+        this.events.off(Phaser.Scenes.Events.POST_UPDATE, this.updateCarriedWeapon, this);
+      });
       if (this.area === "dungeon") this.spawnEncounters();
       else this.state.totalEnemies = 0;
       this.createCollisions();
@@ -560,11 +606,36 @@
       this.updateWardMask();
     }
 
+    buildWardWallIndex() {
+      this.wardWallIndex = new Map();
+      this.walls.getChildren().forEach((wall) => {
+        const bounds = wall.getBounds();
+        for (let cy = Math.floor((bounds.top - 1) / TILE); cy <= Math.floor((bounds.bottom + 1) / TILE); cy++) {
+          for (let cx = Math.floor((bounds.left - 1) / TILE); cx <= Math.floor((bounds.right + 1) / TILE); cx++) {
+            const key = `${cx},${cy}`;
+            if (!this.wardWallIndex.has(key)) this.wardWallIndex.set(key, []);
+            this.wardWallIndex.get(key).push(wall);
+          }
+        }
+      });
+    }
+
+    nearbyWardWalls(x, y) {
+      if (!this.wardWallIndex) this.buildWardWallIndex();
+      const found = new Set();
+      for (let cy = Math.floor((y - 13) / TILE); cy <= Math.floor((y + 13) / TILE); cy++) {
+        for (let cx = Math.floor((x - 21) / TILE); cx <= Math.floor((x + 21) / TILE); cx++) {
+          (this.wardWallIndex.get(`${cx},${cy}`) || []).forEach((wall) => found.add(wall));
+        }
+      }
+      return [...found];
+    }
+
     findWardScale(x, y) {
       // Wall artwork can extend above its collision tile. Test visible bounds,
       // not only tile occupancy, so the floor effect is never sliced by a cap.
       const obstacles = [
-        ...this.walls.getChildren(),
+        ...this.nearbyWardWalls(x, y),
         ...(this.props?.getChildren() || []).filter((prop) => prop.body?.enable !== false),
         ...(this.enemies?.getChildren() || []).filter((enemy) =>
           enemy.getData("type") === "mimic" && enemy.getData("dormant"))
@@ -1258,7 +1329,8 @@
       this.cameras.main.setRoundPixels(false);
       this.cameras.main.setBackgroundColor(0x09080b);
       this.updateZoom();
-      this.scale.on("resize", () => this.updateZoom());
+      this.scale.on("resize", this.updateZoom, this);
+      this.events.once("shutdown", () => this.scale.off("resize", this.updateZoom, this));
     }
 
     updateZoom() {
