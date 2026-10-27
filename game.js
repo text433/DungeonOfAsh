@@ -62,7 +62,8 @@
     armorRank: document.getElementById("armor-rank")
   };
 
-  const asset = (name) => `assets/frames/${name}.png`;
+  const artPack = window.DungeonArtPack || {};
+  const asset = (name) => artPack[name] || `assets/frames/${name}.png`;
 
   const ASSETS = {
     door: Array.from({ length: 8 }, (_, i) => `ash_door_f${i}`),
@@ -86,7 +87,19 @@
     smithNpc: [0, 1, 2, 3].map((i) => `doc_idle_anim_f${i}`),
     lavaMid: [0, 1, 2].map((i) => `wall_fountain_mid_red_anim_f${i}`),
     lavaBasin: [0, 1, 2].map((i) => `wall_fountain_basin_red_anim_f${i}`),
-    weapons: ["weapon_regular_sword", "weapon_knight_sword", "weapon_red_gem_sword", "weapon_lavish_sword"],
+    weapons: ["weapon_regular_sword", "weapon_knight_sword", "weapon_red_gem_sword", "weapon_lavish_sword", "weapon_ember_axe", "weapon_frost_spear", "weapon_runeblade"],
+    frostIdle: [0, 1, 2, 3].map((i) => `frost_idle_f${i}`),
+    frostRun: [0, 1, 2, 3].map((i) => `frost_run_f${i}`),
+    runeIdle: [0, 1, 2, 3].map((i) => `rune_idle_f${i}`),
+    runeRun: [0, 1, 2, 3].map((i) => `rune_run_f${i}`),
+    emberIdle: [0, 1, 2, 3].map((i) => `ember_idle_f${i}`),
+    emberRun: [0, 1, 2, 3].map((i) => `ember_run_f${i}`),
+    wraithIdle: [0, 1, 2, 3].map((i) => `wraith_idle_f${i}`),
+    wraithRun: [0, 1, 2, 3].map((i) => `wraith_run_f${i}`),
+    spiderIdle: [0, 1, 2, 3].map((i) => `spider_idle_f${i}`),
+    spiderRun: [0, 1, 2, 3].map((i) => `spider_run_f${i}`),
+    golemIdle: [0, 1, 2, 3].map((i) => `golem_idle_f${i}`),
+    golemRun: [0, 1, 2, 3].map((i) => `golem_run_f${i}`),
     zombie: ["zombie_anim_f1", "zombie_anim_f2", "zombie_anim_f3", "zombie_anim_f10"],
     goblinIdle: [0, 1, 2, 3].map((i) => `goblin_idle_anim_f${i}`),
     goblinRun: [0, 1, 2, 3].map((i) => `goblin_run_anim_f${i}`),
@@ -127,6 +140,18 @@
       blockChance: 0,
       bonus: "+10% ātrums"
     },
+    frost: {
+      id: "frost", name: "Ledus sarga bruņas", idle: ASSETS.frostIdle, run: ASSETS.frostRun,
+      hit: "frost_hit_f0", speedMultiplier: 0.98, blockChance: 0.16, bonus: "16% bloks"
+    },
+    rune: {
+      id: "rune", name: "Rūnu bruņas", idle: ASSETS.runeIdle, run: ASSETS.runeRun,
+      hit: "rune_hit_f0", speedMultiplier: 1.08, blockChance: 0.08, bonus: "+8% ātrums · 8% bloks"
+    },
+    ember: {
+      id: "ember", name: "Ogles sarga bruņas", idle: ASSETS.emberIdle, run: ASSETS.emberRun,
+      hit: "ember_hit_f0", speedMultiplier: 0.94, blockChance: 0.22, bonus: "22% bloks"
+    },
     ash: {
       id: "ash",
       name: "Pelnu bruņas",
@@ -149,6 +174,11 @@
     { name: "south", dx: 0, dy: 1, x: 0, y: 8, width: 16, height: 8 },
     { name: "south-east", dx: 1, dy: 1, x: 8, y: 8, width: 8, height: 8 }
   ]);
+
+  document.querySelectorAll('img[src^="assets/frames/"]').forEach((image) => {
+    const key = image.getAttribute("src").split("/").pop().replace(/\.png$/, "");
+    if (artPack[key]) image.src = asset(key);
+  });
 
   class RunState {
     constructor(data = {}) {
@@ -456,12 +486,11 @@
     }
 
     preload() {
-      this.load.setPath("assets/frames/");
-      this.load.spritesheet("wall_atlas_low", "atlas_walls_low-16x16.png", {
+      this.load.spritesheet("wall_atlas_low", asset("atlas_walls_low-16x16"), {
         frameWidth: TILE,
         frameHeight: TILE
       });
-      this.load.spritesheet("wall_atlas_high", "atlas_walls_high-16x32.png", {
+      this.load.spritesheet("wall_atlas_high", asset("atlas_walls_high-16x32"), {
         frameWidth: TILE,
         frameHeight: TILE * 2
       });
@@ -473,9 +502,14 @@
         ...ASSETS.zombie, ...ASSETS.goblinIdle, ...ASSETS.goblinRun,
         ...ASSETS.skeletonIdle, ...ASSETS.skeletonRun, ...ASSETS.impIdle, ...ASSETS.impRun,
         ...ASSETS.townNpc, ...ASSETS.guideNpc, ...ASSETS.orcIdle, ...ASSETS.orcRun,
-        ...ASSETS.bossIdle, ...ASSETS.bossRun, ...ASSETS.chest, ...ASSETS.mimic, ...ASSETS.coin, ...ASSETS.items
+        ...ASSETS.bossIdle, ...ASSETS.bossRun, ...ASSETS.chest, ...ASSETS.mimic, ...ASSETS.coin, ...ASSETS.items,
+        ...ASSETS.frostIdle, ...ASSETS.frostRun, ...ASSETS.runeIdle, ...ASSETS.runeRun,
+        ...ASSETS.emberIdle, ...ASSETS.emberRun, "frost_hit_f0", "rune_hit_f0", "ember_hit_f0",
+        ...ASSETS.wraithIdle, ...ASSETS.wraithRun, ...ASSETS.spiderIdle, ...ASSETS.spiderRun,
+        ...ASSETS.golemIdle, ...ASSETS.golemRun,
+        ...["moss", "ember"].flatMap((theme) => Array.from({ length: 8 }, (_, i) => `${theme}_floor_${i + 1}`))
       ];
-      [...new Set(allKeys)].forEach((key) => this.load.image(key, `${key}.png${ASSETS.door.includes(key) ? "?v=63" : ""}`));
+      [...new Set(allKeys)].forEach((key) => this.load.image(key, asset(key)));
     }
 
     create() {
@@ -531,6 +565,14 @@
       create("player-scout-run", ASSETS.scoutRun, 9);
       create("player-ash-idle", ASSETS.ashIdle, 5);
       create("player-ash-run", ASSETS.ashRun, 9);
+      for (const id of ["frost", "rune", "ember"]) {
+        create(`player-${id}-idle`, ARMOR_SETS[id].idle, 5);
+        create(`player-${id}-run`, ARMOR_SETS[id].run, 9);
+      }
+      for (const id of ["wraith", "spider", "golem"]) {
+        create(`${id}-idle`, ASSETS[`${id}Idle`], 5);
+        create(`${id}-run`, ASSETS[`${id}Run`], id === "spider" ? 12 : 8);
+      }
       create("smith-npc-idle", ASSETS.smithNpc, 5);
       create("lava-flow", ASSETS.lavaMid, 8);
       create("lava-basin", ASSETS.lavaBasin, 7);
@@ -689,6 +731,7 @@
       title.classList.add("is-hidden");
       if (this.area !== "dungeon") return;
       title.textContent = `${this.state.floor}. STĀVS`;
+      title.dataset.theme = ({ crypt: "AKMENS KRIPTAS", moss: "AIZAUGUŠĀS DRUPAS", ember: "PELNU KALVE" })[this.mapLayout.theme];
       void title.offsetWidth;
       title.classList.remove("is-hidden");
       this.cameras.main.fadeIn(350, 8, 6, 10);
@@ -729,7 +772,8 @@
         for (let x = 0; x < MAP_W; x += 1) {
           if (!this.hasFloor(x, y)) continue;
           const noise = this.hash(x, y, this.mapLayout.seed);
-          const key = noise % 13 === 0 ? ASSETS.floor[1 + (noise % (ASSETS.floor.length - 1))] : "floor_1";
+          const variant = noise % 13 === 0 ? 1 + (noise % (ASSETS.floor.length - 1)) : 0;
+          const key = this.mapLayout.theme === "crypt" ? ASSETS.floor[variant] : `${this.mapLayout.theme}_floor_${variant + 1}`;
           this.floorTiles.add(this.add.image(x * TILE + 8, y * TILE + 8, key, "__BASE").setDepth(-30));
         }
       }
@@ -1074,22 +1118,24 @@
     }
 
     createFloorUnderlayFrames() {
-      const texture = this.textures.get("floor_1");
-      FLOOR_UNDERLAY_PIECES.forEach((piece) => {
-        const frameName = `wall-floor-${piece.name}`;
-        if (!texture.has(frameName)) {
-          texture.add(frameName, 0, piece.x, piece.y, piece.width, piece.height);
-        }
-      });
+      for (const key of ["floor_1", "moss_floor_1", "ember_floor_1"]) {
+        const texture = this.textures.get(key);
+        FLOOR_UNDERLAY_PIECES.forEach((piece) => {
+          const frameName = `wall-floor-${piece.name}`;
+          if (!texture.has(frameName)) texture.add(frameName, 0, piece.x, piece.y, piece.width, piece.height);
+        });
+      }
     }
 
     addWallFloorUnderlay(x, y) {
+      const theme = this.mapLayout?.theme;
+      const key = this.area === "dungeon" && theme && theme !== "crypt" ? `${theme}_floor_1` : "floor_1";
       FLOOR_UNDERLAY_PIECES.forEach((piece) => {
         if (!this.hasFloor(x + piece.dx, y + piece.dy)) return;
         const underlay = this.add.image(
           x * TILE + piece.x,
           y * TILE + piece.y,
-          "floor_1",
+          key,
           `wall-floor-${piece.name}`
         ).setOrigin(0).setDepth(-30);
         this.floorTiles.add(underlay);
@@ -1246,6 +1292,9 @@
         skeleton: { texture: ASSETS.skeletonIdle[0], idle: "skeleton-idle", run: "skeleton-run", hp: 3, speed: 36, damage: 1, reward: 3, aggroRadius: 158, patrolRadius: 52 },
         imp: { texture: ASSETS.impIdle[0], idle: "imp-idle", run: "imp-run", hp: 3, speed: 43, damage: 1, reward: 4, aggroRadius: 170, patrolRadius: 62 },
         orc: { texture: ASSETS.orcIdle[0], idle: "orc-idle", run: "orc-run", hp: 4, speed: 39, damage: 1, reward: 4, aggroRadius: 185, patrolRadius: 54 },
+        wraith: { texture: ASSETS.wraithIdle[0], idle: "wraith-idle", run: "wraith-run", hp: 3, speed: 49, damage: 1, reward: 5, aggroRadius: 180, patrolRadius: 65 },
+        spider: { texture: ASSETS.spiderIdle[0], idle: "spider-idle", run: "spider-run", hp: 2, speed: 60, damage: 1, reward: 3, aggroRadius: 110, patrolRadius: 38 },
+        golem: { texture: ASSETS.golemIdle[0], idle: "golem-idle", run: "golem-run", hp: 7, speed: 25, damage: 2, reward: 7, aggroRadius: 140, patrolRadius: 30 },
         mimic: { texture: ASSETS.mimic[0], idle: "mimic-run", run: "mimic-run", hp: 5, speed: 52, damage: 1, reward: 7, aggroRadius: 150, patrolRadius: 0 },
         boss: { texture: ASSETS.bossIdle[0], idle: "boss-idle", run: "boss-run", hp: 16, speed: 34, damage: 2, reward: 20, aggroRadius: 390, patrolRadius: 70 }
       };
@@ -1278,7 +1327,8 @@
       });
       if (type === "boss") enemy.body.setSize(22, 20).setOffset(5, 15);
       else if (type === "mimic") enemy.body.setSize(15, 11).setOffset(0, 5);
-      else if (type === "orc") enemy.body.setSize(11, 11).setOffset(2, 11);
+      else if (["orc", "golem"].includes(type)) enemy.body.setSize(11, 11).setOffset(2, 11);
+      else if (type === "wraith") enemy.body.setSize(10, 9).setOffset(3, 15);
       else enemy.body.setSize(10, 9).setOffset(3, 7);
       enemy.setCollideWorldBounds(true);
       if (type === "mimic") enemy.body.moves = false;
@@ -2152,9 +2202,9 @@
       if (Math.random() < 0.58) this.spawnDrop(chest.x, chest.y - 7, "potion", 2, { fromChest: true });
       const unopenedChests = this.chests.filter((candidate) => !candidate.getData("opened")).length;
       if (Math.random() < 0.36 || (!this.state.armorDropSeen && unopenedChests === 0)) {
-        const armorId = this.state.armorId === "ash"
-          ? Phaser.Utils.Array.GetRandom(["steel", "scout"])
-          : "ash";
+        const unlocked = this.state.floor >= 3 ? ["steel", "scout", "ash", "frost", "rune", "ember"]
+          : this.state.floor >= 2 ? ["steel", "scout", "ash", "frost", "rune"] : ["steel", "scout", "ash", "frost"];
+        const armorId = Phaser.Utils.Array.GetRandom(unlocked.filter((id) => id !== this.state.armorId));
         this.state.armorDropSeen = true;
         this.spawnDrop(chest.x, chest.y - 7, "armor", armorId, { fromChest: true });
       }
@@ -2304,7 +2354,13 @@
       }
       dom.gold.textContent = String(this.state.gold);
       dom.floor.textContent = this.area === "town" ? "—" : String(this.state.floor);
-      dom.area.textContent = this.area === "town" ? "Pilsēta" : "Stāvs";
+      dom.area.textContent = this.area === "town" ? "Pilsēta" : ({ crypt: "Kripta", moss: "Drupas", ember: "Kalve" })[this.mapLayout.theme];
+      const armorPreview = document.getElementById("pause-armor");
+      const weaponPreview = document.getElementById("pause-weapon");
+      const equipmentLabel = document.getElementById("pause-equipment");
+      if (armorPreview) armorPreview.src = asset(this.armorConfig().idle[0]);
+      if (weaponPreview) weaponPreview.src = asset(progression.weaponConfig().texture);
+      if (equipmentLabel) equipmentLabel.textContent = `${this.armorConfig().name} · ${progression.weaponConfig().name}`;
       dom.xp.style.width = `${Math.min(100, (this.state.kills / Math.max(1, this.state.totalEnemies)) * 100)}%`;
       this.applyWeaponVisual();
       dom.armorRank.textContent = `${this.armorConfig().name} · ${this.armorConfig().bonus}`;

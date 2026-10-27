@@ -173,6 +173,7 @@
   function generateDungeonLayout(floor = 1, runSeed = 1, mapWidth = 64, mapHeight = 48) {
     if (mapWidth < 60 || mapHeight < 44) throw new Error("Procedurālajai kartei vajag vismaz 60x44 flīzes");
     const level = Math.max(1, Math.floor(Number(floor) || 1));
+    const theme = ["crypt", "moss", "ember"][(level - 1) % 3];
     const seed = mixSeed((Number(runSeed) >>> 0) ^ Math.imul(level, 0x9e3779b1));
     const random = createSeededRandom(seed);
     const sizedRoom = (centerX, centerY, minWidth, maxWidth, minHeight, maxHeight, label) => {
@@ -220,8 +221,9 @@
     carveCorridor(floorCells, centerRoom, leftMid, random, mapWidth, mapHeight);
     carveCorridor(floorCells, leftMid, upperLeft, random, mapWidth, mapHeight);
     carveCorridor(floorCells, centerRoom, upperMid, random, mapWidth, mapHeight);
-    if (random.chance(0.7)) carveCorridor(floorCells, upperLeft, upperMid, random, mapWidth, mapHeight);
-    if (random.chance(0.55)) carveCorridor(floorCells, centerRoom, midRight, random, mapWidth, mapHeight);
+    // Ruins have more loops; the forge has a more directed main route.
+    if (random.chance(theme === "moss" ? 0.95 : theme === "ember" ? 0.45 : 0.7)) carveCorridor(floorCells, upperLeft, upperMid, random, mapWidth, mapHeight);
+    if (random.chance(theme === "moss" ? 0.85 : theme === "ember" ? 0.35 : 0.55)) carveCorridor(floorCells, centerRoom, midRight, random, mapWidth, mapHeight);
     for (let x = BOSS_CHAMBER.gateLeft; x <= BOSS_CHAMBER.gateRight; x += 1) {
       floorCells.add(cellKey(x, BOSS_CHAMBER.wallY));
     }
@@ -352,6 +354,7 @@
     const skulls = Array.from({ length: 6 }, () => claimPoint(combatRooms, 1));
 
     const enemyPool = ["zombie", "zombie", "goblin", "goblin", "skeleton", "imp", "orc"];
+    enemyPool.push(...(theme === "moss" ? ["spider", "spider", "wraith"] : theme === "ember" ? ["golem", "golem", "imp"] : ["wraith", "spider"]));
     if (level >= 3) enemyPool.push("imp", "orc", "skeleton");
     if (level >= 6) enemyPool.push("orc", "orc", "imp");
     const enemyCount = 18 + Math.min(12, level * 2);
@@ -363,6 +366,7 @@
     return Object.freeze({
       seed,
       level,
+      theme,
       rooms: Object.freeze(rooms),
       rectangles: Object.freeze(rooms.map((room) => Object.freeze(roomRectangle(room)))),
       floorCells,

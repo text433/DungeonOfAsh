@@ -1,0 +1,1415 @@
+{
+  "steel": {
+    "keys": [
+      "knight_m_idle_anim_f0",
+      "knight_m_idle_anim_f1",
+      "knight_m_idle_anim_f2",
+      "knight_m_idle_anim_f3",
+      "knight_m_run_anim_f0",
+      "knight_m_run_anim_f1",
+      "knight_m_run_anim_f2",
+      "knight_m_run_anim_f3",
+      "knight_m_hit_anim_f0"
+    ],
+    "sizes": [
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ]
+    ],
+    "cols": 4,
+    "rows": 3
+  },
+  "scout": {
+    "keys": [
+      "knight_f_idle_anim_f0",
+      "knight_f_idle_anim_f1",
+      "knight_f_idle_anim_f2",
+      "knight_f_idle_anim_f3",
+      "knight_f_run_anim_f0",
+      "knight_f_run_anim_f1",
+      "knight_f_run_anim_f2",
+      "knight_f_run_anim_f3",
+      "knight_f_hit_anim_f0"
+    ],
+    "sizes": [
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ]
+    ],
+    "cols": 4,
+    "rows": 3
+  },
+  "ash": {
+    "keys": [
+      "knight_ash_v2_idle_anim_f0",
+      "knight_ash_v2_idle_anim_f1",
+      "knight_ash_v2_idle_anim_f2",
+      "knight_ash_v2_idle_anim_f3",
+      "knight_ash_v2_run_anim_f0",
+      "knight_ash_v2_run_anim_f1",
+      "knight_ash_v2_run_anim_f2",
+      "knight_ash_v2_run_anim_f3",
+      "knight_ash_v2_hit_anim_f0"
+    ],
+    "sizes": [
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ]
+    ],
+    "cols": 4,
+    "rows": 3
+  },
+  "goblin": {
+    "keys": [
+      "goblin_idle_anim_f0",
+      "goblin_idle_anim_f1",
+      "goblin_idle_anim_f2",
+      "goblin_idle_anim_f3",
+      "goblin_run_anim_f0",
+      "goblin_run_anim_f1",
+      "goblin_run_anim_f2",
+      "goblin_run_anim_f3"
+    ],
+    "sizes": [
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ]
+    ],
+    "cols": 4,
+    "rows": 2
+  },
+  "skeleton": {
+    "keys": [
+      "skelet_idle_anim_f0",
+      "skelet_idle_anim_f1",
+      "skelet_idle_anim_f2",
+      "skelet_idle_anim_f3",
+      "skelet_run_anim_f0",
+      "skelet_run_anim_f1",
+      "skelet_run_anim_f2",
+      "skelet_run_anim_f3"
+    ],
+    "sizes": [
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ]
+    ],
+    "cols": 4,
+    "rows": 2
+  },
+  "imp": {
+    "keys": [
+      "imp_idle_anim_f0",
+      "imp_idle_anim_f1",
+      "imp_idle_anim_f2",
+      "imp_idle_anim_f3",
+      "imp_run_anim_f0",
+      "imp_run_anim_f1",
+      "imp_run_anim_f2",
+      "imp_run_anim_f3"
+    ],
+    "sizes": [
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ]
+    ],
+    "cols": 4,
+    "rows": 2
+  },
+  "orc": {
+    "keys": [
+      "orc_warrior_idle_anim_f0",
+      "orc_warrior_idle_anim_f1",
+      "orc_warrior_idle_anim_f2",
+      "orc_warrior_idle_anim_f3",
+      "orc_warrior_run_anim_f0",
+      "orc_warrior_run_anim_f1",
+      "orc_warrior_run_anim_f2",
+      "orc_warrior_run_anim_f3"
+    ],
+    "sizes": [
+      [
+        16,
+        23
+      ],
+      [
+        16,
+        23
+      ],
+      [
+        16,
+        23
+      ],
+      [
+        16,
+        23
+      ],
+      [
+        16,
+        23
+      ],
+      [
+        16,
+        23
+      ],
+      [
+        16,
+        23
+      ],
+      [
+        16,
+        23
+      ]
+    ],
+    "cols": 4,
+    "rows": 2
+  },
+  "boss": {
+    "keys": [
+      "big_demon_idle_anim_f0",
+      "big_demon_idle_anim_f1",
+      "big_demon_idle_anim_f2",
+      "big_demon_idle_anim_f3",
+      "big_demon_run_anim_f0",
+      "big_demon_run_anim_f1",
+      "big_demon_run_anim_f2",
+      "big_demon_run_anim_f3"
+    ],
+    "sizes": [
+      [
+        32,
+        36
+      ],
+      [
+        32,
+        36
+      ],
+      [
+        32,
+        36
+      ],
+      [
+        32,
+        36
+      ],
+      [
+        32,
+        36
+      ],
+      [
+        32,
+        36
+      ],
+      [
+        32,
+        36
+      ],
+      [
+        32,
+        36
+      ]
+    ],
+    "cols": 4,
+    "rows": 2
+  },
+  "zombie": {
+    "keys": [
+      "zombie_anim_f1",
+      "zombie_anim_f2",
+      "zombie_anim_f3",
+      "zombie_anim_f10"
+    ],
+    "sizes": [
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ]
+    ],
+    "cols": 4,
+    "rows": 1
+  },
+  "smith": {
+    "keys": [
+      "doc_idle_anim_f0",
+      "doc_idle_anim_f1",
+      "doc_idle_anim_f2",
+      "doc_idle_anim_f3"
+    ],
+    "sizes": [
+      [
+        16,
+        23
+      ],
+      [
+        16,
+        23
+      ],
+      [
+        16,
+        23
+      ],
+      [
+        16,
+        23
+      ]
+    ],
+    "cols": 4,
+    "rows": 1
+  },
+  "mage": {
+    "keys": [
+      "wizzard_m_idle_anim_f0",
+      "wizzard_m_idle_anim_f1",
+      "wizzard_m_idle_anim_f2",
+      "wizzard_m_idle_anim_f3"
+    ],
+    "sizes": [
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ]
+    ],
+    "cols": 4,
+    "rows": 1
+  },
+  "guide": {
+    "keys": [
+      "angel_idle_anim_f0",
+      "angel_idle_anim_f1",
+      "angel_idle_anim_f2",
+      "angel_idle_anim_f3"
+    ],
+    "sizes": [
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ]
+    ],
+    "cols": 4,
+    "rows": 1
+  },
+  "chest": {
+    "keys": [
+      "chest_full_open_anim_f0",
+      "chest_full_open_anim_f1",
+      "chest_full_open_anim_f2",
+      "chest_mimic_open_anim_f0",
+      "chest_mimic_open_anim_f1",
+      "chest_mimic_open_anim_f2"
+    ],
+    "sizes": [
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ]
+    ],
+    "cols": 4,
+    "rows": 2
+  },
+  "torch": {
+    "keys": [
+      "ash_torch_f0",
+      "ash_torch_f1",
+      "ash_torch_f2",
+      "ash_torch_f3"
+    ],
+    "sizes": [
+      [
+        32,
+        32
+      ],
+      [
+        32,
+        32
+      ],
+      [
+        32,
+        32
+      ],
+      [
+        32,
+        32
+      ]
+    ],
+    "cols": 4,
+    "rows": 1
+  },
+  "door": {
+    "keys": [
+      "ash_door_f0",
+      "ash_door_f1",
+      "ash_door_f2",
+      "ash_door_f3",
+      "ash_door_f4",
+      "ash_door_f5",
+      "ash_door_f6",
+      "ash_door_f7"
+    ],
+    "sizes": [
+      [
+        64,
+        64
+      ],
+      [
+        64,
+        64
+      ],
+      [
+        64,
+        64
+      ],
+      [
+        64,
+        64
+      ],
+      [
+        64,
+        64
+      ],
+      [
+        64,
+        64
+      ],
+      [
+        64,
+        64
+      ],
+      [
+        64,
+        64
+      ]
+    ],
+    "cols": 4,
+    "rows": 2
+  },
+  "floors": {
+    "keys": [
+      "floor_1",
+      "floor_2",
+      "floor_3",
+      "floor_4",
+      "floor_5",
+      "floor_6",
+      "floor_7",
+      "floor_8"
+    ],
+    "sizes": [
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ]
+    ],
+    "cols": 4,
+    "rows": 2
+  },
+  "props": {
+    "keys": [
+      "column",
+      "column_wall",
+      "crate",
+      "skull",
+      "floor_stairs",
+      "floor_ladder",
+      "wall_banner_red",
+      "wall_banner_blue",
+      "wall_banner_green",
+      "wall_banner_yellow",
+      "wall_hole_1",
+      "wall_hole_2",
+      "wall_fountain_top_2",
+      "wall_fountain_mid_red_anim_f0",
+      "wall_fountain_mid_red_anim_f1",
+      "wall_fountain_mid_red_anim_f2",
+      "wall_fountain_basin_red_anim_f0",
+      "wall_fountain_basin_red_anim_f1",
+      "wall_fountain_basin_red_anim_f2",
+      "floor_spikes_anim_f0",
+      "floor_spikes_anim_f1",
+      "floor_spikes_anim_f2",
+      "floor_spikes_anim_f3"
+    ],
+    "sizes": [
+      [
+        16,
+        48
+      ],
+      [
+        16,
+        48
+      ],
+      [
+        16,
+        24
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ]
+    ],
+    "cols": 5,
+    "rows": 5
+  },
+  "items": {
+    "keys": [
+      "weapon_regular_sword",
+      "weapon_knight_sword",
+      "weapon_red_gem_sword",
+      "weapon_lavish_sword",
+      "weapon_golden_sword",
+      "flask_big_red",
+      "flask_big_blue",
+      "flask_big_green",
+      "ui_heart_full",
+      "ui_heart_half",
+      "ui_heart_empty",
+      "weapon_big_hammer",
+      "weapon_duel_sword",
+      "weapon_spear",
+      "weapon_red_magic_staff",
+      "coin_anim_f0",
+      "coin_anim_f1",
+      "coin_anim_f2",
+      "coin_anim_f3"
+    ],
+    "sizes": [
+      [
+        10,
+        21
+      ],
+      [
+        10,
+        29
+      ],
+      [
+        10,
+        21
+      ],
+      [
+        10,
+        30
+      ],
+      [
+        10,
+        22
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        13,
+        12
+      ],
+      [
+        13,
+        12
+      ],
+      [
+        13,
+        12
+      ],
+      [
+        10,
+        37
+      ],
+      [
+        9,
+        30
+      ],
+      [
+        6,
+        30
+      ],
+      [
+        8,
+        30
+      ],
+      [
+        6,
+        7
+      ],
+      [
+        6,
+        7
+      ],
+      [
+        6,
+        7
+      ],
+      [
+        6,
+        7
+      ]
+    ],
+    "cols": 5,
+    "rows": 4
+  },
+  "atlas_walls_low-16x16": {
+    "atlas": true
+  },
+  "atlas_walls_high-16x32": {
+    "atlas": true
+  },
+  "frost": {
+    "keys": [
+      "frost_idle_f0",
+      "frost_idle_f1",
+      "frost_idle_f2",
+      "frost_idle_f3",
+      "frost_run_f0",
+      "frost_run_f1",
+      "frost_run_f2",
+      "frost_run_f3",
+      "frost_hit_f0"
+    ],
+    "sizes": [
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ]
+    ],
+    "cols": 4,
+    "rows": 3
+  },
+  "rune": {
+    "keys": [
+      "rune_idle_f0",
+      "rune_idle_f1",
+      "rune_idle_f2",
+      "rune_idle_f3",
+      "rune_run_f0",
+      "rune_run_f1",
+      "rune_run_f2",
+      "rune_run_f3",
+      "rune_hit_f0"
+    ],
+    "sizes": [
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ]
+    ],
+    "cols": 4,
+    "rows": 3
+  },
+  "ember": {
+    "keys": [
+      "ember_idle_f0",
+      "ember_idle_f1",
+      "ember_idle_f2",
+      "ember_idle_f3",
+      "ember_run_f0",
+      "ember_run_f1",
+      "ember_run_f2",
+      "ember_run_f3",
+      "ember_hit_f0"
+    ],
+    "sizes": [
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ],
+      [
+        16,
+        28
+      ]
+    ],
+    "cols": 4,
+    "rows": 3
+  },
+  "wraith": {
+    "keys": [
+      "wraith_idle_f0",
+      "wraith_idle_f1",
+      "wraith_idle_f2",
+      "wraith_idle_f3",
+      "wraith_run_f0",
+      "wraith_run_f1",
+      "wraith_run_f2",
+      "wraith_run_f3"
+    ],
+    "sizes": [
+      [
+        16,
+        24
+      ],
+      [
+        16,
+        24
+      ],
+      [
+        16,
+        24
+      ],
+      [
+        16,
+        24
+      ],
+      [
+        16,
+        24
+      ],
+      [
+        16,
+        24
+      ],
+      [
+        16,
+        24
+      ],
+      [
+        16,
+        24
+      ]
+    ],
+    "cols": 4,
+    "rows": 2
+  },
+  "spider": {
+    "keys": [
+      "spider_idle_f0",
+      "spider_idle_f1",
+      "spider_idle_f2",
+      "spider_idle_f3",
+      "spider_run_f0",
+      "spider_run_f1",
+      "spider_run_f2",
+      "spider_run_f3"
+    ],
+    "sizes": [
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ]
+    ],
+    "cols": 4,
+    "rows": 2
+  },
+  "golem": {
+    "keys": [
+      "golem_idle_f0",
+      "golem_idle_f1",
+      "golem_idle_f2",
+      "golem_idle_f3",
+      "golem_run_f0",
+      "golem_run_f1",
+      "golem_run_f2",
+      "golem_run_f3"
+    ],
+    "sizes": [
+      [
+        16,
+        24
+      ],
+      [
+        16,
+        24
+      ],
+      [
+        16,
+        24
+      ],
+      [
+        16,
+        24
+      ],
+      [
+        16,
+        24
+      ],
+      [
+        16,
+        24
+      ],
+      [
+        16,
+        24
+      ],
+      [
+        16,
+        24
+      ]
+    ],
+    "cols": 4,
+    "rows": 2
+  },
+  "theme-moss": {
+    "keys": [
+      "moss_floor_1",
+      "moss_floor_2",
+      "moss_floor_3",
+      "moss_floor_4",
+      "moss_floor_5",
+      "moss_floor_6",
+      "moss_floor_7",
+      "moss_floor_8"
+    ],
+    "sizes": [
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ]
+    ],
+    "cols": 4,
+    "rows": 2
+  },
+  "theme-ember": {
+    "keys": [
+      "ember_floor_1",
+      "ember_floor_2",
+      "ember_floor_3",
+      "ember_floor_4",
+      "ember_floor_5",
+      "ember_floor_6",
+      "ember_floor_7",
+      "ember_floor_8"
+    ],
+    "sizes": [
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        16,
+        16
+      ]
+    ],
+    "cols": 4,
+    "rows": 2
+  },
+  "weapons-new": {
+    "keys": [
+      "weapon_ember_axe",
+      "weapon_frost_spear",
+      "weapon_runeblade"
+    ],
+    "sizes": [
+      [
+        16,
+        32
+      ],
+      [
+        16,
+        32
+      ],
+      [
+        16,
+        32
+      ]
+    ],
+    "cols": 3,
+    "rows": 1
+  },
+  "ui": {
+    "keys": [
+      "ui_joystick-base",
+      "ui_joystick-knob",
+      "ui_attack",
+      "ui_ability",
+      "ui_talent",
+      "ui_pause",
+      "ui_fullscreen",
+      "ui_zoom",
+      "ui_close"
+    ],
+    "sizes": [
+      [
+        48,
+        48
+      ],
+      [
+        48,
+        48
+      ],
+      [
+        48,
+        48
+      ],
+      [
+        48,
+        48
+      ],
+      [
+        48,
+        48
+      ],
+      [
+        48,
+        48
+      ],
+      [
+        48,
+        48
+      ],
+      [
+        48,
+        48
+      ],
+      [
+        48,
+        48
+      ]
+    ],
+    "cols": 3,
+    "rows": 3
+  },
+  "door-trims": {
+    "keys": [
+      "doors_frame_left",
+      "doors_frame_top",
+      "doors_frame_right",
+      "doors_leaf_closed",
+      "doors_leaf_open"
+    ],
+    "cols": 5,
+    "rows": 1,
+    "sizes": [
+      [
+        16,
+        32
+      ],
+      [
+        32,
+        16
+      ],
+      [
+        16,
+        32
+      ],
+      [
+        32,
+        32
+      ],
+      [
+        32,
+        32
+      ]
+    ]
+  }
+}

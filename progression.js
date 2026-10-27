@@ -32,7 +32,7 @@
         if (!saved || typeof saved !== "object") return clean;
         clean.points = Math.max(0, Number(saved.points) || 0);
         clean.floorsCleared = Math.max(0, Number(saved.floorsCleared) || 0);
-        clean.weaponLevel = Math.max(0, Math.min(3, Number(saved.weaponLevel) || 0));
+        clean.weaponLevel = Math.max(0, Math.min(6, Math.floor(Number(saved.weaponLevel) || 0)));
         Object.keys(TALENTS).forEach((id) => {
           clean.levels[id] = Math.max(0, Math.min(TALENTS[id].maxLevel, Number(saved.levels?.[id]) || 0));
         });
@@ -81,7 +81,10 @@
         { level: 0, name: "Ceļinieka zobens", texture: "weapon_regular_sword", cost: 20, damage: 0, glow: 0x000000 },
         { level: 1, name: "Bruņinieka zobens", texture: "weapon_knight_sword", cost: 45, damage: 1, glow: 0xd89a48 },
         { level: 2, name: "Asinsrūnas zobens", texture: "weapon_red_gem_sword", cost: 80, damage: 2, glow: 0xe34a38 },
-        { level: 3, name: "Pelnu valdnieka zobens", texture: "weapon_lavish_sword", cost: null, damage: 3, glow: 0xffc766 }
+        { level: 3, name: "Pelnu valdnieka zobens", texture: "weapon_lavish_sword", cost: 120, damage: 3, glow: 0xffc766 },
+        { level: 4, name: "Ogles cirvis", texture: "weapon_ember_axe", cost: 170, damage: 4, glow: 0xd87e43 },
+        { level: 5, name: "Ledus šķēps", texture: "weapon_frost_spear", cost: 230, damage: 5, glow: 0x79c9d1 },
+        { level: 6, name: "Rūnu asmens", texture: "weapon_runeblade", cost: null, damage: 6, glow: 0x9d8ac7 }
       ];
       return weapons[this.state.weaponLevel || 0];
     }
@@ -89,7 +92,7 @@
     upgradeWeapon(gold) {
       const current = this.weaponConfig();
       if (current.cost == null || gold < current.cost) return { success: false, cost: current.cost, level: current.level };
-      this.state.weaponLevel = Math.min(3, current.level + 1);
+      this.state.weaponLevel = Math.min(6, current.level + 1);
       this.save();
       return { success: true, cost: current.cost, level: this.state.weaponLevel };
     }

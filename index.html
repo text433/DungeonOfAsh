@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0b090d" />
     <meta name="description" content="Dungeon of Ash — spēlējama HTML5 dungeon piedzīvojumu spēle." />
     <title>Dungeon of Ash</title>
-    <link rel="stylesheet" href="style.css?v=77" />
+    <link rel="stylesheet" href="style.css?v=78" />
   </head>
   <body>
     <main id="game-shell" aria-label="Dungeon of Ash spēle">
@@ -71,7 +71,7 @@
 
       <section id="start-screen" class="overlay active">
         <div class="sigil" aria-hidden="true"><span></span></div>
-        <p class="eyebrow">PIXEL DUNGEON</p>
+        <p class="eyebrow">KRIPTAS · DRUPAS · PELNU KALVE</p>
         <h1>DUNGEON<br /><em>OF ASH</em></h1>
         <p class="intro">Šī pamācība būs redzama tikai pirmo reizi.</p>
         <div class="intro-steps">
@@ -85,7 +85,8 @@
 
       <section id="pause-screen" class="overlay modal">
         <p class="eyebrow">SPĒLE APTURĒTA</p>
-        <h2>Pauze</h2>
+        <h2>Atpūta pie uguns</h2>
+        <div class="equipment-preview" aria-label="Pašreizējais aprīkojums"><img id="pause-armor" alt="" /><span id="pause-equipment"></span><img id="pause-weapon" alt="" /></div>
         <button id="resume-button" class="primary-button" type="button">TURPINĀT</button>
         <button id="restart-button" class="ghost-button" type="button">SĀKT NO JAUNA</button>
       </section>
@@ -156,6 +157,7 @@
           <h2>Ieroču darbnīca</h2>
           <p>Pašreizējais ierocis</p>
           <strong id="smith-weapon" class="smith-weapon">Ceļinieka zobens</strong>
+          <div class="forge-lineup" aria-label="Ieroču attīstība"><img src="assets/art-v78/weapon_regular_sword.png" alt="" /><img src="assets/art-v78/weapon_knight_sword.png" alt="" /><img src="assets/art-v78/weapon_red_gem_sword.png" alt="" /><img src="assets/art-v78/weapon_lavish_sword.png" alt="" /><img src="assets/art-v78/weapon_ember_axe.png" alt="" /><img src="assets/art-v78/weapon_frost_spear.png" alt="" /><img src="assets/art-v78/weapon_runeblade.png" alt="" /></div>
           <div class="smith-cost">Cena: <strong id="smith-cost">20 zelta</strong></div>
           <button id="smith-upgrade" class="primary-button" type="button">KALT PAR 20 ZELTA</button>
           <small>Katrs līmenis maina zobena izskatu un palielina bojājumus.</small>
@@ -166,8 +168,9 @@
     </main>
 
     <script src="vendor/phaser.min.js"></script>
-    <script src="map-rules.js?v=68"></script>
-    <script src="progression.js?v=28"></script>
-    <script src="game.js?v=77"></script>
+    <script src="map-rules.js?v=78"></script>
+    <script src="progression.js?v=78"></script>
+    <script src="art-pack.js?v=78"></script>
+    <script src="game.js?v=78"></script>
   </body>
 </html>
