@@ -1,0 +1,212 @@
+{
+  "frost": {
+    "keys": [
+      "frost_idle_f0",
+      "frost_idle_f1",
+      "frost_idle_f2",
+      "frost_idle_f3",
+      "frost_run_f0",
+      "frost_run_f1",
+      "frost_run_f2",
+      "frost_run_f3",
+      "frost_hit_f0"
+    ],
+    "visible": [
+      15,
+      21
+    ],
+    "canvas": [
+      16,
+      28
+    ],
+    "reference": "knight_m",
+    "scale": 0.9545,
+    "source_visible": [
+      15,
+      22
+    ]
+  },
+  "rune": {
+    "keys": [
+      "rune_idle_f0",
+      "rune_idle_f1",
+      "rune_idle_f2",
+      "rune_idle_f3",
+      "rune_run_f0",
+      "rune_run_f1",
+      "rune_run_f2",
+      "rune_run_f3",
+      "rune_hit_f0"
+    ],
+    "visible": [
+      15,
+      21
+    ],
+    "canvas": [
+      16,
+      28
+    ],
+    "reference": "knight_m",
+    "scale": 1.0,
+    "source_visible": [
+      15,
+      21
+    ]
+  },
+  "ember": {
+    "keys": [
+      "ember_idle_f0",
+      "ember_idle_f1",
+      "ember_idle_f2",
+      "ember_idle_f3",
+      "ember_run_f0",
+      "ember_run_f1",
+      "ember_run_f2",
+      "ember_run_f3",
+      "ember_hit_f0"
+    ],
+    "visible": [
+      15,
+      21
+    ],
+    "canvas": [
+      16,
+      28
+    ],
+    "reference": "knight_m",
+    "scale": 1.0,
+    "source_visible": [
+      15,
+      21
+    ]
+  },
+  "wraith": {
+    "keys": [
+      "wraith_idle_f0",
+      "wraith_idle_f1",
+      "wraith_idle_f2",
+      "wraith_idle_f3",
+      "wraith_run_f0",
+      "wraith_run_f1",
+      "wraith_run_f2",
+      "wraith_run_f3"
+    ],
+    "visible": [
+      14,
+      16
+    ],
+    "canvas": [
+      16,
+      24
+    ],
+    "scale": 0.8889,
+    "source_visible": [
+      15,
+      18
+    ]
+  },
+  "spider": {
+    "keys": [
+      "spider_idle_f0",
+      "spider_idle_f1",
+      "spider_idle_f2",
+      "spider_idle_f3",
+      "spider_run_f0",
+      "spider_run_f1",
+      "spider_run_f2",
+      "spider_run_f3"
+    ],
+    "visible": [
+      12,
+      9
+    ],
+    "canvas": [
+      16,
+      16
+    ],
+    "scale": 0.8,
+    "source_visible": [
+      15,
+      11
+    ]
+  },
+  "golem": {
+    "keys": [
+      "golem_idle_f0",
+      "golem_idle_f1",
+      "golem_idle_f2",
+      "golem_idle_f3",
+      "golem_run_f0",
+      "golem_run_f1",
+      "golem_run_f2",
+      "golem_run_f3"
+    ],
+    "visible": [
+      15,
+      16
+    ],
+    "canvas": [
+      16,
+      23
+    ],
+    "scale": 1.0,
+    "source_visible": [
+      15,
+      14
+    ]
+  },
+  "weapon_ember_axe": {
+    "keys": [
+      "weapon_ember_axe"
+    ],
+    "visible": [
+      12,
+      24
+    ],
+    "canvas": [
+      16,
+      32
+    ],
+    "scale": 0.8276,
+    "source_visible": [
+      14,
+      29
+    ]
+  },
+  "weapon_frost_spear": {
+    "keys": [
+      "weapon_frost_spear"
+    ],
+    "visible": [
+      8,
+      28
+    ],
+    "canvas": [
+      16,
+      32
+    ],
+    "scale": 0.9032,
+    "source_visible": [
+      5,
+      31
+    ]
+  },
+  "weapon_runeblade": {
+    "keys": [
+      "weapon_runeblade"
+    ],
+    "visible": [
+      10,
+      26
+    ],
+    "canvas": [
+      16,
+      32
+    ],
+    "scale": 0.8387,
+    "source_visible": [
+      10,
+      31
+    ]
+  }
+}

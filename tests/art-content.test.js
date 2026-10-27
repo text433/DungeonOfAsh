@@ -6,7 +6,7 @@ const { createHash } = require('node:crypto');
 const root = path.join(__dirname, '..');
 const source = fs.readFileSync(path.join(root, 'game.js'), 'utf8');
 const assets = vm.runInNewContext(source.slice(source.indexOf('  const ASSETS ='), source.indexOf('  const ARMOR_SETS')).replace('const ASSETS =', 'globalThis.assets =') + ';assets');
-const manifest = require('../assets/art-v78/manifest.json');
+const manifest = require('../assets/art-v79/manifest.json');
 function png(key) {
   assert(manifest[key], `Missing replacement texture: ${key}`);
   const data = fs.readFileSync(path.join(root, manifest[key]));

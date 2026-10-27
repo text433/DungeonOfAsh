@@ -1213,46 +1213,11 @@ button:focus-visible { outline: 2px solid #f0d39b; outline-offset: 3px; }
   .joystick-zone { left: max(12px, env(safe-area-inset-left)); }
 }
 
-/* v78: chunky stone and bronze kit; combat field stays open. */
-:root { --ui-ink: #1b1a21; --ui-stone: #484248; --ui-bronze: #9e8059; --ui-light: #eee2c5; --ui-magic: #75c5c0; }
-#joystick-base { background-image: url("assets/art-v78/ui_joystick-base.png"); }
-#joystick-knob { background-image: url("assets/art-v78/ui_joystick-knob.png"); }
-.action-pad .attack { background-image: url("assets/art-v78/ui_attack.png"); }
-#ability-button, #ability-button.is-ready, #ability-button.is-active,
-#ability-button.pressed, #ability-button:active { background-image: url("assets/art-v78/ui_ability.png"); }
-#talent-button { background-image: url("assets/art-v78/ui_talent.png"); }
-#fullscreen-button { background-image: url("assets/art-v78/ui_fullscreen.png"); }
-#pause-button { background-image: url("assets/art-v78/ui_pause.png"); }
-#minimap-zoom { background-image: url("assets/art-v78/ui_zoom.png"); }
-#minimap-close { background-image: url("assets/art-v78/ui_close.png"); }
-#hearts { gap: 5px; }
-#hearts img { width: 34px; height: 32px; image-rendering: pixelated; }
-.hud-panel.run-panel { background: #17161eb3; border-bottom-color: #b39a72; }
-.boss-progress-track { height: 7px; border-color: #a18c68; box-shadow: 1px 1px #0a0a0e; }
-.boss-progress-track > span { background: #679b83; box-shadow: inset 0 2px #acd0a5; }
-.boss-progress.is-ready .boss-progress-track > span { background: #d3b36b; box-shadow: inset 0 2px #f1dda4; }
+/* v79: retain v77 controls and compact HUD; menus use natural sprite ratios. */
 .floor-title::after { content: attr(data-theme); display: block; margin-top: 9px; font-size: clamp(12px, 2.5vw, 19px); color: #c1ae89; letter-spacing: .15em; }
-.overlay { background: radial-gradient(ellipse at 50% 30%, #302b32eb, #0f1015f5 70%); }
-.overlay h1, .overlay h2 { color: #eee2c5; text-shadow: 3px 3px #111017; }
-.overlay .eyebrow { color: #b69a70; }
-.primary-button, .ghost-button, .talent-close, .minimap-reopen, .prompt:not(:disabled) {
-  border: 2px solid #ac9471; border-radius: 0;
-  background: #343038; box-shadow: inset 2px 2px #5c514b, inset -2px -2px #16151b, 2px 2px #0b0b10;
-  font-family: "Courier New", monospace; font-weight: bold;
-}
-.primary-button { color: #f3dfaa; border-color: #c2a16a; }
-.primary-button:hover:not(:disabled), .ghost-button:hover { background: #49404a; }
-.primary-button:active:not(:disabled), .ghost-button:active { transform: translateY(2px); }
-.primary-button:disabled { color: #8e8989; border-color: #686169; background: #26252d; }
-.talent-window, .smith-window { border: 3px solid #9a8265; background: #1f1e26; box-shadow: inset 3px 3px #49434a, inset -3px -3px #111119, 0 8px 0 #0b0c12; }
-.talent-branch { background: #27252e; border-color: #5c5458; }
-.talent-node { background: #1d1c24; border-color: #5c5458; }
-.talent-node.available { border-color: #bba06c; }
-.talent-node.unlocked { background: #243635; border-color: #78a59a; }
-.equipment-preview { display: flex; align-items: center; justify-content: center; gap: 16px; width: min(360px, 88vw); padding: 12px 16px; margin: 0 0 18px; background: #17171f; border-top: 2px solid #5c5150; border-bottom: 2px solid #5c5150; }
+.equipment-preview { display: flex; align-items: center; justify-content: center; gap: 12px; width: min(330px, 85vw); padding: 8px 12px; margin: 0 0 14px; border-bottom: 1px solid var(--ui-bronze); }
 .equipment-preview img { width: 32px; height: 56px; object-fit: contain; image-rendering: pixelated; }
-.equipment-preview span { max-width: 210px; color: #d3c6a8; font: bold 13px/1.6 "Courier New", monospace; }
-.forge-lineup { display: flex; justify-content: center; align-items: end; gap: 11px; padding: 12px 0; margin: 8px 0; border-top: 2px solid #534a4e; border-bottom: 2px solid #534a4e; }
-.forge-lineup img { width: 24px; height: 44px; object-fit: contain; image-rendering: pixelated; }
-@media (max-width: 390px) { .forge-lineup { gap: 7px; } .forge-lineup img { width: 22px; } }
-@media (pointer: coarse) and (orientation: landscape) { .equipment-preview { padding: 5px 10px; margin-bottom: 9px; } .equipment-preview img { height: 36px; } }
+.equipment-preview span { max-width: 210px; color: var(--ui-light); font: bold 12px/1.5 "Courier New", monospace; }
+.forge-lineup { display: flex; justify-content: center; align-items: end; gap: 8px; padding: 8px 0; margin: 6px 0; border-bottom: 1px solid var(--ui-bronze); }
+.forge-lineup img { object-fit: contain; image-rendering: pixelated; max-width: 32px; max-height: 64px; }
+@media (pointer: coarse) and (orientation: landscape) { .equipment-preview { padding: 4px 8px; margin-bottom: 8px; } .equipment-preview img { height: 36px; } }
